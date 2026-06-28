@@ -19,4 +19,4 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
 EXPOSE 8000
 
 # storage:link y serve se hacen al INICIAR, no al construir
-CMD php artisan storage:link --force 2>/dev/null; php artisan config:clear; php artisan serve --host=0.0.0.0 --port=8000
+CMD php artisan storage:link --force 2>/dev/null; php artisan config:clear; php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
