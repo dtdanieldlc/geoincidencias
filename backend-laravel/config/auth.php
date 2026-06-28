@@ -8,9 +8,9 @@ return [
     ],
 
     'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'usuarios',
+    'web' => [
+        'driver' => 'session',
+        'provider' => 'usuarios',
         ],
         'sanctum' => [
             'driver' => 'sanctum',
