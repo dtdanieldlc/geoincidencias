@@ -4,7 +4,7 @@
 
 // Backend Laravel corriendo en otro puerto (php artisan serve = 8000 por defecto).
 // Si sirves el frontend desde el mismo dominio/puerto que Laravel, puedes usar '/api'.
-const API = 'http://localhost:8000/api';
+const API = 'https://geoincidencias-production.up.railway.app/api';
 
 function getToken()   { return localStorage.getItem('gi_token'); }
 function getUsuario() { try { return JSON.parse(localStorage.getItem('gi_usuario')); } catch(e) { return null; } }

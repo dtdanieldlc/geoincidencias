@@ -1,5 +1,5 @@
 // frontend/js/login.js
-const API = 'http://localhost:8000/api';
+const API = 'https://geoincidencias-production.up.railway.app/api';
 
 function mostrarAlerta(msg, tipo='danger') {
   const el = document.getElementById('alerta');
