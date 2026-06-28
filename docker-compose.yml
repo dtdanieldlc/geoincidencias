@@ -1,0 +1,43 @@
+services:
+
+  # ── Backend Laravel ──────────────────────────────────
+  backend:
+    build:
+      context: ./backend-laravel
+      dockerfile: Dockerfile
+    container_name: geoincidencias_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: GeoIncidencias
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      APP_KEY: "base64:2HaHorFJUyX2QI5eiHceKyspp0/gDbC+n+KRk4mO83I="
+      DB_CONNECTION: mysql
+      DB_HOST: mybd-incidencias-dtlcdaniel-f353.a.aivencloud.com
+      DB_PORT: "27191"
+      DB_DATABASE: defaultdb
+      DB_USERNAME: avnadmin
+      DB_PASSWORD: AVNS_cQsr5j-WA2xF4blhEFb
+      MYSQL_ATTR_SSL_CA: /var/www/ca.pem
+    volumes:
+      - ./backend-laravel/storage:/var/www/storage
+      - ./backend-laravel/ca.pem:/var/www/ca.pem
+
+  # ── Frontend (Nginx sirve los HTML estáticos) ─────────
+  frontend:
+    image: nginx:alpine
+    container_name: geoincidencias_frontend
+    restart: unless-stopped
+    ports:
+      - "5500:80"
+    volumes:
+      - ./frontend/html:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - geoincidencias_net
+networks:
+  geoincidencias_net:
+    driver: bridge

@@ -1,0 +1,7 @@
+backend-laravel/vendor
+backend-laravel/.env
+backend-laravel/storage/logs/*.log
+backend-laravel/storage/framework/cache/data/*
+backend-laravel/storage/framework/sessions/*
+backend-laravel/storage/framework/views/*
+backend-laravel/bootstrap/cache/*.php
