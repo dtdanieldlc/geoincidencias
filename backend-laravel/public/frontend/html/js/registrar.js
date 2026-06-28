@@ -125,7 +125,7 @@ async function guardarIncidencia() {
     const res  = await fetchAPI(`${API}/incidencias`, { method:'POST', body: JSON.stringify(payload) });
     const data = await res.json();
     if (res.ok && data.ok) {
-      mostrarAlerta(data.mensaje, 'success');
+      mostrarAlerta('✅ Incidencia registrada y enviada a revisión del administrador.', 'success');
       setTimeout(() => window.location.href = 'incidencias.html', 2200);
     } else {
       mostrarAlerta(data.mensaje || 'Error al registrar.', 'danger');

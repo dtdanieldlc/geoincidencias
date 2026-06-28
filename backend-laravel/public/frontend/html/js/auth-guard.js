@@ -1,9 +1,4 @@
 // frontend/js/auth-guard.js
-// Se incluye en TODAS las páginas protegidas (todas excepto login.html)
-// Verifica sesión, expone el usuario actual y ofrece fetchAPI() con el token ya incluido.
-
-// Backend Laravel corriendo en otro puerto (php artisan serve = 8000 por defecto).
-// Si sirves el frontend desde el mismo dominio/puerto que Laravel, puedes usar '/api'.
 const API = 'https://geoincidencias-production.up.railway.app/api';
 
 function getToken()   { return localStorage.getItem('gi_token'); }
@@ -15,23 +10,16 @@ function cerrarSesion() {
   window.location.href = 'login.html';
 }
 
-// Redirige a login si no hay sesión válida. Llamar al inicio de cada página protegida.
 function exigirSesion() {
-  if (!getToken() || !getUsuario()) {
-    window.location.href = 'login.html';
-  }
+  if (!getToken() || !getUsuario()) window.location.href = 'login.html';
 }
 
-// Si la página es exclusiva de admin, redirige si el usuario no lo es.
 function exigirAdmin() {
   exigirSesion();
   const u = getUsuario();
-  if (!u || u.rol !== 'admin') {
-    window.location.href = 'index.html';
-  }
+  if (!u || u.rol !== 'admin') window.location.href = 'index.html';
 }
 
-// Wrapper de fetch que agrega el token automáticamente y maneja 401/403.
 async function fetchAPI(url, opciones = {}) {
   const headers = {
     'Content-Type': 'application/json',
@@ -47,24 +35,92 @@ async function fetchAPI(url, opciones = {}) {
   return res;
 }
 
-// Pinta el nombre del usuario y botón logout / oculta enlaces admin si no aplica.
-function inicializarBarraUsuario() {
-  const u = getUsuario();
-  if (!u) return;
-  const nombreEl = document.getElementById('nombreUsuarioActual');
-  if (nombreEl) nombreEl.textContent = u.nombre;
-  const rolEl = document.getElementById('rolUsuarioActual');
-  if (rolEl) rolEl.textContent = u.rol === 'admin' ? 'Administrador' : 'Usuario';
+// ── Panel de notificaciones ──
+function crearPanelNotificaciones() {
+  if (document.getElementById('panelNotificaciones')) return;
 
-  // Oculta enlaces marcados como solo-admin si el usuario no lo es
-  if (u.rol !== 'admin') {
-    document.querySelectorAll('.solo-admin').forEach(el => el.style.display = 'none');
+  const panel = document.createElement('div');
+  panel.id = 'panelNotificaciones';
+  panel.style.cssText = `
+    display:none; position:fixed; top:60px; right:16px; width:340px; max-height:480px;
+    background:#161b22; border:1px solid #30363d; border-radius:10px;
+    box-shadow:0 8px 32px rgba(0,0,0,.5); z-index:9999; overflow:hidden; flex-direction:column;
+  `;
+  panel.innerHTML = `
+    <div style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:600; color:#e6edf3;">🔔 Notificaciones</span>
+      <button onclick="marcarTodasLeidas()" style="background:none;border:none;color:#58a6ff;font-size:.8rem;cursor:pointer;">Marcar todas leídas</button>
+    </div>
+    <div id="listaNotificaciones" style="overflow-y:auto; max-height:380px; padding:8px 0;">
+      <div style="text-align:center;padding:24px;color:#8b949e;">Cargando...</div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  // Cerrar al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    const btn = document.getElementById('btnNotificaciones');
+    if (!panel.contains(e.target) && btn && !btn.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+}
+
+function togglePanelNotificaciones() {
+  const panel = document.getElementById('panelNotificaciones');
+  if (!panel) return;
+  const visible = panel.style.display === 'flex';
+  panel.style.display = visible ? 'none' : 'flex';
+  if (!visible) cargarNotificaciones();
+}
+
+async function cargarNotificaciones() {
+  const lista = document.getElementById('listaNotificaciones');
+  if (!lista) return;
+  try {
+    const r = await fetchAPI(`${API}/notificaciones`);
+    const datos = await r.json();
+    if (!datos.length) {
+      lista.innerHTML = '<div style="text-align:center;padding:24px;color:#8b949e;"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:8px;"></i>Sin notificaciones</div>';
+      return;
+    }
+    lista.innerHTML = datos.map(n => `
+      <div onclick="marcarNotifLeida(${n.id_notificacion}, this)"
+           style="padding:10px 16px; border-bottom:1px solid #21262d; cursor:pointer;
+                  background:${n.leida ? 'transparent' : 'rgba(88,166,255,.06)'};
+                  transition:background .2s;"
+           onmouseover="this.style.background='rgba(255,255,255,.04)'"
+           onmouseout="this.style.background='${n.leida ? 'transparent' : 'rgba(88,166,255,.06)'}'">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:1.2rem;margin-top:2px;">${n.leida ? '🔘' : '🔵'}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="color:#e6edf3;font-size:.85rem;line-height:1.4;">${n.mensaje}</div>
+            <div style="color:#8b949e;font-size:.75rem;margin-top:4px;">${new Date(n.fecha).toLocaleString('es-EC')}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    lista.innerHTML = '<div style="text-align:center;padding:24px;color:#f87171;">Error al cargar</div>';
   }
+}
 
-  const btnLogout = document.getElementById('btnCerrarSesion');
-  if (btnLogout) btnLogout.addEventListener('click', cerrarSesion);
+async function marcarNotifLeida(id, el) {
+  try {
+    await fetchAPI(`${API}/notificaciones/${id}/leida`, { method: 'PUT' });
+    el.style.background = 'transparent';
+    el.querySelector('span').textContent = '🔘';
+    el.onmouseout = () => el.style.background = 'transparent';
+    await cargarContadorNotificaciones();
+  } catch(e) {}
+}
 
-  cargarContadorNotificaciones();
+async function marcarTodasLeidas() {
+  try {
+    await fetchAPI(`${API}/notificaciones/marcar-todas`, { method: 'PUT' });
+    await cargarNotificaciones();
+    await cargarContadorNotificaciones();
+  } catch(e) {}
 }
 
 async function cargarContadorNotificaciones() {
@@ -73,8 +129,42 @@ async function cargarContadorNotificaciones() {
     const d = await r.json();
     const badge = document.getElementById('badgeNotificaciones');
     if (badge) {
-      if (d.total > 0) { badge.textContent = d.total; badge.style.display='inline-block'; }
+      if (d.total > 0) { badge.textContent = d.total; badge.style.display = 'inline-block'; }
       else badge.style.display = 'none';
     }
   } catch(e) {}
+}
+
+// ── Barra de usuario ──
+function inicializarBarraUsuario() {
+  const u = getUsuario();
+  if (!u) return;
+
+  const nombreEl = document.getElementById('nombreUsuarioActual');
+  if (nombreEl) nombreEl.textContent = u.nombre;
+  const rolEl = document.getElementById('rolUsuarioActual');
+  if (rolEl) rolEl.textContent = u.rol === 'admin' ? 'Administrador' : 'Usuario';
+
+  if (u.rol !== 'admin') {
+    document.querySelectorAll('.solo-admin').forEach(el => el.style.display = 'none');
+  }
+
+  const btnLogout = document.getElementById('btnCerrarSesion');
+  if (btnLogout) btnLogout.addEventListener('click', cerrarSesion);
+
+  // Botón notificaciones
+  const btnNotif = document.getElementById('btnNotificaciones');
+  if (btnNotif) {
+    btnNotif.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePanelNotificaciones();
+    });
+  }
+
+  crearPanelNotificaciones();
+  cargarContadorNotificaciones();
+
+  // Actualizar contador cada 60 segundos
+  setInterval(cargarContadorNotificaciones, 60000);
 }

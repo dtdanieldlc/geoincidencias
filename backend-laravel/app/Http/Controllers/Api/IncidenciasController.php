@@ -201,6 +201,17 @@ public function index(Request $request)
         ], 201);
     }
 
+    // GET /api/incidencias/mis-reportes
+    public function misReportes(Request $request)
+    {
+        $usuario = $request->user();
+        $datos = $this->baseQuery()
+            ->where('incidencias.id_usuario_creador', $usuario->id_usuario)
+            ->orderByDesc('incidencias.fecha_registro')
+            ->get();
+        return response()->json(['datos' => $datos, 'total' => $datos->count()]);
+    }   
+
     // PUT /api/incidencias/{id}
     public function update(Request $request, $id)
     {

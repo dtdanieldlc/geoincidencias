@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('incidencias/exportar/csv', [IncidenciasController::class, 'exportarCsv']);
     Route::put('incidencias/{id}/aprobar', [IncidenciasController::class, 'aprobar']);
     Route::put('incidencias/{id}/rechazar', [IncidenciasController::class, 'rechazar']);
+    Route::get('incidencias/mis-reportes', [IncidenciasController::class, 'misReportes']);
     Route::apiResource('incidencias', IncidenciasController::class);
 
     // Apoyos
