@@ -165,6 +165,11 @@ function inicializarBarraUsuario() {
   crearPanelNotificaciones();
   cargarContadorNotificaciones();
 
+  // Actualizar foto en sidebar si existe
+  if (typeof actualizarFotoSidebar === 'function') {
+    actualizarFotoSidebar(u.foto_url ?? null);
+  }
+
   // Actualizar contador cada 60 segundos
   setInterval(cargarContadorNotificaciones, 60000);
 }
