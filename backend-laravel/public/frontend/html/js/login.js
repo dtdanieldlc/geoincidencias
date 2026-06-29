@@ -68,9 +68,8 @@ async function crearCuenta() {
     });
     const data = await res.json();
     if (res.ok && data.ok) {
-      mostrarAlerta('Cuenta creada. Ya puedes iniciar sesión.', 'success');
-      mostrarTab('login');
-      document.getElementById('loginCorreo').value = correo;
+      sessionStorage.setItem('correo_pendiente', correo);
+      window.location.href = `verificar-correo.html?correo=${encodeURIComponent(correo)}`;
     } else {
       mostrarAlerta(data.mensaje || 'No se pudo crear la cuenta.', 'danger');
     }
