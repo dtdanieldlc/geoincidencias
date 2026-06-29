@@ -23,12 +23,13 @@ class Usuario extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
-        'password' => 'hashed',
-        'saldo_incentivos' => 'decimal:2',
-        'activo' => 'boolean',
-        'created_at' => 'datetime',
+    'password'                    => 'hashed',
+    'saldo_incentivos'            => 'decimal:2',
+    'activo'                      => 'boolean',
+    'correo_verificado'           => 'boolean',
+    'codigo_verificacion_expira'  => 'datetime',
+    'created_at'                  => 'datetime',
     ];
-
     public function getNombreCompletoAttribute(): string
     {
         return trim($this->nombre . ' ' . ($this->apellido ?? ''));
