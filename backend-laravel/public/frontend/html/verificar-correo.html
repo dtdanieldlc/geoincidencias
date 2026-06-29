@@ -8,14 +8,17 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
   <style>
     :root { --accent: #f85149; }
-    body { background: #0d1117; color: #e6edf3; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body {
+      background: #0d1117; color: #e6edf3; min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
     .card-verif {
       background: #161b22;
       border: 1px solid rgba(139,148,158,.25);
       border-radius: 14px;
       padding: 40px 36px;
-      width: 100%;
-      max-width: 420px;
+      width: 100%; max-width: 420px;
     }
     .icon-wrap {
       width:64px; height:64px; border-radius:50%;
@@ -25,14 +28,17 @@
       font-size:1.8rem; color:#58a6ff;
     }
     h1 { font-size:1.3rem; font-weight:700; text-align:center; margin-bottom:6px; }
-    .sub { text-align:center; color:#8b949e; font-size:.88rem; margin-bottom:28px; line-height:1.5; }
+    .sub {
+      text-align:center; color:#8b949e;
+      font-size:.88rem; margin-bottom:28px; line-height:1.5;
+    }
     .correo-pill {
       background:#1f2937; border:1px solid rgba(88,166,255,.2);
       color:#58a6ff; padding:4px 12px; border-radius:20px;
       font-size:.82rem; font-weight:600;
     }
 
-    /* Inputs de código */
+    /* ── Inputs de código ── */
     .code-inputs { display:flex; gap:10px; justify-content:center; margin-bottom:28px; }
     .code-inputs input {
       width:48px; height:56px;
@@ -41,23 +47,28 @@
       border:2px solid rgba(139,148,158,.3); border-radius:10px;
       outline:none; transition:border .15s;
     }
-    .code-inputs input:focus { border-color:#58a6ff; }
-    .code-inputs input.filled { border-color:#58a6ff; background:#0d2040; }
-    .code-inputs input.error  { border-color:#f85149; animation: shake .3s ease; }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+    .code-inputs input:focus           { border-color:#58a6ff; }
+    .code-inputs input.filled          { border-color:#58a6ff; background:#0d2040; }
+    .code-inputs input.input-error     { border-color:#f85149; animation: shake .3s ease; }
+    @keyframes shake {
+      0%,100% { transform:translateX(0); }
+      25%      { transform:translateX(-5px); }
+      75%      { transform:translateX(5px); }
+    }
 
-    .btn-primary-custom {
+    .btn-verificar {
       width:100%; padding:12px; border:none; border-radius:10px;
       background:#238636; color:#fff; font-size:.95rem; font-weight:600;
       cursor:pointer; transition:background .15s;
     }
-    .btn-primary-custom:hover:not(:disabled) { background:#2ea043; }
-    .btn-primary-custom:disabled { opacity:.5; cursor:default; }
+    .btn-verificar:hover:not(:disabled) { background:#2ea043; }
+    .btn-verificar:disabled             { opacity:.5; cursor:default; }
 
-    .btn-link-custom {
-      background:none; border:none; color:#58a6ff; font-size:.83rem; cursor:pointer; padding:0; text-decoration:underline;
+    .btn-reenviar {
+      background:none; border:none; color:#58a6ff;
+      font-size:.83rem; cursor:pointer; padding:0; text-decoration:underline;
     }
-    .btn-link-custom:disabled { opacity:.4; cursor:default; }
+    .btn-reenviar:disabled { opacity:.4; cursor:default; text-decoration:none; }
 
     .msg { padding:10px 14px; border-radius:8px; font-size:.85rem; margin-bottom:16px; text-align:center; }
     .msg.error   { background:#3d1212; color:#f85149; border:1px solid #f8514926; }
@@ -88,14 +99,16 @@
     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="code-digit" data-i="5"/>
   </div>
 
-  <button class="btn-primary-custom mb-3" id="btnVerificar" onclick="verificar()">
+  <button class="btn-verificar mb-3" id="btnVerificar">
     <span id="btnVerificarTxt">Verificar código</span>
   </button>
 
   <div class="text-center mt-2">
     <span style="font-size:.82rem;color:#8b949e;">¿No recibiste el código? </span>
-    <button class="btn-link-custom" id="btnReenviar" onclick="reenviarCodigo()">Reenviar</button>
-    <span id="reenviarTimer" style="font-size:.78rem;color:#8b949e;display:none;"> (<span id="timerSeg">60</span>s)</span>
+    <button class="btn-reenviar" id="btnReenviar">Reenviar</button>
+    <span id="reenviarTimer" style="font-size:.78rem;color:#8b949e;display:none;">
+      (<span id="timerSeg">60</span>s)
+    </span>
   </div>
 
   <div class="text-center mt-3">
@@ -105,140 +118,6 @@
   </div>
 </div>
 
-<script>
-const API = (window._API_BASE ?? 'http://localhost:8000') + '/api';
-
-// ── Obtener correo de la URL o sessionStorage ──
-const params = new URLSearchParams(location.search);
-const correo = params.get('correo') ?? sessionStorage.getItem('correo_pendiente') ?? '';
-document.getElementById('correoDestino').textContent = correo || '(correo no encontrado)';
-
-if (!correo) {
-  showMsg('No se encontró el correo. Vuelve al registro.', 'warning');
-}
-
-// ── Inputs de código ──
-const digits = document.querySelectorAll('.code-digit');
-
-digits.forEach((inp, i) => {
-  inp.addEventListener('input', e => {
-    const v = e.target.value.replace(/\D/g, '');
-    inp.value = v.slice(-1);
-    inp.classList.toggle('filled', !!inp.value);
-    if (inp.value && i < 5) digits[i + 1].focus();
-    if (getCode().length === 6) verificar();
-  });
-
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Backspace' && !inp.value && i > 0) {
-      digits[i - 1].value = '';
-      digits[i - 1].classList.remove('filled');
-      digits[i - 1].focus();
-    }
-  });
-
-  inp.addEventListener('paste', e => {
-    e.preventDefault();
-    const txt = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    txt.split('').forEach((c, j) => { if (digits[j]) { digits[j].value = c; digits[j].classList.add('filled'); } });
-    if (txt.length === 6) { digits[5].focus(); verificar(); }
-  });
-});
-
-digits[0].focus();
-
-function getCode() { return [...digits].map(d => d.value).join(''); }
-
-function setCodeError() {
-  digits.forEach(d => { d.classList.add('error'); d.classList.remove('filled'); });
-  setTimeout(() => digits.forEach(d => d.classList.remove('error')), 600);
-  digits.forEach(d => d.value = '');
-  digits[0].focus();
-}
-
-// ── Verificar ──
-async function verificar() {
-  const codigo = getCode();
-  if (codigo.length < 6) { showMsg('Ingresa los 6 dígitos del código.', 'error'); return; }
-  setBtnLoading(true);
-  hideMsg();
-  try {
-    const r = await fetch(`${API}/auth/verificar-correo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, codigo }),
-    });
-    const d = await r.json();
-    if (d.ok) {
-      showMsg('¡Correo verificado! Redirigiendo al inicio de sesión…', 'success');
-      sessionStorage.removeItem('correo_pendiente');
-      setTimeout(() => location.href = 'login.html', 2000);
-    } else {
-      if (d.expirado) {
-        showMsg('El código ha expirado. Solicita uno nuevo.', 'warning');
-      } else {
-        showMsg(d.mensaje ?? 'Código incorrecto.', 'error');
-        setCodeError();
-      }
-    }
-  } catch {
-    showMsg('Error de conexión. Intenta de nuevo.', 'error');
-  } finally {
-    setBtnLoading(false);
-  }
-}
-
-// ── Reenviar ──
-let reenviarBloqueado = false;
-
-async function reenviarCodigo() {
-  if (reenviarBloqueado || !correo) return;
-  reenviarBloqueado = true;
-  document.getElementById('btnReenviar').disabled = true;
-  document.getElementById('reenviarTimer').style.display = 'inline';
-  iniciarTimer(60);
-  hideMsg();
-  try {
-    const r = await fetch(`${API}/auth/reenviar-codigo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo }),
-    });
-    const d = await r.json();
-    showMsg(d.mensaje ?? (d.ok ? 'Código reenviado.' : 'Error al reenviar.'), d.ok ? 'success' : 'error');
-  } catch {
-    showMsg('Error de conexión.', 'error');
-  }
-}
-
-function iniciarTimer(seg) {
-  const span = document.getElementById('timerSeg');
-  const btn  = document.getElementById('btnReenviar');
-  span.textContent = seg;
-  const iv = setInterval(() => {
-    seg--;
-    span.textContent = seg;
-    if (seg <= 0) {
-      clearInterval(iv);
-      reenviarBloqueado = false;
-      btn.disabled = false;
-      document.getElementById('reenviarTimer').style.display = 'none';
-    }
-  }, 1000);
-}
-
-// ── Helpers UI ──
-function showMsg(msg, type) {
-  const box = document.getElementById('msgBox');
-  box.textContent = msg;
-  box.className = `msg ${type}`;
-  box.style.display = 'block';
-}
-function hideMsg() { document.getElementById('msgBox').style.display = 'none'; }
-function setBtnLoading(loading) {
-  document.getElementById('btnVerificar').disabled = loading;
-  document.getElementById('btnVerificarTxt').textContent = loading ? 'Verificando…' : 'Verificar código';
-}
-</script>
+<script src="./js/verificar-correo.js"></script>
 </body>
 </html>
