@@ -8,54 +8,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body class="bg-dark text-white">
+<body>
 
-<!-- ── NAVBAR ── -->
-<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-secondary" style="background:#0d1117;">
-  <div class="container-fluid px-4">
-    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="index.html">
-      <span class="badge bg-danger rounded-circle p-2"><i class="bi bi-geo-alt-fill"></i></span>
-      <span>GeoIncidencias</span>
-    </a>
-    <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
-        <li class="nav-item"><a class="nav-link text-secondary" href="index.html"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link text-secondary" href="incidencias.html"><i class="bi bi-list-ul me-1"></i>Incidencias</a></li>
-        <li class="nav-item"><a class="nav-link text-secondary" href="registrar.html"><i class="bi bi-plus-circle me-1"></i>Registrar</a></li>
-        <li class="nav-item"><a class="nav-link text-secondary" href="mis-reportes.html"><i class="bi bi-file-earmark-text me-1"></i>Mis Reportes</a></li>
-        <li class="nav-item"><a class="nav-link text-secondary" href="mis-apoyos.html"><i class="bi bi-hand-thumbs-up me-1"></i>Mis apoyos</a></li>
-        <li class="nav-item"><a class="nav-link active text-danger fw-semibold" href="reportes.html"><i class="bi bi-bar-chart me-1"></i>Reportes</a></li>
-        <li class="nav-item"><a class="nav-link text-secondary" href="perfil.html"><i class="bi bi-person me-1"></i>Perfil</a></li>
-        <li class="nav-item solo-admin"><a class="nav-link text-secondary" href="admin.html"><i class="bi bi-shield-check me-1"></i>Administración</a></li>
-        <li class="nav-item solo-admin"><a class="nav-link text-secondary" href="historial.html"><i class="bi bi-clock-history me-1"></i>Historial</a></li>
-        <li class="nav-item ms-lg-2">
-          <button id="btnNotificaciones" class="btn btn-link nav-link text-white d-flex align-items-center gap-1 p-0" style="text-decoration:none;">
-            <span class="position-relative">
-              <i class="bi bi-bell fs-5"></i>
-              <span id="badgeNotificaciones" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:.6rem;">0</span>
-            </span>
-          </button>
-        </li>
-        <li class="nav-item dropdown ms-lg-2">
-          <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
-            <span class="position-relative">
-              <i class="bi bi-person-circle fs-5"></i>
-            </span>
-            <span id="nombreUsuarioActual">Usuario</span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end border-secondary" style="background:#161b22;">
-            <li><span class="dropdown-item-text text-secondary small" id="rolUsuarioActual">Rol</span></li>
-            <li><hr class="dropdown-divider border-secondary"/></li>
-            <li><button class="dropdown-item text-danger" id="btnCerrarSesion"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
 
 <div class="container-fluid px-4 py-4" style="background:#0d1117;min-height:100vh;">
 
@@ -192,6 +146,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="./js/auth-guard.js"></script>
+<script src="./js/sidebar.js"></script>
 <script src="./js/reportes.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded",()=>initSidebar("reportes"));</script>
 </body>
 </html>
