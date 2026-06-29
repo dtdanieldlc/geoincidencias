@@ -3,7 +3,7 @@
    Depende de: Bootstrap 5, auth-guard.js
 ═══════════════════════════════════════════════════════════ */
 
-const API     = (window._API_BASE ?? 'http://localhost:8000') + '/api';
+// API definida en auth-guard.js
 const token   = () => localStorage.getItem('token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
