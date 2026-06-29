@@ -3,7 +3,7 @@
    GeoIncidencias
 ═══════════════════════════════════════════════════════════ */
 
-const API = (window._API_BASE ?? 'http://localhost:8000') + '/api';
+const API = 'https://geoincidencias-production.up.railway.app/api';
 
 // ── Correo desde URL o sessionStorage ──────────────────────
 const params = new URLSearchParams(location.search);
