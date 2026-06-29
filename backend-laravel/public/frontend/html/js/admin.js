@@ -72,6 +72,7 @@ async function aprobarIncidencia(id) {
 function abrirRechazarIncidencia(id) {
   rechazarIncidenciaId = id;
   document.getElementById('rechazarIncMotivo').value = '';
+  document.activeElement?.blur(); 
   new bootstrap.Modal(document.getElementById('modalRechazarInc')).show();
 }
 
@@ -130,6 +131,7 @@ async function aprobarApoyo(id) {
 function abrirRechazarApoyo(id) {
   rechazarApoyoId = id;
   document.getElementById('rechazarApoyoComentario').value = '';
+  document.activeElement?.blur(); 
   new bootstrap.Modal(document.getElementById('modalRechazarApoyo')).show();
 }
 
