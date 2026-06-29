@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════════ */
 
 // API definida en auth-guard.js
-const token   = () => localStorage.getItem('token') ?? '';
+const token   = () => localStorage.getItem('gi_token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
 /* ══════════════════════════════════════════════════════════
@@ -72,7 +72,7 @@ function toggleSidebar() {
    USUARIO ACTUAL (sidebar inferior)
 ══════════════════════════════════════════════════════════ */
 function initUsuarioActual() {
-  const u = JSON.parse(localStorage.getItem('usuario') ?? '{}');
+  const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
   if (u.nombre) {
     document.getElementById('sideNombre').textContent = u.nombre;
     document.getElementById('sideRol').textContent    = u.rol === 'admin' ? 'Administrador' : 'Usuario';
@@ -415,6 +415,7 @@ function verifBadge(v) {
    INIT — DOMContentLoaded
 ══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  exigirAdmin();   // redirige si no hay sesión o no es admin
   initUsuarioActual();
   cargarIncidenciasPendientes();
   cargarApoyosPendientes();
