@@ -10,11 +10,14 @@ return new class extends Migration
     {
         Schema::create('incidencia_fotos', function (Blueprint $table) {
             $table->id('id_foto');
-            $table->foreignId('id_incidencia')->constrained('incidencias', 'id_incidencia')->onDelete('cascade');
-            $table->foreignId('id_usuario')->nullable()->constrained('usuarios', 'id_usuario')->onDelete('set null');
+            $table->unsignedBigInteger('id_incidencia');
+            $table->unsignedBigInteger('id_usuario')->nullable();
             $table->string('ruta', 255);
             $table->enum('tipo', ['antes', 'despues'])->default('antes');
             $table->timestamp('fecha')->useCurrent();
+
+            $table->foreign('id_incidencia')->references('id_incidencia')->on('incidencias')->onDelete('cascade');
+            $table->foreign('id_usuario')->references('id_usuario')->on('usuarios')->onDelete('set null');
         });
     }
 
