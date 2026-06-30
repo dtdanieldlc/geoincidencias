@@ -8,6 +8,25 @@ const token   = () => localStorage.getItem('gi_token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
 /* ══════════════════════════════════════════════════════════
+   HEARTBEAT — presencia en tiempo real
+══════════════════════════════════════════════════════════ */
+function startHeartbeat() {
+  const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
+  if (!u.id_usuario) return;
+  const pagina = location.pathname.split('/').pop() || 'admin.html';
+
+  function ping() {
+    fetch(`${API}/admin/usuarios/${u.id_usuario}/presencia`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ pagina }),
+    }).catch(() => {});
+  }
+  ping();
+  setInterval(ping, 30000); // cada 30 segundos
+}
+
+/* ══════════════════════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════════════════════ */
 let _toastTimer;
@@ -108,7 +127,6 @@ async function cargarIncidenciasPendientes() {
     const d     = await r.json();
     const items = d.data ?? d ?? [];
 
-    // Actualizar contadores
     document.getElementById('cntPendIncidencias').textContent = items.length;
     const badge = document.getElementById('sideIncBadge');
     if (items.length > 0) { badge.textContent = items.length; badge.style.display = 'inline'; }
@@ -272,7 +290,7 @@ async function cargarUsuarios(pagina = 1) {
   uPagActual = pagina;
   const params = new URLSearchParams({ page: pagina, por_pagina: 15, ...uFiltros });
   const tbody  = document.getElementById('tbodyUsuarios');
-  tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
 
   try {
     const r     = await fetch(`${API}/admin/usuarios?${params}`, { headers: headers() });
@@ -281,38 +299,53 @@ async function cargarUsuarios(pagina = 1) {
     const meta  = d.data ?? {};
 
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5" style="color:var(--text-muted)">No se encontraron usuarios</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5" style="color:var(--text-muted)">No se encontraron usuarios</td></tr>';
       document.getElementById('paginacionUsuarios').innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = items.map(u => `
-      <tr>
-        <td style="color:var(--text-muted);font-size:.78rem;">#${u.id_usuario}</td>
-        <td><strong>${esc(u.nombre)} ${esc(u.apellido ?? '')}</strong></td>
-        <td style="color:var(--text-muted);font-size:.82rem;">${esc(u.correo)}</td>
-        <td>${rolBadge(u.rol)}</td>
-        <td>${verifBadge(u.correo_verificado)}</td>
-        <td>${activoBadge(u.activo)}</td>
-        <td style="color:var(--text-muted);font-size:.75rem;">${fmtDate(u.created_at)}</td>
-        <td>
-          <button class="btn-icon me-1" title="${u.activo ? 'Desactivar' : 'Activar'}"
-            onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
-            <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
-          </button>
-          <button class="btn-icon" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
-            onclick="cambiarRol(${u.id_usuario}, '${u.rol}')">
-            <i class="bi bi-shield-${u.rol === 'admin' ? 'minus' : 'plus'}"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    const ahora = Date.now();
+
+    tbody.innerHTML = items.map(u => {
+      // ── Presencia online ──
+      const ultimaPresencia = u.ultima_presencia_at
+        ? new Date(u.ultima_presencia_at).getTime()
+        : 0;
+      const estaOnline  = ultimaPresencia > 0 && (ahora - ultimaPresencia) < 60000;
+      const paginaLabel = (u.ultima_pagina ?? '').replace('.html', '') || '—';
+      const badgeOnline = estaOnline
+        ? `<span style="color:#3fb950;font-size:.78rem;font-weight:600;" title="En línea · ${esc(u.ultima_pagina ?? '')}">🟢 ${esc(paginaLabel)}</span>`
+        : `<span style="color:#8b949e;font-size:.78rem;">⚫ Desconectado</span>`;
+
+      return `
+        <tr>
+          <td style="color:var(--text-muted);font-size:.78rem;">#${u.id_usuario}</td>
+          <td><strong>${esc(u.nombre)} ${esc(u.apellido ?? '')}</strong></td>
+          <td style="color:var(--text-muted);font-size:.82rem;">${esc(u.correo)}</td>
+          <td>${rolBadge(u.rol)}</td>
+          <td>${activoBadge(u.activo)}</td>
+          <td>${badgeOnline}</td>
+          <td style="color:var(--text-muted);font-size:.75rem;">${fmtDate(u.created_at)}</td>
+          <td style="color:var(--text-muted);font-size:.75rem;">${fmtDatetime(u.ultima_presencia_at)}</td>
+          <td>
+            <button class="btn-icon me-1" title="${u.activo ? 'Desactivar' : 'Activar'}"
+              onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
+              <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
+            </button>
+            <button class="btn-icon" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
+              onclick="cambiarRol(${u.id_usuario}, '${u.rol}')">
+              <i class="bi bi-shield-${u.rol === 'admin' ? 'minus' : 'plus'}"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
     renderPaginacion(meta.current_page, meta.last_page, meta.total);
     cargarEstadisticasUsuarios();
 
   } catch {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-5">Error al cargar usuarios</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-5">Error al cargar usuarios</td></tr>';
   }
 }
 
@@ -393,6 +426,13 @@ function fmtDate(d) {
   return isNaN(dt) ? '—' : dt.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function fmtDatetime(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '—';
+  return dt.toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
 function rolBadge(rol) {
   return rol === 'admin'
     ? '<span class="badge-admin">Admin</span>'
@@ -415,33 +455,29 @@ function verifBadge(v) {
    INIT — DOMContentLoaded
 ══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  exigirAdmin();   // redirige si no hay sesión o no es admin
+  exigirAdmin();
   initUsuarioActual();
+  startHeartbeat();
   cargarIncidenciasPendientes();
   cargarApoyosPendientes();
   cargarNotificaciones();
 
-  // Tabs
   document.getElementById('tabIncidenciasBtn').addEventListener('click', () => cambiarTab('incidencias'));
   document.getElementById('tabApoyosBtn').addEventListener('click',      () => cambiarTab('apoyos'));
   document.getElementById('tabUsuariosBtn').addEventListener('click',    () => cambiarTab('usuarios'));
 
-  // Sidebar links (admin section)
   document.getElementById('linkAdmin').addEventListener('click',    (e) => { e.preventDefault(); cambiarTab('incidencias'); });
   document.getElementById('linkApoyos').addEventListener('click',   (e) => { e.preventDefault(); cambiarTab('apoyos'); });
   document.getElementById('linkUsuarios').addEventListener('click', (e) => { e.preventDefault(); cambiarTab('usuarios'); });
 
-  // Sidebar mobile
   document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
 
-  // Filtros usuarios
   document.getElementById('filtBuscar').addEventListener('input',    aplicarFiltros);
   document.getElementById('filtActivo').addEventListener('change',   aplicarFiltros);
   document.getElementById('filtRol').addEventListener('change',      aplicarFiltros);
   document.getElementById('filtVerif').addEventListener('change',    aplicarFiltros);
   document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
 
-  // Modales — botones confirmar
   document.getElementById('btnConfirmarRechazoInc').addEventListener('click',   confirmarRechazoIncidencia);
   document.getElementById('btnConfirmarRechazoApoyo').addEventListener('click', confirmarRechazoApoyo);
 });
