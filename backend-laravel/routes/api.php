@@ -38,6 +38,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar']);
     Route::put('incidencias/{id}/rechazar',           [IncidenciasController::class, 'rechazar']);
     Route::get('incidencias/mis-reportes',            [IncidenciasController::class, 'misReportes']);
+    Route::get('incidencias/{id}/comentarios',        [IncidenciasController::class, 'comentarios']);
+    Route::post('incidencias/{id}/comentarios',       [IncidenciasController::class, 'agregarComentario']);
+    Route::get('incidencias/{id}/fotos',              [IncidenciasController::class, 'fotos']);
+    Route::post('incidencias/{id}/fotos',             [IncidenciasController::class, 'agregarFoto']);
+    Route::delete('incidencias/{id}/fotos/{idFoto}',  [IncidenciasController::class, 'eliminarFoto']);
     Route::apiResource('incidencias', IncidenciasController::class);
 
     // ── Apoyos ───────────────────────────────────────────────────

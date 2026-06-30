@@ -9,7 +9,7 @@ class IncidenciaComentario extends Model
     protected $table = 'incidencia_comentarios';
     protected $primaryKey = 'id_comentario';
     public $timestamps = false;
-    protected $fillable = ['id_incidencia', 'id_usuario', 'comentario'];
+    protected $fillable = ['id_incidencia', 'id_usuario', 'comentario', 'fecha'];
     protected $casts = ['fecha' => 'datetime'];
 
     public function usuario()

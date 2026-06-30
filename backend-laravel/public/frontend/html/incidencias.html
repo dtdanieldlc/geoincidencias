@@ -96,6 +96,57 @@
   </div>
 </div>
 
+<!-- Modal Ver detalle: fotos antes/después + comentarios -->
+<div class="modal fade" id="modalVer" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border border-secondary" style="background:#161b22;color:#e6edf3;">
+      <div class="modal-header border-secondary">
+        <h6 class="modal-title"><i class="bi bi-eye-fill text-danger me-2"></i><span id="verTitulo">Detalle de Incidencia</span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ver_id"/>
+        <p id="verDescripcion" class="text-secondary small mb-4"></p>
+
+        <!-- Fotos antes / después -->
+        <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;"><i class="bi bi-images me-1"></i>Fotos — Antes / Después</h6>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge" style="background:rgba(248,81,73,.15);color:#f87171;">Antes</span>
+              <label class="btn btn-sm btn-outline-secondary mb-0" style="cursor:pointer;">
+                <i class="bi bi-upload"></i>
+                <input type="file" accept="image/*" hidden onchange="subirFotoIncidencia(this,'antes')"/>
+              </label>
+            </div>
+            <div id="galeriaAntes" class="d-flex flex-wrap gap-2"></div>
+          </div>
+          <div class="col-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;">Después</span>
+              <label class="btn btn-sm btn-outline-secondary mb-0" style="cursor:pointer;">
+                <i class="bi bi-upload"></i>
+                <input type="file" accept="image/*" hidden onchange="subirFotoIncidencia(this,'despues')"/>
+              </label>
+            </div>
+            <div id="galeriaDespues" class="d-flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <hr class="border-secondary opacity-25"/>
+
+        <!-- Comentarios -->
+        <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;"><i class="bi bi-chat-left-text me-1"></i>Comentarios</h6>
+        <div id="listaComentarios" class="mb-3" style="max-height:240px;overflow-y:auto;"></div>
+        <div class="input-group">
+          <input type="text" id="nuevoComentario" class="form-control border-secondary text-white" style="background:#0d1117;" placeholder="Escribe un comentario..." onkeyup="if(event.key==='Enter') enviarComentario()"/>
+          <button class="btn btn-danger btn-sm" onclick="enviarComentario()"><i class="bi bi-send"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container-fluid px-4 py-4" style="background:#0d1117;min-height:100vh;">
 
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">

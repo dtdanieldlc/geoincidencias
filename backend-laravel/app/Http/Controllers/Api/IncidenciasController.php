@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Estado;
 use App\Models\HistorialActividad;
 use App\Models\Incidencia;
+use App\Models\IncidenciaComentario;
+use App\Models\IncidenciaFoto;
 use App\Models\Notificacion;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class IncidenciasController extends Controller
@@ -321,5 +324,175 @@ public function index(Request $request)
     {
         $datos = $this->baseQuery()->where('incidencias.estado_aprobacion', 'aprobada')->get();
         return response()->json($datos);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       COMENTARIOS
+    ══════════════════════════════════════════════════════ */
+
+    // GET /api/incidencias/{id}/comentarios
+    public function comentarios(int $id)
+    {
+        if (! Incidencia::where('id_incidencia', $id)->exists()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $comentarios = IncidenciaComentario::with('usuario:id_usuario,nombre,apellido')
+            ->where('id_incidencia', $id)
+            ->orderBy('fecha', 'asc')
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id_comentario' => $c->id_comentario,
+                    'comentario'    => $c->comentario,
+                    'fecha'         => $c->fecha,
+                    'usuario'       => $c->usuario ? [
+                        'id_usuario'  => $c->usuario->id_usuario,
+                        'nombre'      => trim($c->usuario->nombre . ' ' . $c->usuario->apellido),
+                    ] : null,
+                ];
+            });
+
+        return response()->json(['ok' => true, 'datos' => $comentarios]);
+    }
+
+    // POST /api/incidencias/{id}/comentarios
+    public function agregarComentario(Request $request, int $id)
+    {
+        $usuario = $request->user();
+
+        if (! Incidencia::where('id_incidencia', $id)->exists()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'comentario' => 'required|string|min:1|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errores' => $validator->errors()], 422);
+        }
+
+        $comentario = IncidenciaComentario::create([
+            'id_incidencia' => $id,
+            'id_usuario'    => $usuario->id_usuario,
+            'comentario'    => trim($request->comentario),
+            'fecha'         => now(),
+        ]);
+
+        HistorialActividad::registrar(
+            $usuario->id_usuario, $id, 'comentario_incidencia',
+            "{$usuario->nombre} comentó en la incidencia #{$id}.",
+            $request->ip()
+        );
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Comentario agregado.',
+            'datos' => [
+                'id_comentario' => $comentario->id_comentario,
+                'comentario'    => $comentario->comentario,
+                'fecha'         => $comentario->fecha,
+                'usuario'       => [
+                    'id_usuario'  => $usuario->id_usuario,
+                    'nombre'      => trim($usuario->nombre . ' ' . $usuario->apellido),
+                ],
+            ],
+        ], 201);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       FOTOS (antes / después)
+    ══════════════════════════════════════════════════════ */
+
+    // GET /api/incidencias/{id}/fotos
+    public function fotos(int $id)
+    {
+        if (! Incidencia::where('id_incidencia', $id)->exists()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $fotos = IncidenciaFoto::with('usuario:id_usuario,nombre,apellido')
+            ->where('id_incidencia', $id)
+            ->orderBy('fecha', 'asc')
+            ->get()
+            ->map(function ($f) {
+                return [
+                    'id_foto' => $f->id_foto,
+                    'tipo'    => $f->tipo,
+                    'url'     => Storage::disk('public')->url($f->ruta),
+                    'fecha'   => $f->fecha,
+                    'usuario' => $f->usuario ? trim($f->usuario->nombre . ' ' . $f->usuario->apellido) : null,
+                ];
+            });
+
+        return response()->json(['ok' => true, 'datos' => $fotos]);
+    }
+
+    // POST /api/incidencias/{id}/fotos
+    public function agregarFoto(Request $request, int $id)
+    {
+        $usuario = $request->user();
+
+        if (! Incidencia::where('id_incidencia', $id)->exists()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'foto' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'tipo' => 'required|in:antes,despues',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errores' => $validator->errors()], 422);
+        }
+
+        $ruta = $request->file('foto')->store('incidencias', 'public');
+
+        $foto = IncidenciaFoto::create([
+            'id_incidencia' => $id,
+            'id_usuario'    => $usuario->id_usuario,
+            'ruta'          => $ruta,
+            'tipo'          => $request->tipo,
+            'fecha'         => now(),
+        ]);
+
+        HistorialActividad::registrar(
+            $usuario->id_usuario, $id, 'foto_incidencia',
+            "{$usuario->nombre} subió una foto de '{$request->tipo}' en la incidencia #{$id}.",
+            $request->ip()
+        );
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Foto subida correctamente.',
+            'datos' => [
+                'id_foto' => $foto->id_foto,
+                'tipo'    => $foto->tipo,
+                'url'     => Storage::disk('public')->url($foto->ruta),
+                'fecha'   => $foto->fecha,
+                'usuario' => trim($usuario->nombre . ' ' . $usuario->apellido),
+            ],
+        ], 201);
+    }
+
+    // DELETE /api/incidencias/{id}/fotos/{idFoto}
+    public function eliminarFoto(Request $request, int $id, int $idFoto)
+    {
+        $usuario = $request->user();
+        $foto = IncidenciaFoto::where('id_incidencia', $id)->where('id_foto', $idFoto)->first();
+
+        if (! $foto) {
+            return response()->json(['ok' => false, 'mensaje' => 'Foto no encontrada'], 404);
+        }
+
+        if ($usuario->rol !== 'admin' && $foto->id_usuario !== $usuario->id_usuario) {
+            return response()->json(['ok' => false, 'mensaje' => 'No tienes permiso para eliminar esta foto'], 403);
+        }
+
+        Storage::disk('public')->delete($foto->ruta);
+        $foto->delete();
+
+        return response()->json(['ok' => true, 'mensaje' => 'Foto eliminada.']);
     }
 }

@@ -112,6 +112,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
       <td class="border-secondary small text-secondary">${new Date(inc.fecha_ocurrencia).toLocaleDateString('es-EC')}</td>
       <td class="border-secondary">
         <div class="d-flex gap-1 flex-wrap">
+          <button class="btn btn-sm btn-outline-light" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
           ${puedeApoyar ? `<button class="btn btn-sm btn-outline-danger" title="Apoyar ($${monto})" onclick="window.location.href='mis-apoyos.html'"><i class="bi bi-hand-thumbs-up"></i></button>` : ''}
           ${esAdmin ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
           ${esAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
@@ -282,3 +283,126 @@ async function init() {
   cargarIncidencias();
 }
 init();
+
+/* ══════════════════════════════════════════════════════
+   MODAL VER: fotos antes/después + comentarios
+══════════════════════════════════════════════════════ */
+let idIncidenciaVer = null;
+
+async function abrirVer(id, titulo) {
+  idIncidenciaVer = id;
+  document.getElementById('ver_id').value = id;
+  document.getElementById('verTitulo').textContent = titulo;
+  document.getElementById('verDescripcion').textContent = 'Cargando…';
+  new bootstrap.Modal(document.getElementById('modalVer')).show();
+
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}`);
+    const inc = await r.json();
+    document.getElementById('verDescripcion').textContent = inc.descripcion || 'Sin descripción.';
+  } catch { document.getElementById('verDescripcion').textContent = ''; }
+
+  cargarFotosIncidencia(id);
+  cargarComentariosIncidencia(id);
+}
+
+async function cargarFotosIncidencia(id) {
+  const galAntes   = document.getElementById('galeriaAntes');
+  const galDespues = document.getElementById('galeriaDespues');
+  galAntes.innerHTML = galDespues.innerHTML = '<span class="text-secondary small">Cargando…</span>';
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/fotos`);
+    const d = await r.json();
+    const fotos = d.datos || [];
+    const renderFoto = f => `
+      <div class="position-relative" style="width:90px;height:90px;">
+        <img src="${f.url}" class="rounded-2 border border-secondary" style="width:90px;height:90px;object-fit:cover;cursor:pointer;" onclick="window.open('${f.url}','_blank')"/>
+        <button class="btn btn-sm btn-danger position-absolute top-0 end-0 p-0" style="width:20px;height:20px;line-height:1;font-size:.65rem;" title="Eliminar" onclick="eliminarFotoIncidencia(${f.id_foto})"><i class="bi bi-x"></i></button>
+      </div>`;
+    const antes   = fotos.filter(f => f.tipo === 'antes');
+    const despues = fotos.filter(f => f.tipo === 'despues');
+    galAntes.innerHTML   = antes.length   ? antes.map(renderFoto).join('')   : '<span class="text-secondary small">Sin fotos aún.</span>';
+    galDespues.innerHTML = despues.length ? despues.map(renderFoto).join('') : '<span class="text-secondary small">Sin fotos aún.</span>';
+  } catch {
+    galAntes.innerHTML = galDespues.innerHTML = '<span class="text-danger small">Error al cargar fotos.</span>';
+  }
+}
+
+async function subirFotoIncidencia(input, tipo) {
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('foto', file);
+  fd.append('tipo', tipo);
+  try {
+    const res = await fetch(`${API}/incidencias/${idIncidenciaVer}/fotos`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: fd,
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Foto subida correctamente.', 'success');
+      cargarFotosIncidencia(idIncidenciaVer);
+    } else {
+      mostrarAlerta(data.mensaje || (data.errores ? Object.values(data.errores)[0][0] : 'Error al subir la foto.'), 'danger');
+    }
+  } catch {
+    mostrarAlerta('Error de conexión al subir la foto.', 'danger');
+  }
+  input.value = '';
+}
+
+async function eliminarFotoIncidencia(idFoto) {
+  if (!confirm('¿Eliminar esta foto?')) return;
+  try {
+    const res = await fetchAPI(`${API}/incidencias/${idIncidenciaVer}/fotos/${idFoto}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok && data.ok) { mostrarAlerta('Foto eliminada.', 'success'); cargarFotosIncidencia(idIncidenciaVer); }
+    else mostrarAlerta(data.mensaje || 'No se pudo eliminar.', 'danger');
+  } catch { mostrarAlerta('Error de conexión.', 'danger'); }
+}
+
+async function cargarComentariosIncidencia(id) {
+  const cont = document.getElementById('listaComentarios');
+  cont.innerHTML = '<span class="text-secondary small">Cargando…</span>';
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/comentarios`);
+    const d = await r.json();
+    const comentarios = d.datos || [];
+    if (!comentarios.length) {
+      cont.innerHTML = '<span class="text-secondary small">Aún no hay comentarios. ¡Sé el primero!</span>';
+      return;
+    }
+    cont.innerHTML = comentarios.map(c => `
+      <div class="mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+        <div class="d-flex justify-content-between">
+          <strong class="small">${c.usuario ? c.usuario.nombre : 'Usuario'}</strong>
+          <span class="text-secondary" style="font-size:.7rem;">${new Date(c.fecha).toLocaleString('es-EC')}</span>
+        </div>
+        <div class="small text-secondary">${c.comentario.replace(/</g,'&lt;')}</div>
+      </div>`).join('');
+    cont.scrollTop = cont.scrollHeight;
+  } catch {
+    cont.innerHTML = '<span class="text-danger small">Error al cargar comentarios.</span>';
+  }
+}
+
+async function enviarComentario() {
+  const input = document.getElementById('nuevoComentario');
+  const texto = input.value.trim();
+  if (!texto) return;
+  try {
+    const res = await fetchAPI(`${API}/incidencias/${idIncidenciaVer}/comentarios`, {
+      method: 'POST',
+      body: JSON.stringify({ comentario: texto }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      input.value = '';
+      cargarComentariosIncidencia(idIncidenciaVer);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo enviar el comentario.', 'danger');
+    }
+  } catch { mostrarAlerta('Error de conexión al comentar.', 'danger'); }
+}
