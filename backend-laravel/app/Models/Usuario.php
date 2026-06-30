@@ -10,26 +10,28 @@ class Usuario extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $table = 'usuarios';
+    protected $table      = 'usuarios';
     protected $primaryKey = 'id_usuario';
-    public $timestamps = false;
+    public $timestamps    = false;
 
     protected $fillable = [
-    'nombre', 'apellido', 'correo', 'password', 'rol',
-    'telefono', 'saldo_incentivos', 'activo',
-    'correo_verificado', 'codigo_verificacion', 'codigo_verificacion_expira',
+        'nombre', 'apellido', 'correo', 'password', 'rol',
+        'telefono', 'saldo_incentivos', 'activo',
+        'correo_verificado',
+        'ultima_presencia_at', 'ultima_pagina',
     ];
 
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
-    'password'                    => 'hashed',
-    'saldo_incentivos'            => 'decimal:2',
-    'activo'                      => 'boolean',
-    'correo_verificado'           => 'boolean',
-    'codigo_verificacion_expira'  => 'datetime',
-    'created_at'                  => 'datetime',
+        'password'           => 'hashed',
+        'saldo_incentivos'   => 'decimal:2',
+        'activo'             => 'boolean',
+        'correo_verificado'  => 'boolean',
+        'ultima_presencia_at'=> 'datetime',
+        'created_at'         => 'datetime',
     ];
+
     public function getNombreCompletoAttribute(): string
     {
         return trim($this->nombre . ' ' . ($this->apellido ?? ''));

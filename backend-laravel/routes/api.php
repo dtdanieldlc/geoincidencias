@@ -15,20 +15,16 @@ Route::get('/health', fn () => response()->json(['ok' => true, 'mensaje' => 'Bac
 
 // ── Autenticación (pública) ───────────────────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('/login',            [AuthController::class, 'login']);
-    Route::post('/registro',         [AuthController::class, 'registro']);
-
-    // Verificación de correo — no requiere token
-    Route::post('/verificar-correo', [AuthController::class, 'verificarCorreo']);
-    Route::post('/reenviar-codigo',  [AuthController::class, 'reenviarCodigo']);
+    Route::post('/login',    [AuthController::class, 'login']);
+    Route::post('/registro', [AuthController::class, 'registro']);
 
     // Rutas protegidas por token
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/perfil',              [AuthController::class, 'perfil']);
-        Route::put('/perfil',              [AuthController::class, 'actualizarPerfil']);
-        Route::put('/cambiar-password',    [AuthController::class, 'cambiarPassword']);
-        Route::post('/foto',               [AuthController::class, 'subirFoto']);
-        Route::post('/logout',             [AuthController::class, 'logout']);
+        Route::get('/perfil',           [AuthController::class, 'perfil']);
+        Route::put('/perfil',           [AuthController::class, 'actualizarPerfil']);
+        Route::put('/cambiar-password', [AuthController::class, 'cambiarPassword']);
+        Route::post('/foto',            [AuthController::class, 'subirFoto']);
+        Route::post('/logout',          [AuthController::class, 'logout']);
     });
 });
 
@@ -54,50 +50,51 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('apoyos/{id}/rechazar',[ApoyosController::class, 'rechazar'])->middleware('solo.admin');
 
     // ── Catálogos ────────────────────────────────────────────────
-    Route::get('catalogos/tipos',            [CatalogosController::class, 'tipos']);
-    Route::get('catalogos/subtipos/{id_tipo}',[CatalogosController::class, 'subtipos']);
-    Route::get('catalogos/estados',          [CatalogosController::class, 'estados']);
-    Route::get('catalogos/zonas',            [CatalogosController::class, 'zonas']);
-    Route::get('catalogos/usuarios',         [CatalogosController::class, 'usuarios']);
-    Route::get('catalogos/incentivos',       [CatalogosController::class, 'incentivos']);
+    Route::get('catalogos/tipos',             [CatalogosController::class, 'tipos']);
+    Route::get('catalogos/subtipos/{id_tipo}', [CatalogosController::class, 'subtipos']);
+    Route::get('catalogos/estados',           [CatalogosController::class, 'estados']);
+    Route::get('catalogos/zonas',             [CatalogosController::class, 'zonas']);
+    Route::get('catalogos/usuarios',          [CatalogosController::class, 'usuarios']);
+    Route::get('catalogos/incentivos',        [CatalogosController::class, 'incentivos']);
 
     // ── Dashboard ────────────────────────────────────────────────
-    Route::get('dashboard/resumen',   [DashboardController::class, 'resumen']);
-    Route::get('dashboard/por-tipo',  [DashboardController::class, 'porTipo']);
-    Route::get('dashboard/por-estado',[DashboardController::class, 'porEstado']);
-    Route::get('dashboard/por-zona',  [DashboardController::class, 'porZona']);
-    Route::get('dashboard/ultimas',   [DashboardController::class, 'ultimas']);
+    Route::get('dashboard/resumen',    [DashboardController::class, 'resumen']);
+    Route::get('dashboard/por-tipo',   [DashboardController::class, 'porTipo']);
+    Route::get('dashboard/por-estado', [DashboardController::class, 'porEstado']);
+    Route::get('dashboard/por-zona',   [DashboardController::class, 'porZona']);
+    Route::get('dashboard/ultimas',    [DashboardController::class, 'ultimas']);
 
     // ── Historial & Notificaciones ───────────────────────────────
-    Route::get('historial',                       [HistorialController::class, 'index']);
-    Route::get('historial/acciones',              [HistorialController::class, 'acciones']);
-    Route::get('notificaciones',                  [NotificacionesController::class, 'index']);
-    Route::get('notificaciones/no-leidas',        [NotificacionesController::class, 'noLeidas']);
-    Route::put('notificaciones/{id}/leida',       [NotificacionesController::class, 'marcarLeida']);
-    Route::put('notificaciones/marcar-todas',     [NotificacionesController::class, 'marcarTodasLeidas']);
+    Route::get('historial',                   [HistorialController::class, 'index']);
+    Route::get('historial/acciones',          [HistorialController::class, 'acciones']);
+    Route::get('notificaciones',              [NotificacionesController::class, 'index']);
+    Route::get('notificaciones/no-leidas',    [NotificacionesController::class, 'noLeidas']);
+    Route::put('notificaciones/{id}/leida',   [NotificacionesController::class, 'marcarLeida']);
+    Route::put('notificaciones/marcar-todas', [NotificacionesController::class, 'marcarTodasLeidas']);
 
     // ── Reportes ─────────────────────────────────────────────────
-    Route::get('reportes/resumen',          [ReportesController::class, 'resumen']);
-    Route::get('reportes/por-categoria',    [ReportesController::class, 'porCategoria']);
-    Route::get('reportes/por-estado',       [ReportesController::class, 'porEstado']);
-    Route::get('reportes/tendencia',        [ReportesController::class, 'tendencia']);
-    Route::get('reportes/por-responsable',  [ReportesController::class, 'porResponsable']);
+    Route::get('reportes/resumen',         [ReportesController::class, 'resumen']);
+    Route::get('reportes/por-categoria',   [ReportesController::class, 'porCategoria']);
+    Route::get('reportes/por-estado',      [ReportesController::class, 'porEstado']);
+    Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
+    Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
 
     // ── Admin: Gestión de usuarios (solo admin) ──────────────────
     Route::middleware('solo.admin')->prefix('admin')->group(function () {
-        Route::get('usuarios',                  [AdminUsuariosController::class, 'index']);
-        Route::get('usuarios/estadisticas',     [AdminUsuariosController::class, 'estadisticas']);
-        Route::get('usuarios/{id}',             [AdminUsuariosController::class, 'show']);
-        Route::put('usuarios/{id}/activo',      [AdminUsuariosController::class, 'toggleActivo']);
-        Route::put('usuarios/{id}/rol',         [AdminUsuariosController::class, 'cambiarRol']);
+        Route::get('usuarios',              [AdminUsuariosController::class, 'index']);
+        Route::get('usuarios/estadisticas', [AdminUsuariosController::class, 'estadisticas']);
+        Route::get('usuarios/{id}',         [AdminUsuariosController::class, 'show']);
+        Route::put('usuarios/{id}/activo',  [AdminUsuariosController::class, 'toggleActivo']);
+        Route::put('usuarios/{id}/rol',     [AdminUsuariosController::class, 'cambiarRol']);
+        // ── NUEVO: presencia en tiempo real ──
+        Route::put('usuarios/{id}/presencia', [AdminUsuariosController::class, 'actualizarPresencia']);
 
-        // Rutas admin duplicadas (ya definidas arriba con middleware individual, se mantienen aquí también)
-        Route::delete('incidencias/{id}',       [IncidenciasController::class, 'destroy']);
-        Route::get('apoyos',                    [ApoyosController::class, 'index']);
-        Route::get('apoyos/pendientes',         [ApoyosController::class, 'pendientes']);
-        Route::put('apoyos/{id}/aprobar',       [ApoyosController::class, 'aprobar']);
-        Route::put('apoyos/{id}/rechazar',      [ApoyosController::class, 'rechazar']);
-        Route::get('historial',                 [HistorialController::class, 'index']);
-        Route::get('historial/acciones',        [HistorialController::class, 'acciones']);
+        Route::delete('incidencias/{id}',  [IncidenciasController::class, 'destroy']);
+        Route::get('apoyos',               [ApoyosController::class, 'index']);
+        Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes']);
+        Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar']);
+        Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar']);
+        Route::get('historial',            [HistorialController::class, 'index']);
+        Route::get('historial/acciones',   [HistorialController::class, 'acciones']);
     });
 });
