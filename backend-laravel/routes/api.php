@@ -78,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportes/por-estado',      [ReportesController::class, 'porEstado']);
     Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
     Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
+    Route::get('reportes/exportar-pdf', [ReportesController::class, 'exportarPdf']);
 
     // ── Admin: Gestión de usuarios (solo admin) ──────────────────
     Route::middleware('solo.admin')->prefix('admin')->group(function () {

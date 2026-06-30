@@ -157,19 +157,26 @@ function renderTablaResponsables(datos) {
     html || '<tr><td colspan="6" class="text-center text-secondary py-4">Sin datos</td></tr>';
 }
 
-// ── Exportar CSV ──
-async function exportarCSV() {
+//EXPORTAR PDF
+async function exportarPDF() {
   try {
-    const r = await fetchAPI(`${API}/incidencias/exportar/csv`);
-    const datos = await r.json();
-    if (!datos.length) return alert('No hay datos para exportar.');
-    const cols = Object.keys(datos[0]);
-    const csv = [cols.join(','), ...datos.map(row => cols.map(c => `"${row[c]??''}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const params = new URLSearchParams();
+    const desde = document.getElementById('rDesde').value;
+    const hasta = document.getElementById('rHasta').value;
+    const tipo  = document.getElementById('rTipo').value;
+    const zona  = document.getElementById('rZona').value;
+    if (desde) params.append('desde', desde);
+    if (hasta) params.append('hasta', hasta);
+    if (tipo)  params.append('tipo',  tipo);
+    if (zona)  params.append('zona',  zona);
+
+    const r = await fetchAPI(`${API}/reportes/exportar-pdf?${params}`);
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href=url; a.download='incidencias.csv'; a.click();
-  } catch(e) { alert('Error al exportar.'); }
+    a.href = url; a.download = `reporte-geoincidencias-${new Date().toISOString().split('T')[0]}.pdf`; a.click();
+  } catch(e) { alert('Error al exportar el reporte.'); }
 }
 
 // ── Init ──
