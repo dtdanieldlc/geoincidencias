@@ -113,7 +113,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
       <td class="border-secondary">
         <div class="d-flex gap-1 flex-wrap">
           ${puedeApoyar ? `<button class="btn btn-sm btn-outline-danger" title="Apoyar ($${monto})" onclick="window.location.href='mis-apoyos.html'"><i class="bi bi-hand-thumbs-up"></i></button>` : ''}
-          ${(esAdmin || inc.id_usuario_creador === usuarioActual.id_usuario) ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
+          ${esAdmin ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
           ${esAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
         </div>
       </td>

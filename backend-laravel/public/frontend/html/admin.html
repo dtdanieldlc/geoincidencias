@@ -267,7 +267,8 @@
 
     <!-- ── Panel: Incidencias ── -->
     <div id="panelIncidencias">
-      <div class="data-table">
+      <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Pendientes de aprobación</h6>
+      <div class="data-table mb-4">
         <table>
           <thead>
             <tr>
@@ -279,6 +280,22 @@
             <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Todas las incidencias — cambiar estado</h6>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th><th>Tipo</th><th>Zona</th><th>Prioridad</th>
+              <th>Estado actual</th><th>Fecha</th><th>Cambiar estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTodasIncidencias">
+            <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination-bar" id="paginacionTodasIncidencias"></div>
       </div>
     </div>
 

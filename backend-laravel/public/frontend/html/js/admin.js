@@ -167,6 +167,103 @@ async function cargarIncidenciasPendientes() {
   }
 }
 
+/* ══════════════════════════════════════════════════════════
+   TODAS LAS INCIDENCIAS — cambiar estado (solo admin)
+══════════════════════════════════════════════════════════ */
+const ESTADOS_INCIDENCIA = [
+  { id: 1, nombre: 'Pendiente'  },
+  { id: 2, nombre: 'En proceso' },
+  { id: 3, nombre: 'Resuelto'   },
+  { id: 4, nombre: 'Cerrado'    },
+];
+let paginaTodasInc = 1;
+
+async function cargarTodasIncidencias(pag = 1) {
+  paginaTodasInc = pag;
+  const tbody = document.getElementById('tbodyTodasIncidencias');
+  try {
+    const r = await fetch(`${API}/incidencias?todas=1&pagina=${pag}&por_pagina=10`, { headers: headers() });
+    const d = await r.json();
+    const items = d.datos ?? [];
+
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)">No hay incidencias registradas</td></tr>';
+      document.getElementById('paginacionTodasIncidencias').innerHTML = '';
+      return;
+    }
+
+    const prioColor = { Alta: '#f85149', Media: '#e3b341', Baja: '#3fb950' };
+
+    tbody.innerHTML = items.map(i => `
+      <tr>
+        <td><strong>${esc(i.titulo)}</strong></td>
+        <td style="color:var(--text-muted)">${esc(i.tipo ?? '—')}</td>
+        <td style="color:var(--text-muted)">${esc(i.zona ?? '—')}</td>
+        <td>
+          <span style="color:${prioColor[i.prioridad] ?? '#8b949e'};font-weight:600;font-size:.8rem;">
+            ${esc((i.prioridad ?? '—').toUpperCase())}
+          </span>
+        </td>
+        <td>${badgeEstadoAdmin(i.estado)}</td>
+        <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(i.fecha_ocurrencia)}</td>
+        <td>
+          <select class="form-select form-select-sm border-secondary text-white" style="background:#0d1117;width:auto;display:inline-block;"
+                  onchange="cambiarEstadoIncidencia(${i.id_incidencia}, this.value)">
+            ${ESTADOS_INCIDENCIA.map(e => `<option value="${e.id}" ${e.nombre === i.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}
+          </select>
+        </td>
+      </tr>
+    `).join('');
+
+    renderPaginacionTodasIncidencias(d.total ?? items.length, pag, 10);
+
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-5">Error al cargar incidencias</td></tr>';
+  }
+}
+
+function badgeEstadoAdmin(estado) {
+  const colores = {
+    'Pendiente':  { bg: 'rgba(248,81,73,.15)',  color: '#f87171' },
+    'En proceso': { bg: 'rgba(227,179,65,.15)', color: '#e3b341' },
+    'Resuelto':   { bg: 'rgba(63,185,80,.15)',  color: '#3fb950' },
+    'Cerrado':    { bg: 'rgba(139,148,158,.15)',color: '#8b949e' },
+  };
+  const c = colores[estado] ?? { bg: 'rgba(139,148,158,.15)', color: '#8b949e' };
+  return `<span class="badge rounded-pill" style="background:${c.bg};color:${c.color};padding:5px 10px;font-size:.72rem;">${esc(estado ?? '—')}</span>`;
+}
+
+function renderPaginacionTodasIncidencias(total, pagina, porPagina) {
+  const cont = document.getElementById('paginacionTodasIncidencias');
+  const tp = Math.ceil(total / porPagina);
+  if (tp <= 1) { cont.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${pagina===1?'disabled':''} onclick="cargarTodasIncidencias(${pagina-1})">«</button>`;
+  for (let p = Math.max(1, pagina-2); p <= Math.min(tp, pagina+2); p++) {
+    html += `<button class="page-btn ${p===pagina?'active':''}" onclick="cargarTodasIncidencias(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${pagina===tp?'disabled':''} onclick="cargarTodasIncidencias(${pagina+1})">»</button>`;
+  cont.innerHTML = html;
+}
+
+async function cambiarEstadoIncidencia(id, idEstado) {
+  try {
+    const r = await fetch(`${API}/incidencias/${id}`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ id_estado_actual: parseInt(idEstado) }),
+    });
+    const d = await r.json();
+    if (r.ok && d.ok) {
+      showToast('Estado actualizado correctamente.', 'success');
+      cargarTodasIncidencias(paginaTodasInc);
+    } else {
+      showToast(d.mensaje || 'No se pudo actualizar el estado.', 'error');
+    }
+  } catch {
+    showToast('Error de conexión al actualizar estado.', 'error');
+  }
+}
+
 async function aprobarIncidencia(id) {
   const r = await fetch(`${API}/incidencias/${id}/aprobar`, { method: 'PUT', headers: headers() });
   const d = await r.json();
@@ -459,6 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initUsuarioActual();
   startHeartbeat();
   cargarIncidenciasPendientes();
+  cargarTodasIncidencias();
   cargarApoyosPendientes();
   cargarNotificaciones();
 
