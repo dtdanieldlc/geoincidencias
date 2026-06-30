@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\HistorialActividad;
 use App\Models\Usuario;
-use App\Notifications\VerificarCorreoNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -32,16 +30,6 @@ class AuthController extends Controller
 
         if (! $usuario || ! Hash::check($request->password, $usuario->password)) {
             return response()->json(['ok' => false, 'mensaje' => 'Credenciales incorrectas.'], 401);
-        }
-
-        // Bloquear acceso si el correo no está verificado
-        if (! $usuario->correo_verificado) {
-            return response()->json([
-                'ok'                 => false,
-                'mensaje'            => 'Debes verificar tu correo electrónico antes de iniciar sesión.',
-                'requiere_verificacion' => true,
-                'correo'             => $usuario->correo,
-            ], 403);
         }
 
         $token = $usuario->createToken('auth_token', ['*'], now()->addHours(8))->plainTextToken;
@@ -82,33 +70,16 @@ class AuthController extends Controller
             return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
         }
 
-        // Generar código de 6 dígitos
-        $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
         $usuario = Usuario::create([
-            'nombre'                       => $request->nombre,
-            'apellido'                     => $request->apellido,
-            'correo'                       => $request->correo,
-            'password'                     => Hash::make($request->password),
-            'rol'                          => 'usuario',
-            'telefono'                     => $request->telefono,
-            'activo'                       => true,
-            'correo_verificado'            => false,
-            'codigo_verificacion'          => $codigo,
-            'codigo_verificacion_expira'   => now()->addMinutes(15),
+            'nombre'            => $request->nombre,
+            'apellido'          => $request->apellido,
+            'correo'            => $request->correo,
+            'password'          => Hash::make($request->password),
+            'rol'               => 'usuario',
+            'telefono'          => $request->telefono,
+            'activo'            => true,
+            'correo_verificado' => true,
         ]);
-
-        // Enviar correo con el código
-        try {
-            $usuario->notify(new VerificarCorreoNotification($codigo, $usuario->nombre));
-        } catch (\Throwable $e) {
-            // Si falla el envío, eliminar usuario para que pueda reintentar
-            $usuario->delete();
-            return response()->json([
-                'ok'     => false,
-                'mensaje' => 'No se pudo enviar el correo de verificación. Verifica que el correo sea válido e intenta de nuevo.',
-            ], 422);
-        }
 
         HistorialActividad::registrar(
             $usuario->id_usuario, null, 'registro_usuario',
@@ -117,99 +88,8 @@ class AuthController extends Controller
 
         return response()->json([
             'ok'      => true,
-            'mensaje' => 'Cuenta creada. Te enviamos un código de 6 dígitos a tu correo para verificarla.',
-            'correo'  => $usuario->correo,
+            'mensaje' => 'Cuenta creada. Ya puedes iniciar sesión.',
         ], 201);
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    //  POST /api/auth/verificar-correo
-    // ──────────────────────────────────────────────────────────────
-    public function verificarCorreo(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'correo' => 'required|email',
-            'codigo' => 'required|string|size:6',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
-        }
-
-        $usuario = Usuario::where('correo', $request->correo)
-            ->where('correo_verificado', false)
-            ->first();
-
-        if (! $usuario) {
-            return response()->json(['ok' => false, 'mensaje' => 'Correo no encontrado o ya verificado.'], 404);
-        }
-
-        // Verificar expiración
-        if (now()->isAfter($usuario->codigo_verificacion_expira)) {
-            return response()->json([
-                'ok'       => false,
-                'mensaje'  => 'El código ha expirado. Solicita uno nuevo.',
-                'expirado' => true,
-            ], 400);
-        }
-
-        // Verificar código
-        if ($usuario->codigo_verificacion !== $request->codigo) {
-            return response()->json(['ok' => false, 'mensaje' => 'Código incorrecto.'], 400);
-        }
-
-        // Marcar como verificado
-        $usuario->correo_verificado          = true;
-        $usuario->correo_verificado_at       = now();
-        $usuario->codigo_verificacion        = null;
-        $usuario->codigo_verificacion_expira = null;
-        $usuario->save();
-
-        HistorialActividad::registrar(
-            $usuario->id_usuario, null, 'verificar_correo',
-            "Usuario verificó su correo: {$usuario->correo}", $request->ip()
-        );
-
-        return response()->json([
-            'ok'      => true,
-            'mensaje' => '¡Correo verificado! Ya puedes iniciar sesión.',
-        ]);
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    //  POST /api/auth/reenviar-codigo
-    // ──────────────────────────────────────────────────────────────
-    public function reenviarCodigo(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'correo' => 'required|email',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
-        }
-
-        $usuario = Usuario::where('correo', $request->correo)
-            ->where('correo_verificado', false)
-            ->first();
-
-        if (! $usuario) {
-            return response()->json(['ok' => false, 'mensaje' => 'Correo no encontrado o ya verificado.'], 404);
-        }
-
-        $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        $usuario->codigo_verificacion        = $codigo;
-        $usuario->codigo_verificacion_expira = now()->addMinutes(15);
-        $usuario->save();
-
-        try {
-            $usuario->notify(new VerificarCorreoNotification($codigo, $usuario->nombre));
-        } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'mensaje' => 'No se pudo reenviar el correo. Intenta de nuevo.'], 422);
-        }
-
-        return response()->json(['ok' => true, 'mensaje' => 'Nuevo código enviado a tu correo.']);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -220,16 +100,16 @@ class AuthController extends Controller
         $usuario = $request->user();
 
         return response()->json([
-            'id_usuario'         => $usuario->id_usuario,
-            'nombre'             => $usuario->nombre,
-            'apellido'           => $usuario->apellido,
-            'correo'             => $usuario->correo,
-            'rol'                => $usuario->rol,
-            'telefono'           => $usuario->telefono,
-            'saldo_incentivos'   => $usuario->saldo_incentivos,
-            'created_at'         => $usuario->created_at,
-            'correo_verificado'  => $usuario->correo_verificado,
-            'foto_url'           => $usuario->foto_url ? Storage::url($usuario->foto_url) : null,
+            'id_usuario'        => $usuario->id_usuario,
+            'nombre'            => $usuario->nombre,
+            'apellido'          => $usuario->apellido,
+            'correo'            => $usuario->correo,
+            'rol'               => $usuario->rol,
+            'telefono'          => $usuario->telefono,
+            'saldo_incentivos'  => $usuario->saldo_incentivos,
+            'created_at'        => $usuario->created_at,
+            'correo_verificado' => $usuario->correo_verificado,
+            'foto_url'          => $usuario->foto_url ? Storage::url($usuario->foto_url) : null,
         ]);
     }
 
