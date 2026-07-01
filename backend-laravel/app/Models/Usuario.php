@@ -79,9 +79,6 @@ class Usuario extends Authenticatable
             ->keyBy('modulo')
             ->toArray();
     }
-    {
-        return $this->rol === 'admin';
-    }
 
     public function incidenciasCreadas()
     {
