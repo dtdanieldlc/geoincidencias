@@ -286,7 +286,7 @@ function initSidebar(paginaActiva) {
   const u = getUsuario();
   if (!u) return;
 
-  const esAdmin = u.rol === 'admin';
+  const esAdmin = u.rol === 'admin' || u.rol === 'superadmin';
 
   // 1. Crear el sidebar
   const sidebar = document.createElement('nav');
@@ -357,7 +357,7 @@ function _cargarDatosUsuario(u) {
   const sbAvatar = document.getElementById('sbAvatar');
 
   if (sbNombre) sbNombre.textContent = nombre;
-  if (sbRol)    sbRol.textContent    = u.rol === 'admin' ? 'Administrador' : 'Usuario';
+  if (sbRol)    sbRol.textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
   if (sbLetra)  sbLetra.textContent  = inicial;
 
   // Foto de perfil: si tiene foto_url la muestra, si no muestra la inicial
