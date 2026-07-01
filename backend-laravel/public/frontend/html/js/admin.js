@@ -94,7 +94,7 @@ function initUsuarioActual() {
   const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
   if (u.nombre) {
     document.getElementById('sideNombre').textContent = u.nombre;
-    document.getElementById('sideRol').textContent    = u.rol === 'admin' ? 'Administrador' : 'Usuario';
+    document.getElementById('sideRol').textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
     document.getElementById('sideAvatar').textContent = u.nombre.charAt(0).toUpperCase();
   }
 
