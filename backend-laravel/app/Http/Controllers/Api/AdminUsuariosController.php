@@ -96,13 +96,14 @@ class AdminUsuariosController extends Controller
     {
         $admin = $request->user();
 
-        if (! in_array($request->rol, ['admin', 'usuario', 'superadmin'])) {
-            return response()->json(['ok' => false, 'mensaje' => 'Rol inválido.'], 400);
+        // Solo el superadmin puede cambiar roles — un admin normal debe
+        // pasar por el flujo de solicitud de permisos.
+        if ($admin->rol !== 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo el superadmin puede cambiar roles de usuarios.'], 403);
         }
 
-        // Solo superadmin puede asignar/quitar rol superadmin
-        if ($request->rol === 'superadmin' && $admin->rol !== 'superadmin') {
-            return response()->json(['ok' => false, 'mensaje' => 'Solo el superadmin puede asignar ese rol.'], 403);
+        if (! in_array($request->rol, ['admin', 'usuario', 'superadmin'])) {
+            return response()->json(['ok' => false, 'mensaje' => 'Rol inválido.'], 400);
         }
 
         $usuario = Usuario::findOrFail($id);
@@ -111,8 +112,8 @@ class AdminUsuariosController extends Controller
             return response()->json(['ok' => false, 'mensaje' => 'No puedes cambiar tu propio rol.'], 400);
         }
 
-        // Nadie puede degradar a un superadmin excepto él mismo
-        if ($usuario->rol === 'superadmin' && $admin->rol !== 'superadmin') {
+        // Nadie puede degradar a un superadmin, ni siquiera otro superadmin
+        if ($usuario->rol === 'superadmin') {
             return response()->json(['ok' => false, 'mensaje' => 'No puedes modificar el rol del superadmin.'], 403);
         }
 

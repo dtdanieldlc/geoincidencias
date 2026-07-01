@@ -444,10 +444,11 @@ async function cargarUsuarios(pagina = 1) {
               onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
               <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
             </button>
+            ${esSuperAdminActual() ? `
             <button class="btn-icon me-1" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
               onclick="cambiarRol(${u.id_usuario}, '${u.rol}')">
               <i class="bi bi-shield-${u.rol === 'admin' ? 'minus' : 'plus'}"></i>
-            </button>
+            </button>` : ''}
             ${(esSuperAdminActual() && u.rol === 'admin') ? `
             <button class="btn-icon" title="Editar permisos"
               onclick="abrirModalPermisosUsuario(${u.id_usuario}, '${esc(u.nombre)} ${esc(u.apellido ?? '')}')">
