@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\SoloAdmin;
+use App\Http\Middleware\SoloSuperAdmin;
+use App\Http\Middleware\VerificarPermiso;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'solo.admin' => SoloAdmin::class,
+            'solo.admin'      => SoloAdmin::class,
+            'solo.superadmin' => SoloSuperAdmin::class,
+            'permiso'         => VerificarPermiso::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

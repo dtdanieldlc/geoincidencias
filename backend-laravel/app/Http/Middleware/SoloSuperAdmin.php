@@ -1,17 +1,18 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 
-class SoloAdmin
+class SoloSuperAdmin
 {
     public function handle(Request $request, Closure $next)
     {
         $usuario = $request->user();
 
-        if (!$usuario || !in_array($usuario->rol, ['admin', 'superadmin'])) {
-            return response()->json(['ok' => false, 'mensaje' => 'Acceso restringido a administradores.'], 403);
+        if (!$usuario || $usuario->rol !== 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'Acceso restringido al superadministrador.'], 403);
         }
 
         return $next($request);

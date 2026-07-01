@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\NotificacionesController;
 use App\Http\Controllers\Api\ReportesController;
 use App\Http\Controllers\Api\AdminUsuariosController;
+use App\Http\Controllers\Api\SuperAdminController;
+use App\Http\Controllers\Api\PermisosController;
 
 Route::get('/health', fn () => response()->json(['ok' => true, 'mensaje' => 'Backend funcionando correctamente.']));
 
@@ -85,14 +87,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
     Route::get('reportes/exportar-pdf', [ReportesController::class, 'exportarPdf']);
 
-    // ── Admin: Gestión de usuarios (solo admin) ──────────────────
+    // ── Mis permisos (cualquier usuario autenticado) ──────────────
+    Route::get('mis-permisos', [PermisosController::class, 'misPermisos']);
+
+    // ── Admin: solicitar permisos ─────────────────────────────────
     Route::middleware('solo.admin')->prefix('admin')->group(function () {
         Route::get('usuarios',              [AdminUsuariosController::class, 'index']);
         Route::get('usuarios/estadisticas', [AdminUsuariosController::class, 'estadisticas']);
         Route::get('usuarios/{id}',         [AdminUsuariosController::class, 'show']);
         Route::put('usuarios/{id}/activo',  [AdminUsuariosController::class, 'toggleActivo']);
         Route::put('usuarios/{id}/rol',     [AdminUsuariosController::class, 'cambiarRol']);
-        // ── NUEVO: presencia en tiempo real ──
         Route::put('usuarios/{id}/presencia', [AdminUsuariosController::class, 'actualizarPresencia']);
 
         Route::delete('incidencias/{id}',  [IncidenciasController::class, 'destroy']);
@@ -102,5 +106,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar']);
         Route::get('historial',            [HistorialController::class, 'index']);
         Route::get('historial/acciones',   [HistorialController::class, 'acciones']);
+
+        // Solicitudes de permisos (admin solicita al superadmin)
+        Route::get('solicitudes-permisos',  [PermisosController::class, 'misSolicitudes']);
+        Route::post('solicitudes-permisos', [PermisosController::class, 'solicitarPermisos']);
+    });
+
+    // ── SuperAdmin exclusivo ──────────────────────────────────────
+    Route::middleware('solo.superadmin')->prefix('superadmin')->group(function () {
+        Route::get('usuarios',                      [SuperAdminController::class, 'usuarios']);
+        Route::get('usuarios/{id}/credenciales',    [SuperAdminController::class, 'credenciales']);
+        Route::put('usuarios/{id}/rol',             [SuperAdminController::class, 'cambiarRol']);
+        Route::put('usuarios/{id}/password',        [SuperAdminController::class, 'resetPassword']);
+        Route::delete('usuarios/{id}',              [SuperAdminController::class, 'eliminar']);
+        Route::get('logs',                          [SuperAdminController::class, 'logs']);
+        Route::get('conectados',                    [SuperAdminController::class, 'conectados']);
+
+        // Permisos granulares — asignación directa
+        Route::get('permisos/modulos',              [PermisosController::class, 'modulos']);
+        Route::get('permisos/{id_usuario}',         [PermisosController::class, 'permisosDeUsuario']);
+        Route::put('permisos/{id_usuario}',         [PermisosController::class, 'asignarPermisos']);
+
+        // Solicitudes de permisos — revisión
+        Route::get('solicitudes-permisos',                  [PermisosController::class, 'todasLasSolicitudes']);
+        Route::get('solicitudes-permisos/{id}',             [PermisosController::class, 'detalleSolicitud']);
+        Route::put('solicitudes-permisos/{id}/revisar',     [PermisosController::class, 'revisarSolicitud']);
     });
 });

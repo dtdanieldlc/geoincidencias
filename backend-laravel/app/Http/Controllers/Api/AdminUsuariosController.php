@@ -96,14 +96,24 @@ class AdminUsuariosController extends Controller
     {
         $admin = $request->user();
 
-        if (! in_array($request->rol, ['admin', 'usuario'])) {
+        if (! in_array($request->rol, ['admin', 'usuario', 'superadmin'])) {
             return response()->json(['ok' => false, 'mensaje' => 'Rol inválido.'], 400);
+        }
+
+        // Solo superadmin puede asignar/quitar rol superadmin
+        if ($request->rol === 'superadmin' && $admin->rol !== 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo el superadmin puede asignar ese rol.'], 403);
         }
 
         $usuario = Usuario::findOrFail($id);
 
         if ($usuario->id_usuario === $admin->id_usuario) {
             return response()->json(['ok' => false, 'mensaje' => 'No puedes cambiar tu propio rol.'], 400);
+        }
+
+        // Nadie puede degradar a un superadmin excepto él mismo
+        if ($usuario->rol === 'superadmin' && $admin->rol !== 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'No puedes modificar el rol del superadmin.'], 403);
         }
 
         $rolAnterior  = $usuario->rol;

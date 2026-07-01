@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\AdminPermiso;
 
 class Usuario extends Authenticatable
 {
@@ -38,6 +39,46 @@ class Usuario extends Authenticatable
     }
 
     public function esAdmin(): bool
+    {
+        return in_array($this->rol, ['admin', 'superadmin']);
+    }
+
+    public function esSuperAdmin(): bool
+    {
+        return $this->rol === 'superadmin';
+    }
+
+    // Devuelve los permisos del admin para un módulo específico
+    public function permisoEn(string $modulo): ?AdminPermiso
+    {
+        return AdminPermiso::where('id_usuario', $this->id_usuario)
+            ->where('modulo', $modulo)
+            ->first();
+    }
+
+    // Verifica si el admin puede realizar una acción en un módulo
+    public function puedeEn(string $modulo, string $accion = 'ver'): bool
+    {
+        if ($this->esSuperAdmin()) return true;
+        if ($this->rol !== 'admin') return false;
+        $permiso = $this->permisoEn($modulo);
+        if (!$permiso) return false;
+        return match($accion) {
+            'ver'      => $permiso->puede_ver,
+            'editar'   => $permiso->puede_editar,
+            'eliminar' => $permiso->puede_eliminar,
+            default    => false,
+        };
+    }
+
+    // Devuelve todos los permisos del admin como array indexado por módulo
+    public function todosLosPermisos(): array
+    {
+        return AdminPermiso::where('id_usuario', $this->id_usuario)
+            ->get()
+            ->keyBy('modulo')
+            ->toArray();
+    }
     {
         return $this->rol === 'admin';
     }
