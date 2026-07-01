@@ -150,7 +150,7 @@ class AuthController extends Controller
 
         $digitoVerificador = (int) $cedula[9];
         $decena = ceil($suma / 10) * 10;
-        $resultado = ($decena - $suma) === 10 ? 0 : $decena - $suma;
+        $resultado = (int) (($decena - $suma) === 10.0 ? 0 : $decena - $suma);
 
         return $resultado === $digitoVerificador;
     }
