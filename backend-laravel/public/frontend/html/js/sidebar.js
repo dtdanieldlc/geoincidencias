@@ -200,7 +200,7 @@
 // ════════════════════════════════════════════════════════
 //  HTML del sidebar
 // ════════════════════════════════════════════════════════
-function _buildSidebarHTML(paginaActiva, esAdmin) {
+function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
   const links = [
     { id: 'index',       href: 'index.html',        icon: 'bi-speedometer2',      label: 'Dashboard'    },
     { id: 'incidencias', href: 'incidencias.html',   icon: 'bi-list-ul',           label: 'Incidencias'  },
@@ -215,7 +215,12 @@ function _buildSidebarHTML(paginaActiva, esAdmin) {
     { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
     { id: 'apoyos',   href: 'admin.html',    icon: 'bi-cash-coin',    label: 'Incentivos',   badge: '<span class="sb-badge" style="background:#3d2e00;color:#e3b341;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html';" },
     { id: 'usuarios', href: 'admin.html',    icon: 'bi-people',       label: 'Usuarios',     onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html';" },
+    { id: 'permisos', href: 'admin.html',    icon: 'bi-key',          label: 'Solicitar Permisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html';" },
     { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial'     },
+  ];
+
+  const superAdminLinks = [
+    { id: 'superadmin', href: 'superadmin.html', icon: 'bi-shield-lock', label: 'Solicitudes y Permisos' },
   ];
 
   const renderLink = (l) => {
@@ -231,12 +236,17 @@ function _buildSidebarHTML(paginaActiva, esAdmin) {
     ${adminLinks.map(renderLink).join('')}
   ` : '';
 
+  const superAdminSection = esSuperAdmin ? `
+    <div class="sb-section" style="margin-top:8px;">SuperAdmin</div>
+    ${superAdminLinks.map(renderLink).join('')}
+  ` : '';
+
   return `
     <a class="sb-brand" href="index.html">
       <div class="sb-brand-icon"><i class="bi bi-geo-alt-fill text-white"></i></div>
       <div>
         <div class="sb-brand-name">GeoIncidencias</div>
-        ${esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : ''}
+        ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:#3d1f3d;color:#d291ff;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
       </div>
     </a>
 
@@ -244,6 +254,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin) {
       <div class="sb-section">General</div>
       ${links.map(renderLink).join('')}
       ${adminSection}
+      ${superAdminSection}
     </div>
 
     <div id="gi-sidebar-bottom">
@@ -277,6 +288,7 @@ const _TITULOS = {
   'perfil':      'Mi Perfil',
   'admin':       'Panel de Administración',
   'historial':   'Historial de Actividad',
+  'superadmin':  'Solicitudes y Permisos',
 };
 
 // ════════════════════════════════════════════════════════
@@ -287,11 +299,12 @@ function initSidebar(paginaActiva) {
   if (!u) return;
 
   const esAdmin = u.rol === 'admin' || u.rol === 'superadmin';
+  const esSuperAdmin = u.rol === 'superadmin';
 
   // 1. Crear el sidebar
   const sidebar = document.createElement('nav');
   sidebar.id = 'gi-sidebar';
-  sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin);
+  sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin);
   document.body.prepend(sidebar);
 
   // 2. Envolver contenido existente en #gi-main + topbar
@@ -322,6 +335,9 @@ function initSidebar(paginaActiva) {
 
   // 3. Rellenar datos del usuario
   _cargarDatosUsuario(u);
+
+  // 3b. Filtrar módulos del admin según sus permisos reales (superadmin ve todo)
+  if (u.rol === 'admin') _filtrarModulosPorPermisos();
 
   // 4. Eventos
   document.getElementById('sbBtnLogout').addEventListener('click', cerrarSesion);
@@ -366,6 +382,41 @@ function _cargarDatosUsuario(u) {
     const base = API.replace('/api', '');
     const src  = fotoUrl.startsWith('http') ? fotoUrl : `${base}/storage/${fotoUrl}`;
     sbAvatar.innerHTML = `<img src="${src}" alt="${nombre}" onerror="this.parentElement.innerHTML='<span>${inicial}</span>'" />`;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  Filtrar links de administración según permisos reales
+//  (solo aplica a rol='admin'; superadmin ve todo siempre)
+// ════════════════════════════════════════════════════════
+const _MODULO_POR_LINK_ID = {
+  admin:     'incidencias',
+  apoyos:    'incentivos',
+  usuarios:  'usuarios',
+  historial: 'historial',
+};
+
+async function _filtrarModulosPorPermisos() {
+  try {
+    const r = await fetch(`${API}/mis-permisos`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    const data = await r.json();
+    const permisos = data.permisos ?? {};
+
+    document.querySelectorAll('#gi-sidebar .sb-link').forEach(a => {
+      const onclick = a.getAttribute('onclick') || '';
+      const match = onclick.match(/cambiarTab\('(\w+)'\)/);
+      if (!match) return;
+      const tabId = match[1];
+      if (tabId === 'permisos') return; // esa siempre visible para admin
+      const modulo = _MODULO_POR_LINK_ID[tabId];
+      if (!modulo) return;
+      const tienePermiso = permisos[modulo]?.puede_ver;
+      if (!tienePermiso) a.style.display = 'none';
+    });
+  } catch (e) {
+    // Si falla, no se oculta nada (fail-safe: mejor mostrar de más que bloquear el acceso)
   }
 }
 

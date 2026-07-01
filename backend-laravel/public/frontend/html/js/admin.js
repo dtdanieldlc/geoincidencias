@@ -60,10 +60,11 @@ const TAB_TITLES = {
   incidencias: 'Incidencias por revisar',
   apoyos:      'Incentivos por aprobar',
   usuarios:    'Gestión de Usuarios',
+  permisos:    'Solicitar Permisos',
 };
 
 function cambiarTab(tab) {
-  ['incidencias', 'apoyos', 'usuarios'].forEach(t => {
+  ['incidencias', 'apoyos', 'usuarios', 'permisos'].forEach(t => {
     const panel = document.getElementById(`panel${capitalize(t)}`);
     const btn   = document.getElementById(`tab${capitalize(t)}Btn`);
     if (panel) panel.style.display = t === tab ? 'block' : 'none';
@@ -74,6 +75,7 @@ function cambiarTab(tab) {
   if (titulo) titulo.textContent = TAB_TITLES[tab] ?? 'Administración';
 
   if (tab === 'usuarios') cargarUsuarios();
+  if (tab === 'permisos' && typeof initPanelPermisos === 'function') initPanelPermisos();
 }
 
 function capitalize(s) {
@@ -96,6 +98,19 @@ function initUsuarioActual() {
     document.getElementById('sideNombre').textContent = u.nombre;
     document.getElementById('sideRol').textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
     document.getElementById('sideAvatar').textContent = u.nombre.charAt(0).toUpperCase();
+    const badgeEl = document.getElementById('brandBadge');
+    if (badgeEl) badgeEl.textContent = u.rol === 'superadmin' ? 'SUPERADMIN' : 'ADMIN';
+    const tabPermisosBtn = document.getElementById('tabPermisosBtn');
+    if (tabPermisosBtn) tabPermisosBtn.style.display = u.rol === 'admin' ? 'inline-flex' : 'none';
+
+    const linkPermisos = document.getElementById('linkPermisos');
+    if (linkPermisos) linkPermisos.style.display = u.rol === 'admin' ? 'flex' : 'none';
+
+    const esSuperAdmin = u.rol === 'superadmin';
+    const linkSuperAdmin = document.getElementById('linkSuperAdmin');
+    const navSectionSuperAdmin = document.getElementById('navSectionSuperAdmin');
+    if (linkSuperAdmin) linkSuperAdmin.style.display = esSuperAdmin ? 'flex' : 'none';
+    if (navSectionSuperAdmin) navSectionSuperAdmin.style.display = esSuperAdmin ? 'block' : 'none';
   }
 
   document.getElementById('btnCerrarSesion').addEventListener('click', async () => {
@@ -563,10 +578,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tabIncidenciasBtn').addEventListener('click', () => cambiarTab('incidencias'));
   document.getElementById('tabApoyosBtn').addEventListener('click',      () => cambiarTab('apoyos'));
   document.getElementById('tabUsuariosBtn').addEventListener('click',    () => cambiarTab('usuarios'));
+  const tabPermisosBtnEl = document.getElementById('tabPermisosBtn');
+  if (tabPermisosBtnEl) tabPermisosBtnEl.addEventListener('click', () => cambiarTab('permisos'));
 
   document.getElementById('linkAdmin').addEventListener('click',    (e) => { e.preventDefault(); cambiarTab('incidencias'); });
   document.getElementById('linkApoyos').addEventListener('click',   (e) => { e.preventDefault(); cambiarTab('apoyos'); });
   document.getElementById('linkUsuarios').addEventListener('click', (e) => { e.preventDefault(); cambiarTab('usuarios'); });
+  const linkPermisosEl = document.getElementById('linkPermisos');
+  if (linkPermisosEl) linkPermisosEl.addEventListener('click', (e) => { e.preventDefault(); cambiarTab('permisos'); });
 
   document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
 
@@ -579,3 +598,147 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnConfirmarRechazoInc').addEventListener('click',   confirmarRechazoIncidencia);
   document.getElementById('btnConfirmarRechazoApoyo').addEventListener('click', confirmarRechazoApoyo);
 });
+
+/* ══════════════════════════════════════════════════════════
+   PANEL: SOLICITAR PERMISOS (solo admin, no superadmin)
+══════════════════════════════════════════════════════════ */
+const MODULOS_DISPONIBLES = [
+  { id: 'dashboard',   label: 'Dashboard'   },
+  { id: 'incidencias', label: 'Incidencias' },
+  { id: 'usuarios',    label: 'Usuarios'    },
+  { id: 'incentivos',  label: 'Incentivos'  },
+  { id: 'apoyos',      label: 'Apoyos'      },
+  { id: 'reportes',    label: 'Reportes'    },
+  { id: 'historial',   label: 'Historial'   },
+];
+
+let _permisosPanelInicializado = false;
+
+async function initPanelPermisos() {
+  cargarUsuariosObjetivoPermisos();
+  cargarMisSolicitudesPermisos();
+
+  if (_permisosPanelInicializado) return;
+  _permisosPanelInicializado = true;
+
+  const tbody = document.getElementById('tbodyModulosPermisos');
+  if (tbody) {
+    tbody.innerHTML = MODULOS_DISPONIBLES.map(m => `
+      <tr>
+        <td>${m.label}</td>
+        <td class="text-center"><input type="checkbox" class="form-check-input perm-ver"      data-modulo="${m.id}"></td>
+        <td class="text-center"><input type="checkbox" class="form-check-input perm-editar"   data-modulo="${m.id}"></td>
+        <td class="text-center"><input type="checkbox" class="form-check-input perm-eliminar" data-modulo="${m.id}"></td>
+      </tr>
+    `).join('');
+  }
+
+  const btnEnviar = document.getElementById('btnEnviarSolicitudPermiso');
+  if (btnEnviar) btnEnviar.addEventListener('click', enviarSolicitudPermiso);
+}
+
+async function cargarUsuariosObjetivoPermisos() {
+  const select = document.getElementById('selectUsuarioObjetivoPermiso');
+  if (!select) return;
+  try {
+    const r = await fetch(`${API}/admin/usuarios?rol=admin`, { headers: headers() });
+    const data = await r.json();
+    const usuarios = data.data?.data ?? data.data ?? [];
+    select.innerHTML = '<option value="">Selecciona un usuario…</option>' +
+      usuarios.map(u => `<option value="${u.id_usuario}">${u.nombre} ${u.apellido || ''} — ${u.correo}</option>`).join('');
+  } catch (e) {
+    select.innerHTML = '<option value="">Error al cargar usuarios</option>';
+  }
+}
+
+async function enviarSolicitudPermiso() {
+  const idUsuarioObjetivo = document.getElementById('selectUsuarioObjetivoPermiso').value;
+  const motivo = document.getElementById('motivoSolicitudPermiso').value.trim();
+  const btn = document.getElementById('btnEnviarSolicitudPermiso');
+  const msgEl = document.getElementById('msgSolicitudPermiso');
+
+  if (!idUsuarioObjetivo) { mostrarMsgPermiso('Selecciona un usuario.', 'danger'); return; }
+  if (motivo.length < 10)  { mostrarMsgPermiso('El motivo debe tener al menos 10 caracteres.', 'danger'); return; }
+
+  const permisos_solicitados = MODULOS_DISPONIBLES.map(m => ({
+    modulo: m.id,
+    puede_ver:      document.querySelector(`.perm-ver[data-modulo="${m.id}"]`)?.checked || false,
+    puede_editar:   document.querySelector(`.perm-editar[data-modulo="${m.id}"]`)?.checked || false,
+    puede_eliminar: document.querySelector(`.perm-eliminar[data-modulo="${m.id}"]`)?.checked || false,
+  })).filter(p => p.puede_ver || p.puede_editar || p.puede_eliminar);
+
+  if (permisos_solicitados.length === 0) {
+    mostrarMsgPermiso('Selecciona al menos un permiso.', 'danger');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Enviando…';
+
+  try {
+    const r = await fetch(`${API}/admin/solicitudes-permisos`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({
+        id_usuario_objetivo: Number(idUsuarioObjetivo),
+        motivo,
+        permisos_solicitados,
+      }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      mostrarMsgPermiso('Solicitud enviada al superadmin correctamente.', 'success');
+      document.getElementById('motivoSolicitudPermiso').value = '';
+      document.querySelectorAll('.perm-ver, .perm-editar, .perm-eliminar').forEach(c => c.checked = false);
+      cargarMisSolicitudesPermisos();
+    } else {
+      mostrarMsgPermiso(data.mensaje || 'No se pudo enviar la solicitud.', 'danger');
+    }
+  } catch (e) {
+    mostrarMsgPermiso('Error de conexión al enviar la solicitud.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send me-1"></i>Enviar solicitud';
+  }
+}
+
+function mostrarMsgPermiso(texto, tipo) {
+  const msgEl = document.getElementById('msgSolicitudPermiso');
+  if (!msgEl) return;
+  msgEl.className = `alert alert-${tipo} py-2 small mt-2`;
+  msgEl.textContent = texto;
+  msgEl.style.display = 'block';
+  setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
+}
+
+const ESTADO_BADGE = {
+  pendiente:  '<span class="badge" style="background:#3d2e00;color:#e3b341;">Pendiente</span>',
+  aprobado:   '<span class="badge" style="background:#0d3321;color:#3fb950;">Aprobado</span>',
+  rechazado:  '<span class="badge" style="background:#3d1f1f;color:#f85149;">Rechazado</span>',
+  modificado: '<span class="badge" style="background:#1f3347;color:#58a6ff;">Modificado</span>',
+};
+
+async function cargarMisSolicitudesPermisos() {
+  const tbody = document.getElementById('tbodyMisSolicitudesPermisos');
+  if (!tbody) return;
+  try {
+    const r = await fetch(`${API}/admin/solicitudes-permisos`, { headers: headers() });
+    const data = await r.json();
+    const lista = data.data?.data ?? [];
+    if (lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4" style="color:var(--text-muted)">Aún no has enviado solicitudes.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(s => `
+      <tr>
+        <td>${s.usuarioObjetivo ? `${s.usuarioObjetivo.nombre} ${s.usuarioObjetivo.apellido || ''}` : '—'}</td>
+        <td>${(s.permisos_solicitados || []).map(p => p.modulo).join(', ')}</td>
+        <td>${ESTADO_BADGE[s.estado] || s.estado}</td>
+        <td>${s.respuesta_superadmin || '—'}</td>
+        <td>${new Date(s.created_at).toLocaleDateString('es-EC')}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error al cargar solicitudes.</td></tr>';
+  }
+}

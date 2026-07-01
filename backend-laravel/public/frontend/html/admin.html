@@ -184,7 +184,7 @@
     <div class="brand-icon"><i class="bi bi-geo-alt-fill text-white"></i></div>
     <div>
       <div class="brand-name">GeoIncidencias</div>
-      <div class="brand-badge">ADMIN</div>
+      <div class="brand-badge" id="brandBadge">ADMIN</div>
     </div>
   </div>
 
@@ -210,7 +210,15 @@
     <a class="side-link" href="#" id="linkUsuarios">
       <i class="bi bi-people"></i>Usuarios
     </a>
+    <a class="side-link" href="#" id="linkPermisos" style="display:none;">
+      <i class="bi bi-key"></i>Solicitar Permisos
+    </a>
     <a class="side-link" href="historial.html"><i class="bi bi-clock-history"></i>Historial</a>
+
+    <div class="nav-section" id="navSectionSuperAdmin" style="margin-top:8px; display:none;">SuperAdmin</div>
+    <a class="side-link" href="superadmin.html" id="linkSuperAdmin" style="display:none;">
+      <i class="bi bi-shield-lock"></i>Solicitudes y Permisos
+    </a>
   </div>
 
   <div id="sidebarBottom">
@@ -262,6 +270,9 @@
       </button>
       <button class="tab-btn" id="tabUsuariosBtn">
         <i class="bi bi-people"></i>Usuarios
+      </button>
+      <button class="tab-btn" id="tabPermisosBtn" style="display:none;">
+        <i class="bi bi-key"></i>Solicitar Permisos
       </button>
     </div>
 
@@ -363,6 +374,61 @@
         </table>
         <div class="pagination-bar" id="paginacionUsuarios"></div>
       </div>
+
+    </div><!-- /panelUsuarios -->
+
+    <!-- ── Panel: Solicitar Permisos ── -->
+    <div id="panelPermisos" style="display:none">
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Nueva solicitud</h6>
+          <div class="data-table" style="padding:16px;">
+            <label class="form-label text-secondary small text-uppercase">Usuario a otorgar permisos</label>
+            <select id="selectUsuarioObjetivoPermiso" class="form-select border-secondary text-white mb-3" style="background:#0d1117;">
+              <option value="">Cargando…</option>
+            </select>
+
+            <label class="form-label text-secondary small text-uppercase">Módulos y acciones</label>
+            <table style="width:100%; margin-bottom:14px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Módulo</th>
+                  <th class="text-center">Ver</th>
+                  <th class="text-center">Editar</th>
+                  <th class="text-center">Eliminar</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyModulosPermisos"></tbody>
+            </table>
+
+            <label class="form-label text-secondary small text-uppercase">Motivo</label>
+            <textarea id="motivoSolicitudPermiso" class="form-control border-secondary text-white mb-2" style="background:#0d1117;" rows="3" placeholder="Explica por qué este usuario necesita estos permisos…"></textarea>
+
+            <div id="msgSolicitudPermiso" class="alert py-2 small mt-2" style="display:none;"></div>
+
+            <button class="btn btn-danger btn-sm" id="btnEnviarSolicitudPermiso">
+              <i class="bi bi-send me-1"></i>Enviar solicitud
+            </button>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Mis solicitudes</h6>
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th><th>Módulos</th><th>Estado</th><th>Respuesta</th><th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyMisSolicitudesPermisos">
+                <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panelPermisos -->
 
   </div><!-- /content -->
 </div><!-- /main -->

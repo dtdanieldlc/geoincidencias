@@ -41,7 +41,7 @@ async function cargarPerfil() {
     document.getElementById('nombrePerfil').textContent =
       `${usuarioActual.nombre || ''} ${usuarioActual.apellido || ''}`.trim();
     document.getElementById('rolPerfil').textContent =
-      usuarioActual.rol === 'admin' ? 'Administrador' : 'Usuario';
+      usuarioActual.rol === 'superadmin' ? 'Superadmin' : (usuarioActual.rol === 'admin' ? 'Administrador' : 'Usuario');
     document.getElementById('saldoIncentivos').textContent =
       `$${parseFloat(usuarioActual.saldo_incentivos || 0).toFixed(2)}`;
 

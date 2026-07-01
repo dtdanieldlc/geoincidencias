@@ -20,6 +20,12 @@ function exigirAdmin() {
   if (!u || (u.rol !== 'admin' && u.rol !== 'superadmin')) window.location.href = 'index.html';
 }
 
+function exigirSuperAdmin() {
+  exigirSesion();
+  const u = getUsuario();
+  if (!u || u.rol !== 'superadmin') window.location.href = 'index.html';
+}
+
 async function fetchAPI(url, opciones = {}) {
   const headers = {
     'Content-Type': 'application/json',
