@@ -274,6 +274,7 @@ class AuthController extends Controller
             'rol'               => $usuario->rol,
             'saldo_incentivos'  => $usuario->saldo_incentivos,
             'pregunta_secreta'  => $usuario->pregunta_secreta,
+            'tiene_pregunta_secreta' => !empty($usuario->pregunta_secreta),
             'foto_url'          => $usuario->foto_url ? Storage::url($usuario->foto_url) : null,
             'created_at'        => $usuario->created_at,
         ]);
