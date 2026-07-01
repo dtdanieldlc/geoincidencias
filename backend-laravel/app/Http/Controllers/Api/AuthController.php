@@ -260,36 +260,25 @@ class AuthController extends Controller
     // ──────────────────────────────────────────────────────────────
     //  GET /api/auth/perfil
     // ──────────────────────────────────────────────────────────────
-    public function perfil(Request $request)
-    {
-        $usuario = $request->user();
-
-        return response()->json([
-            'id_usuario'        => $usuario->id_usuario,
-            'nombre'            => $usuario->nombre,
-            'apellido'          => $usuario->apellido,
-            'correo'            => $usuario->correo,
-            'rol'               => $usuario->rol,
-            'telefono'          => $usuario->telefono,
-            'saldo_incentivos'  => $usuario->saldo_incentivos,
-            'created_at'        => $usuario->created_at,
-            'correo_verificado' => $usuario->correo_verificado,
-            'foto_url'          => $usuario->foto_url ? Storage::url($usuario->foto_url) : null,
-        ]);
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    //  PUT /api/auth/perfil
-    // ──────────────────────────────────────────────────────────────
-    public function actualizarPerfil(Request $request)
+        public function actualizarPerfil(Request $request)
     {
         $usuario = $request->user();
 
         $validator = Validator::make($request->all(), [
-            'nombre'   => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
-            'telefono' => 'nullable|string|max:20',
-            'correo'   => 'required|email|unique:usuarios,correo,' . $usuario->id_usuario . ',id_usuario',
+            'nombre'            => 'required|string|max:100',
+            'apellido'          => 'nullable|string|max:100',
+            'telefono'          => 'nullable|string|max:20',
+            'correo'            => 'required|email|unique:usuarios,correo,' . $usuario->id_usuario . ',id_usuario',
+            'cedula'            => ['nullable', 'digits:10', 'unique:usuarios,cedula,' . $usuario->id_usuario . ',id_usuario', function ($attribute, $value, $fail) {
+                if ($value && ! self::cedulaEsValida($value)) {
+                    $fail('La cédula ingresada no es válida.');
+                }
+            }],
+            'pregunta_secreta'  => 'nullable|string|max:150',
+            'respuesta_secreta' => 'nullable|string|min:2|max:150',
+        ], [
+            'cedula.digits' => 'La cédula debe tener 10 dígitos.',
+            'cedula.unique' => 'Esa cédula ya está registrada.',
         ]);
 
         if ($validator->fails()) {
@@ -300,6 +289,18 @@ class AuthController extends Controller
         $usuario->apellido = $request->apellido;
         $usuario->telefono = $request->telefono;
         $usuario->correo   = $request->correo;
+
+        // La cédula siempre se puede editar/completar
+        if ($request->filled('cedula')) {
+            $usuario->cedula = $request->cedula;
+        }
+
+        // La pregunta secreta solo se puede configurar UNA vez; si ya existe, se ignora cualquier intento de cambiarla aquí
+        if (! $usuario->pregunta_secreta && $request->filled('pregunta_secreta') && $request->filled('respuesta_secreta')) {
+            $usuario->pregunta_secreta  = $request->pregunta_secreta;
+            $usuario->respuesta_secreta = Hash::make(self::normalizarRespuesta($request->respuesta_secreta));
+        }
+
         $usuario->save();
 
         HistorialActividad::registrar(

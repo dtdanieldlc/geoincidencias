@@ -55,6 +55,11 @@ async function cargarPerfil() {
     document.getElementById('editApellido').value  = usuarioActual.apellido  || '';
     document.getElementById('editCorreo').value    = usuarioActual.correo    || '';
     document.getElementById('editTelefono').value  = usuarioActual.telefono  || '';
+    document.getElementById('editCedula').value = usuarioActual.cedula || '';
+
+    // Muestra el bloque de pregunta secreta SOLO si el usuario aún no la tiene configurada
+    document.getElementById('cardPreguntaSecreta').style.display =
+      usuarioActual.tiene_pregunta_secreta ? 'none' : 'block';
 
     // Mostrar foto guardada si existe
     if (usuarioActual.foto_url) {
@@ -79,9 +84,13 @@ async function guardarPerfil() {
   const apellido = document.getElementById('editApellido').value.trim();
   const correo   = document.getElementById('editCorreo').value.trim();
   const telefono = document.getElementById('editTelefono').value.trim();
+  const cedula   = document.getElementById('editCedula').value.trim();
 
   if (!nombre || !correo) {
     return mostrarAlerta('Nombre y correo son obligatorios', 'warning');
+  }
+  if (cedula && !/^\d{10}$/.test(cedula)) {
+    return mostrarAlerta('La cédula debe tener 10 dígitos.', 'warning');
   }
 
   const btn = document.getElementById('btnGuardarPerfil');
@@ -96,7 +105,7 @@ async function guardarPerfil() {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ nombre, apellido, correo, telefono }),
+      body: JSON.stringify({ nombre, apellido, correo, telefono, cedula }),
     });
 
     const data = await res.json();
@@ -158,6 +167,53 @@ async function cambiarPassword() {
   } catch (e) {
     console.error('Error en cambiarPassword:', e);
     mostrarAlerta('Error de conexión', 'danger');
+  }
+}
+
+async function guardarPreguntaSecreta() {
+  const pregunta_secreta  = document.getElementById('editPregunta').value;
+  const respuesta_secreta = document.getElementById('editRespuesta').value.trim();
+
+  if (!respuesta_secreta || respuesta_secreta.length < 2) {
+    return mostrarAlerta('Escribe una respuesta secreta válida', 'warning');
+  }
+
+  const btn = document.getElementById('btnGuardarPregunta');
+  btn.disabled = true;
+
+  try {
+    const token = getToken();
+    const res = await fetch(`${API}/auth/perfil`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre: usuarioActual.nombre,
+        apellido: usuarioActual.apellido,
+        correo: usuarioActual.correo,
+        telefono: usuarioActual.telefono,
+        cedula: usuarioActual.cedula,
+        pregunta_secreta,
+        respuesta_secreta,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      mostrarAlerta('Pregunta de seguridad configurada correctamente', 'success');
+      cargarPerfil(); // esto vuelve a ocultar el bloque porque ya quedó configurada
+    } else {
+      mostrarAlerta(data.mensaje || 'Error al guardar la pregunta de seguridad', 'danger');
+    }
+  } catch (e) {
+    console.error('Error en guardarPreguntaSecreta:', e);
+    mostrarAlerta('Error de conexión', 'danger');
+  } finally {
+    btn.disabled = false;
   }
 }
 

@@ -95,6 +95,10 @@
               <input type="text" id="editTelefono" class="form-control bg-dark border-secondary text-white">
             </div>
           </div>
+          <div class="col-md-6">
+              <label class="form-label">Cédula</label>
+              <input type="text" id="editCedula" maxlength="10" class="form-control bg-dark border-secondary text-white" placeholder="10 dígitos">
+            </div>
 
           <div class="mt-4">
             <button id="btnGuardarPerfil" onclick="guardarPerfil()" class="btn btn-danger">
@@ -108,6 +112,36 @@
       <!-- Cambiar Contraseña -->
       <div class="card mt-4">
         <div class="card-header border-secondary">
+          <!-- Pregunta de seguridad: solo aparece si el usuario aún no la ha configurado -->
+      <div class="card mt-4" id="cardPreguntaSecreta" style="display:none;">
+        <div class="card-header border-secondary">
+          <i class="bi bi-shield-lock me-2"></i>Configura tu pregunta de seguridad
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">
+            Esto te permitirá recuperar tu cuenta si olvidas tu contraseña. Solo se puede configurar una vez, así que elige una respuesta que recuerdes bien.
+          </p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Pregunta de seguridad</label>
+              <select id="editPregunta" class="form-select bg-dark border-secondary text-white">
+                <option value="¿Cuál es el nombre de tu primera mascota?">¿Cuál es el nombre de tu primera mascota?</option>
+                <option value="¿En qué ciudad naciste?">¿En qué ciudad naciste?</option>
+                <option value="¿Cuál es el nombre de tu mejor amigo de la infancia?">¿Cuál es el nombre de tu mejor amigo de la infancia?</option>
+                <option value="¿Cuál es el segundo nombre de tu madre?">¿Cuál es el segundo nombre de tu madre?</option>
+                <option value="¿Cuál fue el modelo de tu primer celular?">¿Cuál fue el modelo de tu primer celular?</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Respuesta secreta</label>
+              <input type="text" id="editRespuesta" class="form-control bg-dark border-secondary text-white" placeholder="Solo tú debes saberla">
+            </div>
+          </div>
+          <button id="btnGuardarPregunta" onclick="guardarPreguntaSecreta()" class="btn btn-outline-danger mt-3">
+            <i class="bi bi-shield-check me-2"></i>Guardar pregunta de seguridad
+          </button>
+        </div>
+      </div>
           <i class="bi bi-key me-2"></i>Cambiar Contraseña
         </div>
         <div class="card-body">
