@@ -308,7 +308,7 @@
             </div>
           </div>
           <div class="text-end mb-3">
-            <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+            <a href="#" class="forgot-link" onclick="abrirRecuperar(event)">¿Olvidaste tu contraseña?</a>
           </div>
           <div class="d-grid">
             <button id="btnLogin" class="btn btn-primary-geo" onclick="iniciarSesion()">
@@ -333,9 +333,29 @@
             <label class="field-label">Correo</label>
             <input type="email" id="regCorreo" class="form-control field"/>
           </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="field-label">Cédula</label>
+              <input type="text" id="regCedula" class="form-control field" maxlength="10" inputmode="numeric" placeholder="10 dígitos"/>
+            </div>
+            <div class="col-6">
+              <label class="field-label">Teléfono</label>
+              <input type="text" id="regTelefono" class="form-control field"/>
+            </div>
+          </div>
           <div class="mb-3">
-            <label class="field-label">Teléfono</label>
-            <input type="text" id="regTelefono" class="form-control field"/>
+            <label class="field-label">Pregunta de seguridad</label>
+            <select id="regPregunta" class="form-select field">
+              <option value="¿Cuál es el nombre de tu primera mascota?">¿Cuál es el nombre de tu primera mascota?</option>
+              <option value="¿En qué ciudad naciste?">¿En qué ciudad naciste?</option>
+              <option value="¿Cuál es el nombre de tu mejor amigo de la infancia?">¿Cuál es el nombre de tu mejor amigo de la infancia?</option>
+              <option value="¿Cuál es el segundo nombre de tu madre?">¿Cuál es el segundo nombre de tu madre?</option>
+              <option value="¿Cuál fue el modelo de tu primer celular?">¿Cuál fue el modelo de tu primer celular?</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="field-label">Respuesta secreta</label>
+            <input type="text" id="regRespuesta" class="form-control field" placeholder="Solo tú debes saberla"/>
           </div>
           <div class="mb-3">
             <label class="field-label">Contraseña</label>
@@ -358,6 +378,66 @@
           <span>Conexión cifrada</span>
           <span class="dot"></span>
           <span>Acceso monitoreado</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Recuperar contraseña -->
+<div class="modal fade" id="modalRecuperar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--line); color:var(--text); border-radius:18px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--line);">
+        <h6 class="modal-title mono"><i class="bi bi-shield-lock me-2"></i>Recuperar contraseña</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Paso 1: correo + cédula -->
+        <div id="recuperarPaso1">
+          <p class="text-muted small">Ingresa tu correo y cédula para verificar que eres el dueño de la cuenta.</p>
+          <div class="mb-3">
+            <label class="field-label">Correo</label>
+            <input type="email" id="recCorreo" class="form-control field"/>
+          </div>
+          <div class="mb-3">
+            <label class="field-label">Cédula</label>
+            <input type="text" id="recCedula" class="form-control field" maxlength="10" inputmode="numeric"/>
+          </div>
+          <div class="d-grid">
+            <button id="btnRecPaso1" class="btn btn-primary-geo" onclick="recuperarPedirPregunta()">Continuar</button>
+          </div>
+        </div>
+
+        <!-- Paso 2: pregunta secreta -->
+        <div id="recuperarPaso2" style="display:none;">
+          <p class="field-label mb-1">Pregunta de seguridad</p>
+          <p id="recPreguntaTexto" class="mb-3"></p>
+          <div class="mb-3">
+            <label class="field-label">Tu respuesta</label>
+            <input type="text" id="recRespuesta" class="form-control field"/>
+          </div>
+          <div class="d-grid">
+            <button id="btnRecPaso2" class="btn btn-primary-geo" onclick="recuperarVerificarRespuesta()">Verificar</button>
+          </div>
+        </div>
+
+        <!-- Paso 3: nueva contraseña -->
+        <div id="recuperarPaso3" style="display:none;">
+          <p class="text-muted small">Identidad verificada. Define tu nueva contraseña.</p>
+          <div class="mb-3">
+            <label class="field-label">Nueva contraseña</label>
+            <input type="password" id="recPasswordNueva" class="form-control field" placeholder="Mínimo 6 caracteres"/>
+          </div>
+          <div class="mb-3">
+            <label class="field-label">Confirmar contraseña</label>
+            <input type="password" id="recPasswordConfirmar" class="form-control field"/>
+          </div>
+          <div class="d-grid">
+            <button id="btnRecPaso3" class="btn btn-primary-geo" onclick="recuperarGuardarPassword()">Guardar nueva contraseña</button>
+          </div>
         </div>
 
       </div>

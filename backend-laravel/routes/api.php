@@ -20,6 +20,11 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
     Route::post('/registro', [AuthController::class, 'registro']);
 
+    // Recuperación de contraseña (cédula + pregunta de seguridad, sin correo externo)
+    Route::post('/recuperar/pregunta',  [AuthController::class, 'preguntaSecreta']);
+    Route::post('/recuperar/verificar', [AuthController::class, 'verificarRecuperacion']);
+    Route::post('/recuperar/reset',     [AuthController::class, 'restablecerPassword']);
+
     // Rutas protegidas por token
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/perfil',           [AuthController::class, 'perfil']);

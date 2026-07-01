@@ -48,14 +48,20 @@ async function iniciarSesion() {
 }
 
 async function crearCuenta() {
-  const nombre   = document.getElementById('regNombre').value.trim();
-  const apellido = document.getElementById('regApellido').value.trim();
-  const correo   = document.getElementById('regCorreo').value.trim();
-  const telefono = document.getElementById('regTelefono').value.trim();
-  const password = document.getElementById('regPassword').value;
+  const nombre    = document.getElementById('regNombre').value.trim();
+  const apellido  = document.getElementById('regApellido').value.trim();
+  const correo    = document.getElementById('regCorreo').value.trim();
+  const cedula    = document.getElementById('regCedula').value.trim();
+  const telefono  = document.getElementById('regTelefono').value.trim();
+  const password  = document.getElementById('regPassword').value;
+  const pregunta  = document.getElementById('regPregunta').value;
+  const respuesta = document.getElementById('regRespuesta').value.trim();
 
-  if (!nombre || !correo || !password) return mostrarAlerta('Completa los campos obligatorios.', 'warning');
+  if (!nombre || !correo || !password || !cedula || !respuesta) {
+    return mostrarAlerta('Completa los campos obligatorios.', 'warning');
+  }
   if (password.length < 6) return mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', 'warning');
+  if (!/^\d{10}$/.test(cedula)) return mostrarAlerta('La cédula debe tener 10 dígitos.', 'warning');
 
   const btn = document.getElementById('btnRegistro');
   btn.disabled = true;
@@ -64,7 +70,10 @@ async function crearCuenta() {
   try {
     const res  = await fetch(`${API}/auth/registro`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ nombre, apellido, correo, telefono, password })
+      body: JSON.stringify({
+        nombre, apellido, correo, telefono, password,
+        cedula, pregunta_secreta: pregunta, respuesta_secreta: respuesta,
+      })
     });
     const data = await res.json();
     if (res.ok && data.ok) {
@@ -78,6 +87,118 @@ async function crearCuenta() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Crear cuenta';
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+//  Recuperar contraseña (cédula + pregunta secreta)
+// ────────────────────────────────────────────────────────────────
+let recTokenTemporal = null;
+
+function abrirRecuperar(e) {
+  e.preventDefault();
+  document.getElementById('recuperarPaso1').style.display = '';
+  document.getElementById('recuperarPaso2').style.display = 'none';
+  document.getElementById('recuperarPaso3').style.display = 'none';
+  document.getElementById('recCorreo').value = '';
+  document.getElementById('recCedula').value = '';
+  document.getElementById('recRespuesta').value = '';
+  document.getElementById('recPasswordNueva').value = '';
+  document.getElementById('recPasswordConfirmar').value = '';
+  recTokenTemporal = null;
+  new bootstrap.Modal(document.getElementById('modalRecuperar')).show();
+}
+
+async function recuperarPedirPregunta() {
+  const correo = document.getElementById('recCorreo').value.trim();
+  const cedula = document.getElementById('recCedula').value.trim();
+  if (!correo || !cedula) return mostrarAlerta('Ingresa correo y cédula.', 'warning');
+
+  const btn = document.getElementById('btnRecPaso1');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Verificando…';
+
+  try {
+    const res  = await fetch(`${API}/auth/recuperar/pregunta`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ correo, cedula })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('recPreguntaTexto').textContent = data.pregunta_secreta;
+      document.getElementById('recuperarPaso1').style.display = 'none';
+      document.getElementById('recuperarPaso2').style.display = '';
+    } else {
+      mostrarAlerta(data.mensaje || 'No encontramos una cuenta con esos datos.', 'danger');
+    }
+  } catch(e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Continuar';
+  }
+}
+
+async function recuperarVerificarRespuesta() {
+  const correo    = document.getElementById('recCorreo').value.trim();
+  const cedula    = document.getElementById('recCedula').value.trim();
+  const respuesta = document.getElementById('recRespuesta').value.trim();
+  if (!respuesta) return mostrarAlerta('Escribe tu respuesta.', 'warning');
+
+  const btn = document.getElementById('btnRecPaso2');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Verificando…';
+
+  try {
+    const res  = await fetch(`${API}/auth/recuperar/verificar`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ correo, cedula, respuesta_secreta: respuesta })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      recTokenTemporal = data.token;
+      document.getElementById('recuperarPaso2').style.display = 'none';
+      document.getElementById('recuperarPaso3').style.display = '';
+    } else {
+      mostrarAlerta(data.mensaje || 'La respuesta no es correcta.', 'danger');
+    }
+  } catch(e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Verificar';
+  }
+}
+
+async function recuperarGuardarPassword() {
+  const nueva     = document.getElementById('recPasswordNueva').value;
+  const confirmar = document.getElementById('recPasswordConfirmar').value;
+
+  if (!nueva || nueva.length < 6) return mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', 'warning');
+  if (nueva !== confirmar) return mostrarAlerta('Las contraseñas no coinciden.', 'warning');
+  if (!recTokenTemporal) return mostrarAlerta('La verificación expiró, vuelve a intentarlo.', 'danger');
+
+  const btn = document.getElementById('btnRecPaso3');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Guardando…';
+
+  try {
+    const res  = await fetch(`${API}/auth/recuperar/reset`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: recTokenTemporal, password_nuevo: nueva })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Contraseña actualizada. Ya puedes iniciar sesión.', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('modalRecuperar')).hide();
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo actualizar la contraseña.', 'danger');
+    }
+  } catch(e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Guardar nueva contraseña';
   }
 }
 

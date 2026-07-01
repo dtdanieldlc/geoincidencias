@@ -20,9 +20,14 @@ class Usuario extends Authenticatable
         'telefono', 'saldo_incentivos', 'activo',
         'correo_verificado',
         'ultima_presencia_at', 'ultima_pagina',
+        'cedula', 'pregunta_secreta', 'respuesta_secreta',
+        'reset_token', 'reset_token_expira',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password', 'remember_token',
+        'respuesta_secreta', 'reset_token',
+    ];
 
     protected $casts = [
         'password'           => 'hashed',
@@ -30,6 +35,7 @@ class Usuario extends Authenticatable
         'activo'             => 'boolean',
         'correo_verificado'  => 'boolean',
         'ultima_presencia_at'=> 'datetime',
+        'reset_token_expira' => 'datetime',
         'created_at'         => 'datetime',
     ];
 
