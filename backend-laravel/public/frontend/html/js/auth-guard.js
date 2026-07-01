@@ -17,7 +17,7 @@ function exigirSesion() {
 function exigirAdmin() {
   exigirSesion();
   const u = getUsuario();
-  if (!u || u.rol !== 'admin') window.location.href = 'index.html';
+  if (!u || (u.rol !== 'admin' && u.rol !== 'superadmin')) window.location.href = 'index.html';
 }
 
 async function fetchAPI(url, opciones = {}) {
@@ -143,9 +143,9 @@ function inicializarBarraUsuario() {
   const nombreEl = document.getElementById('nombreUsuarioActual');
   if (nombreEl) nombreEl.textContent = u.nombre;
   const rolEl = document.getElementById('rolUsuarioActual');
-  if (rolEl) rolEl.textContent = u.rol === 'admin' ? 'Administrador' : 'Usuario';
+  if (rolEl) rolEl.textContent = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
 
-  if (u.rol !== 'admin') {
+  if (u.rol !== 'admin' && u.rol !== 'superadmin') {
     document.querySelectorAll('.solo-admin').forEach(el => el.style.display = 'none');
   }
 
