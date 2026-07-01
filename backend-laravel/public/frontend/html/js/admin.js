@@ -444,10 +444,15 @@ async function cargarUsuarios(pagina = 1) {
               onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
               <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
             </button>
-            <button class="btn-icon" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
+            <button class="btn-icon me-1" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
               onclick="cambiarRol(${u.id_usuario}, '${u.rol}')">
               <i class="bi bi-shield-${u.rol === 'admin' ? 'minus' : 'plus'}"></i>
             </button>
+            ${(esSuperAdminActual() && u.rol === 'admin') ? `
+            <button class="btn-icon" title="Editar permisos"
+              onclick="abrirModalPermisosUsuario(${u.id_usuario}, '${esc(u.nombre)} ${esc(u.apellido ?? '')}')">
+              <i class="bi bi-key"></i>
+            </button>` : ''}
           </td>
         </tr>
       `;
@@ -740,5 +745,128 @@ async function cargarMisSolicitudesPermisos() {
     `).join('');
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error al cargar solicitudes.</td></tr>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MODAL: Editar permisos de un admin directo desde la tabla
+   de Usuarios (solo visible/usable para superadmin)
+══════════════════════════════════════════════════════════ */
+function esSuperAdminActual() {
+  const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
+  return u.rol === 'superadmin';
+}
+
+let _modalPermisosUsuario = null;
+let _idUsuarioPermisosModal = null;
+
+function _initModalPermisosUsuario() {
+  if (document.getElementById('modalPermisosUsuario')) return;
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal fade" id="modalPermisosUsuario" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0" style="background:#161b22;">
+          <div class="modal-header border-secondary">
+            <h6 class="modal-title"><i class="bi bi-key me-2"></i>Permisos de <span id="modalPermisosNombre"></span></h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <table style="width:100%; margin-bottom:14px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;" class="small text-secondary">Módulo</th>
+                  <th class="text-center small text-secondary">Ver</th>
+                  <th class="text-center small text-secondary">Editar</th>
+                  <th class="text-center small text-secondary">Eliminar</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyModalPermisosUsuario"></tbody>
+            </table>
+            <div id="msgModalPermisosUsuario" class="alert py-2 small mt-2" style="display:none;"></div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-danger btn-sm" id="btnGuardarPermisosModal">
+              <i class="bi bi-check2 me-1"></i>Guardar permisos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div.firstElementChild);
+
+  document.getElementById('btnGuardarPermisosModal').addEventListener('click', guardarPermisosModal);
+  _modalPermisosUsuario = new bootstrap.Modal(document.getElementById('modalPermisosUsuario'));
+}
+
+async function abrirModalPermisosUsuario(idUsuario, nombre) {
+  _initModalPermisosUsuario();
+  _idUsuarioPermisosModal = idUsuario;
+  document.getElementById('modalPermisosNombre').textContent = nombre;
+
+  const tbody = document.getElementById('tbodyModalPermisosUsuario');
+  tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3" style="color:var(--text-muted)">Cargando…</td></tr>`;
+  _modalPermisosUsuario.show();
+
+  try {
+    const r = await fetch(`${API}/superadmin/permisos/${idUsuario}`, { headers: headers() });
+    const data = await r.json();
+    const permisos = data.permisos ?? [];
+
+    tbody.innerHTML = MODULOS_DISPONIBLES.map(m => {
+      const p = permisos.find(x => x.modulo === m.id) || {};
+      return `
+        <tr>
+          <td class="small">${m.label}</td>
+          <td class="text-center"><input type="checkbox" class="form-check-input mpv" data-modulo="${m.id}" ${p.puede_ver ? 'checked' : ''}></td>
+          <td class="text-center"><input type="checkbox" class="form-check-input mpe" data-modulo="${m.id}" ${p.puede_editar ? 'checked' : ''}></td>
+          <td class="text-center"><input type="checkbox" class="form-check-input mpd" data-modulo="${m.id}" ${p.puede_eliminar ? 'checked' : ''}></td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-danger">Error al cargar permisos.</td></tr>`;
+  }
+}
+
+async function guardarPermisosModal() {
+  if (!_idUsuarioPermisosModal) return;
+  const msgEl = document.getElementById('msgModalPermisosUsuario');
+  const btn = document.getElementById('btnGuardarPermisosModal');
+
+  const permisos = MODULOS_DISPONIBLES.map(m => ({
+    modulo: m.id,
+    puede_ver:      document.querySelector(`.mpv[data-modulo="${m.id}"]`)?.checked || false,
+    puede_editar:   document.querySelector(`.mpe[data-modulo="${m.id}"]`)?.checked || false,
+    puede_eliminar: document.querySelector(`.mpd[data-modulo="${m.id}"]`)?.checked || false,
+  }));
+
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/superadmin/permisos/${_idUsuarioPermisosModal}`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ permisos }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      msgEl.className = 'alert alert-success py-2 small mt-2';
+      msgEl.textContent = data.mensaje;
+      msgEl.style.display = 'block';
+      setTimeout(() => { _modalPermisosUsuario.hide(); }, 900);
+    } else {
+      msgEl.className = 'alert alert-danger py-2 small mt-2';
+      msgEl.textContent = data.mensaje || 'No se pudo guardar.';
+      msgEl.style.display = 'block';
+    }
+  } catch (e) {
+    msgEl.className = 'alert alert-danger py-2 small mt-2';
+    msgEl.textContent = 'Error de conexión.';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
   }
 }
