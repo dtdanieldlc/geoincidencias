@@ -260,7 +260,29 @@ class AuthController extends Controller
     // ──────────────────────────────────────────────────────────────
     //  GET /api/auth/perfil
     // ──────────────────────────────────────────────────────────────
-        public function actualizarPerfil(Request $request)
+    public function perfil(Request $request)
+    {
+        $usuario = $request->user();
+
+        return response()->json([
+            'id_usuario'        => $usuario->id_usuario,
+            'nombre'            => $usuario->nombre,
+            'apellido'          => $usuario->apellido,
+            'correo'            => $usuario->correo,
+            'telefono'          => $usuario->telefono,
+            'cedula'            => $usuario->cedula,
+            'rol'               => $usuario->rol,
+            'saldo_incentivos'  => $usuario->saldo_incentivos,
+            'pregunta_secreta'  => $usuario->pregunta_secreta,
+            'foto_url'          => $usuario->foto_url,
+            'created_at'        => $usuario->created_at,
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  PUT /api/auth/perfil
+    // ──────────────────────────────────────────────────────────────
+    public function actualizarPerfil(Request $request)
     {
         $usuario = $request->user();
 
