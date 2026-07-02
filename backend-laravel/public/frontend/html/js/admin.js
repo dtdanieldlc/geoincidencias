@@ -446,7 +446,7 @@ async function cargarUsuarios(pagina = 1) {
             </button>
             ${esSuperAdminActual() ? `
             <button class="btn-icon me-1" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
-              onclick="cambiarRol(${u.id_usuario}, '${u.rol}')">
+              onclick="cambiarRol(${u.id_usuario}, '${u.rol}', '${esc(u.nombre)} ${esc(u.apellido ?? '')}')">
               <i class="bi bi-shield-${u.rol === 'admin' ? 'minus' : 'plus'}"></i>
             </button>` : ''}
             ${(esSuperAdminActual() && u.rol === 'admin') ? `
@@ -517,16 +517,170 @@ async function toggleActivo(id, activo) {
   if (d.ok) cargarUsuarios(uPagActual);
 }
 
-async function cambiarRol(id, rolActual) {
-  const nuevoRol = rolActual === 'admin' ? 'usuario' : 'admin';
-  if (!confirm(`¿Cambiar rol a "${nuevoRol}"?`)) return;
+function cambiarRol(id, rolActual, nombre) {
+  if (rolActual === 'admin') {
+    _abrirModalDegradar(id, nombre);
+  } else {
+    _abrirModalPromover(id, nombre);
+  }
+}
 
-  const r = await fetch(`${API}/admin/usuarios/${id}/rol`, {
-    method: 'PUT', headers: headers(), body: JSON.stringify({ rol: nuevoRol }),
+/* ── Degradar admin → usuario (confirmación simple, sin permisos) ── */
+function _initModalDegradar() {
+  if (document.getElementById('modalDegradarRol')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal fade" id="modalDegradarRol" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content border-0" style="background:#161b22;">
+          <div class="modal-header border-secondary">
+            <h6 class="modal-title"><i class="bi bi-shield-minus me-2"></i>Quitar rol de administrador</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-white mb-0">¿Quitar el rol de administrador a <strong id="degradarNombre"></strong>? Pasará a rol <strong>Usuario</strong> y perderá acceso al panel de administración (sus permisos guardados quedan sin efecto, no se borran).</p>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-danger btn-sm" id="btnConfirmarDegradar">Quitar rol de admin</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(div.firstElementChild);
+}
+
+let _modalDegradar = null;
+let _idDegradarActual = null;
+
+function _abrirModalDegradar(id, nombre) {
+  _initModalDegradar();
+  _idDegradarActual = id;
+  document.getElementById('degradarNombre').textContent = nombre || `#${id}`;
+  document.getElementById('btnConfirmarDegradar').onclick = async () => {
+    const r = await fetch(`${API}/admin/usuarios/${id}/rol`, {
+      method: 'PUT', headers: headers(), body: JSON.stringify({ rol: 'usuario' }),
+    });
+    const d = await r.json();
+    showToast(d.mensaje ?? 'Rol actualizado', d.ok ? 'success' : 'error');
+    if (d.ok) { cargarUsuarios(uPagActual); _modalDegradar.hide(); }
+  };
+  if (!_modalDegradar) _modalDegradar = new bootstrap.Modal(document.getElementById('modalDegradarRol'));
+  _modalDegradar.show();
+}
+
+/* ── Promover usuario → admin CON selección de permisos iniciales ── */
+function _initModalPromover() {
+  if (document.getElementById('modalPromoverAdmin')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal fade" id="modalPromoverAdmin" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0" style="background:#161b22;">
+          <div class="modal-header border-secondary">
+            <h6 class="modal-title"><i class="bi bi-shield-plus me-2"></i>Convertir en administrador a <span id="promoverNombre"></span></h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-secondary mb-3">Elige qué puede ver, editar o eliminar este nuevo admin. Puedes marcar "Todo" para darle acceso completo, o dejar módulos sin marcar para restringirlos.</p>
+            <div class="mb-2">
+              <button type="button" class="btn btn-outline-light btn-sm" id="btnMarcarTodoPromover"><i class="bi bi-check2-all me-1"></i>Marcar todo (ver+editar+eliminar)</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiarPromover">Limpiar todo</button>
+            </div>
+            <table style="width:100%; margin-bottom:8px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;" class="small text-secondary">Módulo</th>
+                  <th class="text-center small text-secondary">Ver</th>
+                  <th class="text-center small text-secondary">Editar</th>
+                  <th class="text-center small text-secondary">Eliminar</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyModulosPromover"></tbody>
+            </table>
+            <div id="msgPromoverAdmin" class="alert py-2 small mt-2" style="display:none;"></div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-danger btn-sm" id="btnConfirmarPromover"><i class="bi bi-shield-check me-1"></i>Convertir en admin</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(div.firstElementChild);
+
+  document.getElementById('btnMarcarTodoPromover').addEventListener('click', () => {
+    document.querySelectorAll('#tbodyModulosPromover input[type="checkbox"]').forEach(c => c.checked = true);
   });
-  const d = await r.json();
-  showToast(d.mensaje ?? 'Rol actualizado', d.ok ? 'success' : 'error');
-  if (d.ok) cargarUsuarios(uPagActual);
+  document.getElementById('btnLimpiarPromover').addEventListener('click', () => {
+    document.querySelectorAll('#tbodyModulosPromover input[type="checkbox"]').forEach(c => c.checked = false);
+  });
+}
+
+let _modalPromover = null;
+let _idPromoverActual = null;
+
+function _abrirModalPromover(id, nombre) {
+  _initModalPromover();
+  _idPromoverActual = id;
+  document.getElementById('promoverNombre').textContent = nombre || `#${id}`;
+
+  const tbody = document.getElementById('tbodyModulosPromover');
+  tbody.innerHTML = MODULOS_DISPONIBLES.map(m => `
+    <tr>
+      <td class="small">${m.label}</td>
+      <td class="text-center"><input type="checkbox" class="form-check-input ppv" data-modulo="${m.id}"></td>
+      <td class="text-center"><input type="checkbox" class="form-check-input ppe" data-modulo="${m.id}"></td>
+      <td class="text-center"><input type="checkbox" class="form-check-input ppd" data-modulo="${m.id}"></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('btnConfirmarPromover').onclick = _confirmarPromover;
+
+  if (!_modalPromover) _modalPromover = new bootstrap.Modal(document.getElementById('modalPromoverAdmin'));
+  _modalPromover.show();
+}
+
+async function _confirmarPromover() {
+  const id = _idPromoverActual;
+  const msgEl = document.getElementById('msgPromoverAdmin');
+  const btn = document.getElementById('btnConfirmarPromover');
+  btn.disabled = true;
+
+  const permisos = MODULOS_DISPONIBLES.map(m => ({
+    modulo: m.id,
+    puede_ver:      document.querySelector(`.ppv[data-modulo="${m.id}"]`)?.checked || false,
+    puede_editar:   document.querySelector(`.ppe[data-modulo="${m.id}"]`)?.checked || false,
+    puede_eliminar: document.querySelector(`.ppd[data-modulo="${m.id}"]`)?.checked || false,
+  }));
+
+  try {
+    const rRol = await fetch(`${API}/admin/usuarios/${id}/rol`, {
+      method: 'PUT', headers: headers(), body: JSON.stringify({ rol: 'admin' }),
+    });
+    const dRol = await rRol.json();
+    if (!dRol.ok) {
+      msgEl.className = 'alert alert-danger py-2 small mt-2';
+      msgEl.textContent = dRol.mensaje || 'No se pudo cambiar el rol.';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    const rPerm = await fetch(`${API}/superadmin/permisos/${id}`, {
+      method: 'PUT', headers: headers(), body: JSON.stringify({ permisos }),
+    });
+    const dPerm = await rPerm.json();
+
+    showToast(`${dRol.mensaje} ${dPerm.ok ? '· Permisos asignados.' : '(revisa los permisos manualmente)'}`, 'success');
+    _modalPromover.hide();
+    cargarUsuarios(uPagActual);
+  } catch (e) {
+    msgEl.className = 'alert alert-danger py-2 small mt-2';
+    msgEl.textContent = 'Error de conexión.';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -647,11 +801,11 @@ async function cargarUsuariosObjetivoPermisos() {
   const select = document.getElementById('selectUsuarioObjetivoPermiso');
   if (!select) return;
   try {
-    const r = await fetch(`${API}/admin/usuarios?rol=admin`, { headers: headers() });
+    const r = await fetch(`${API}/admin/usuarios?por_pagina=100`, { headers: headers() });
     const data = await r.json();
-    const usuarios = data.data?.data ?? data.data ?? [];
+    const usuarios = (data.data?.data ?? data.data ?? []).filter(u => u.rol !== 'superadmin');
     select.innerHTML = '<option value="">Selecciona un usuario…</option>' +
-      usuarios.map(u => `<option value="${u.id_usuario}">${u.nombre} ${u.apellido || ''} — ${u.correo}</option>`).join('');
+      usuarios.map(u => `<option value="${u.id_usuario}">${u.nombre} ${u.apellido || ''} — ${u.correo} (${u.rol === 'admin' ? 'Admin' : 'Usuario'})</option>`).join('');
   } catch (e) {
     select.innerHTML = '<option value="">Error al cargar usuarios</option>';
   }
