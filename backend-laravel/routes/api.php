@@ -35,26 +35,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
-    Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion']);
-    Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv']);
-    Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar']);
-    Route::put('incidencias/{id}/rechazar',           [IncidenciasController::class, 'rechazar']);
+    Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware('solo.admin');
+    Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware('solo.admin');
+    Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
+    Route::put('incidencias/{id}/rechazar',           [IncidenciasController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::get('incidencias/mis-reportes',            [IncidenciasController::class, 'misReportes']);
     Route::get('incidencias/{id}/comentarios',        [IncidenciasController::class, 'comentarios']);
     Route::post('incidencias/{id}/comentarios',       [IncidenciasController::class, 'agregarComentario']);
     Route::get('incidencias/{id}/fotos',              [IncidenciasController::class, 'fotos']);
     Route::post('incidencias/{id}/fotos',             [IncidenciasController::class, 'agregarFoto']);
     Route::delete('incidencias/{id}/fotos/{idFoto}',  [IncidenciasController::class, 'eliminarFoto']);
-    Route::apiResource('incidencias', IncidenciasController::class);
+    Route::apiResource('incidencias', IncidenciasController::class)->except(['destroy', 'update']);
+    Route::match(['put', 'patch'], 'incidencias/{id}', [IncidenciasController::class, 'update'])
+        ->middleware(['solo.admin', 'permiso:incidencias,editar']);
 
     // ── Apoyos ───────────────────────────────────────────────────
     Route::post('apoyos',              [ApoyosController::class, 'store']);
     Route::get('apoyos/mis-apoyos',   [ApoyosController::class, 'misApoyos']);
     Route::get('apoyos/mi-saldo',     [ApoyosController::class, 'miSaldo']);
-    Route::get('apoyos/pendientes',   [ApoyosController::class, 'pendientes'])->middleware('solo.admin');
-    Route::get('apoyos',              [ApoyosController::class, 'index'])->middleware('solo.admin');
-    Route::put('apoyos/{id}/aprobar', [ApoyosController::class, 'aprobar'])->middleware('solo.admin');
-    Route::put('apoyos/{id}/rechazar',[ApoyosController::class, 'rechazar'])->middleware('solo.admin');
+    Route::get('apoyos/pendientes',   [ApoyosController::class, 'pendientes'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
+    Route::get('apoyos',              [ApoyosController::class, 'index'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
+    Route::put('apoyos/{id}/aprobar', [ApoyosController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
+    Route::put('apoyos/{id}/rechazar',[ApoyosController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
 
     // ── Catálogos ────────────────────────────────────────────────
     Route::get('catalogos/tipos',             [CatalogosController::class, 'tipos']);
@@ -94,20 +96,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Admin: solicitar permisos ─────────────────────────────────
     Route::middleware('solo.admin')->prefix('admin')->group(function () {
-        Route::get('usuarios',              [AdminUsuariosController::class, 'index']);
-        Route::get('usuarios/estadisticas', [AdminUsuariosController::class, 'estadisticas']);
-        Route::get('usuarios/{id}',         [AdminUsuariosController::class, 'show']);
-        Route::put('usuarios/{id}/activo',  [AdminUsuariosController::class, 'toggleActivo']);
+        Route::get('usuarios',              [AdminUsuariosController::class, 'index'])->middleware('permiso:usuarios,ver');
+        Route::get('usuarios/estadisticas', [AdminUsuariosController::class, 'estadisticas'])->middleware('permiso:usuarios,ver');
+        Route::get('usuarios/{id}',         [AdminUsuariosController::class, 'show'])->middleware('permiso:usuarios,ver');
+        Route::put('usuarios/{id}/activo',  [AdminUsuariosController::class, 'toggleActivo'])->middleware('permiso:usuarios,editar');
         Route::put('usuarios/{id}/rol',     [AdminUsuariosController::class, 'cambiarRol']);
         Route::put('usuarios/{id}/presencia', [AdminUsuariosController::class, 'actualizarPresencia']);
 
-        Route::delete('incidencias/{id}',  [IncidenciasController::class, 'destroy']);
-        Route::get('apoyos',               [ApoyosController::class, 'index']);
-        Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes']);
-        Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar']);
-        Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar']);
-        Route::get('historial',            [HistorialController::class, 'index']);
-        Route::get('historial/acciones',   [HistorialController::class, 'acciones']);
+        Route::delete('incidencias/{id}',  [IncidenciasController::class, 'destroy'])->middleware('permiso:incidencias,eliminar');
+        Route::get('apoyos',               [ApoyosController::class, 'index'])->middleware('permiso:incentivos,ver');
+        Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes'])->middleware('permiso:incentivos,ver');
+        Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar'])->middleware('permiso:incentivos,editar');
+        Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar'])->middleware('permiso:incentivos,editar');
+        Route::get('historial',            [HistorialController::class, 'index'])->middleware('permiso:historial,ver');
+        Route::get('historial/acciones',   [HistorialController::class, 'acciones'])->middleware('permiso:historial,ver');
 
         // Solicitudes de permisos (admin solicita al superadmin)
         Route::get('solicitudes-permisos',  [PermisosController::class, 'misSolicitudes']);

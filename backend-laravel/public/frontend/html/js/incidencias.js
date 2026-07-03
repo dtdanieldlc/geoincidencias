@@ -91,7 +91,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
     return;
   }
   const usuarioActual = getUsuario();
-  const esAdmin = usuarioActual.rol === 'admin';
+  const esAdmin = usuarioActual.rol === 'admin' || usuarioActual.rol === 'superadmin';
   const html = datos.map((inc,i) => {
     const monto = incentivosPorPrioridad[inc.prioridad] || 0;
     const yaApoya = misApoyosSet.has(inc.id_incidencia);
