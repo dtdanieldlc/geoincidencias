@@ -19,8 +19,14 @@ const COLOR_PRIO = {
 let mapa;
 function iniciarMapa() {
   mapa = L.map('mapa', { zoomControl: true }).setView([-2.2200, -80.9100], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri', maxZoom: 19
+  }).addTo(mapa);
+
+  // Capa de etiquetas (nombres de calles/lugares) sobre la imagen satelital
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '', maxZoom: 19
   }).addTo(mapa);
 }
 
