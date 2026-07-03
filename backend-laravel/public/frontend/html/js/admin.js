@@ -927,28 +927,40 @@ function _initModalPermisosUsuario() {
   div.innerHTML = `
     <div class="modal fade" id="modalPermisosUsuario" tabindex="-1">
       <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0" style="background:#161b22;">
-          <div class="modal-header border-secondary">
-            <h6 class="modal-title"><i class="bi bi-key me-2"></i>Permisos de <span id="modalPermisosNombre"></span></h6>
+        <div class="modal-content border-0" style="background:#161b22; border:1px solid rgba(139,148,158,.25) !important;">
+          <div class="modal-header" style="border-bottom:1px solid rgba(139,148,158,.25);">
+            <h6 class="modal-title text-white mb-0"><i class="bi bi-key me-2" style="color:#d291ff;"></i>Permisos de <span id="modalPermisosNombre" class="fw-bold"></span></h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body">
-            <table style="width:100%; margin-bottom:14px;">
-              <thead>
-                <tr>
-                  <th style="text-align:left;" class="small text-secondary">Módulo</th>
-                  <th class="text-center small text-secondary">Ver</th>
-                  <th class="text-center small text-secondary">Editar</th>
-                  <th class="text-center small text-secondary">Eliminar</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyModalPermisosUsuario"></tbody>
-            </table>
-            <div id="msgModalPermisosUsuario" class="alert py-2 small mt-2" style="display:none;"></div>
+          <div class="modal-body" style="padding:20px 24px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <p class="small text-secondary mb-0">Marca lo que este admin puede ver, editar o eliminar en cada módulo.</p>
+              <div>
+                <button type="button" class="btn btn-outline-light btn-sm" id="btnMarcarTodoModalPermisos"><i class="bi bi-check2-all me-1"></i>Todo</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiarModalPermisos">Limpiar</button>
+              </div>
+            </div>
+            <div id="alertaSinPermisosModal" class="alert py-2 small mb-3" style="display:none; background:#1f2937; border:1px solid rgba(139,148,158,.25); color:#e3b341;">
+              <i class="bi bi-info-circle me-1"></i>Este usuario todavía no tiene ningún permiso asignado.
+            </div>
+            <div style="background:#0d1117; border:1px solid rgba(139,148,158,.25); border-radius:10px; overflow:hidden;">
+              <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#1f2937;">
+                    <th style="text-align:left; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Módulo</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Ver</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Editar</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Eliminar</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyModalPermisosUsuario"></tbody>
+              </table>
+            </div>
+            <div id="msgModalPermisosUsuario" class="alert py-2 small mt-3" style="display:none;"></div>
           </div>
-          <div class="modal-footer border-secondary">
+          <div class="modal-footer" style="border-top:1px solid rgba(139,148,158,.25);">
             <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-danger btn-sm" id="btnGuardarPermisosModal">
+            <button class="btn btn-danger btn-sm" id="btnGuardarPermisosModal" style="background:#5c2e5c; border-color:#5c2e5c;">
               <i class="bi bi-check2 me-1"></i>Guardar permisos
             </button>
           </div>
@@ -959,6 +971,12 @@ function _initModalPermisosUsuario() {
   document.body.appendChild(div.firstElementChild);
 
   document.getElementById('btnGuardarPermisosModal').addEventListener('click', guardarPermisosModal);
+  document.getElementById('btnMarcarTodoModalPermisos').addEventListener('click', () => {
+    document.querySelectorAll('#tbodyModalPermisosUsuario input[type="checkbox"]').forEach(c => c.checked = true);
+  });
+  document.getElementById('btnLimpiarModalPermisos').addEventListener('click', () => {
+    document.querySelectorAll('#tbodyModalPermisosUsuario input[type="checkbox"]').forEach(c => c.checked = false);
+  });
   _modalPermisosUsuario = new bootstrap.Modal(document.getElementById('modalPermisosUsuario'));
 }
 
@@ -975,15 +993,18 @@ async function abrirModalPermisosUsuario(idUsuario, nombre) {
     const r = await fetch(`${API}/superadmin/permisos/${idUsuario}`, { headers: headers() });
     const data = await r.json();
     const permisos = data.permisos ?? [];
+    const tieneAlgunPermiso = permisos.some(p => p.puede_ver || p.puede_editar || p.puede_eliminar);
+    document.getElementById('alertaSinPermisosModal').style.display = tieneAlgunPermiso ? 'none' : 'block';
 
-    tbody.innerHTML = MODULOS_DISPONIBLES.map(m => {
+    tbody.innerHTML = MODULOS_DISPONIBLES.map((m, i) => {
       const p = permisos.find(x => x.modulo === m.id) || {};
+      const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
       return `
-        <tr>
-          <td class="small">${m.label}</td>
-          <td class="text-center"><input type="checkbox" class="form-check-input mpv" data-modulo="${m.id}" ${p.puede_ver ? 'checked' : ''}></td>
-          <td class="text-center"><input type="checkbox" class="form-check-input mpe" data-modulo="${m.id}" ${p.puede_editar ? 'checked' : ''}></td>
-          <td class="text-center"><input type="checkbox" class="form-check-input mpd" data-modulo="${m.id}" ${p.puede_eliminar ? 'checked' : ''}></td>
+        <tr style="background:${bg}; border-top:1px solid rgba(139,148,158,.12);">
+          <td style="padding:10px 16px; color:#e6edf3; font-size:.85rem;">${m.label}</td>
+          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpv" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_ver ? 'checked' : ''}></td>
+          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpe" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_editar ? 'checked' : ''}></td>
+          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpd" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_eliminar ? 'checked' : ''}></td>
         </tr>
       `;
     }).join('');
