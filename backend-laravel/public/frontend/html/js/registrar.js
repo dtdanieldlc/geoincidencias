@@ -8,8 +8,13 @@ let _sucursalesCache = [];
 function iniciarMapa() {
   mapaReg = L.map('mapaRegistrar', { zoomControl: true, dragging: true, scrollWheelZoom: false })
     .setView([-2.2200, -80.9100], 11); // vista general de la península de Santa Elena
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri', maxZoom: 19
+  }).addTo(mapaReg);
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '', maxZoom: 19
   }).addTo(mapaReg);
 }
 
