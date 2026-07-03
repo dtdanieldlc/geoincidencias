@@ -30,11 +30,25 @@
 
     <!-- COLUMNA IZQUIERDA - Mapa + Ubicación Interna -->
     <div class="col-lg-7">
+      <!-- Sucursal -->
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#161b22;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-shop text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Sucursal</span>
+        </div>
+        <div class="p-3">
+          <label class="form-label text-secondary small text-uppercase">¿En qué sucursal ocurrió? <span class="text-danger">*</span></label>
+          <select id="id_sucursal" class="form-select border-secondary text-white" style="background:#0d1117;">
+            <option value="">Seleccionar sucursal…</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Mapa -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#161b22;">
         <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
           <i class="bi bi-pin-map text-danger"></i>
-          <span class="small text-danger text-uppercase fw-semibold">Ubicación georreferenciada</span>
+          <span class="small text-danger text-uppercase fw-semibold">Ubicación de la sucursal</span>
         </div>
         <div class="p-3">
           <div id="mapaRegistrar" class="mb-3"></div>
@@ -48,7 +62,7 @@
               <input type="text" id="longitud" class="form-control form-control-sm border-secondary text-white" style="background:#0d1117;" readonly/>
             </div>
           </div>
-          <small class="text-secondary mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Haz clic en el mapa para marcar la ubicación exacta</small>
+          <small class="text-secondary mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Se marca automáticamente al elegir la sucursal.</small>
         </div>
       </div>
 
@@ -60,8 +74,8 @@
         </div>
         <div class="p-3">
           <label class="form-label text-secondary small text-uppercase">Zona / Área <span class="text-danger">*</span></label>
-          <select id="id_zona" class="form-select border-secondary text-white" style="background:#0d1117;">
-            <option value="">Seleccionar zona…</option>
+          <select id="id_zona" class="form-select border-secondary text-white" style="background:#0d1117;" disabled>
+            <option value="">Primero selecciona una sucursal…</option>
           </select>
         </div>
       </div>

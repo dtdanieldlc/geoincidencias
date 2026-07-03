@@ -53,7 +53,7 @@
     }
     #gi-sidebar .sb-brand-icon {
       background: var(--accent); border-radius: 8px;
-      width: 32px; height: 32px;
+      width: 32px; height: 32px; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -243,7 +243,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 
   return `
     <a class="sb-brand" href="index.html">
-      <div class="sb-brand-icon"><i class="bi bi-geo-alt-fill text-white"></i></div>
+      <div class="sb-brand-icon"><img src="/logo_Domus_Center.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><i class="bi bi-geo-alt-fill text-white" style="display:none;"></i></div>
       <div>
         <div class="sb-brand-name">GeoIncidencias</div>
         ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:#3d1f3d;color:#d291ff;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}

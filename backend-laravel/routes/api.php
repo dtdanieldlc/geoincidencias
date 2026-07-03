@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('catalogos/subtipos/{id_tipo}', [CatalogosController::class, 'subtipos']);
     Route::get('catalogos/estados',           [CatalogosController::class, 'estados']);
     Route::get('catalogos/zonas',             [CatalogosController::class, 'zonas']);
+    Route::get('catalogos/sucursales',        [CatalogosController::class, 'sucursales']);
     Route::get('catalogos/usuarios',          [CatalogosController::class, 'usuarios']);
     Route::get('catalogos/incentivos',        [CatalogosController::class, 'incentivos']);
 
@@ -69,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/por-tipo',   [DashboardController::class, 'porTipo']);
     Route::get('dashboard/por-estado', [DashboardController::class, 'porEstado']);
     Route::get('dashboard/por-zona',   [DashboardController::class, 'porZona']);
+    Route::get('dashboard/por-sucursal', [DashboardController::class, 'porSucursal']);
     Route::get('dashboard/ultimas',    [DashboardController::class, 'ultimas']);
 
     // ── Historial & Notificaciones ───────────────────────────────

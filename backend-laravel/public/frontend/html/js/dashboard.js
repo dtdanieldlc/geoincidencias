@@ -18,10 +18,51 @@ const COLOR_PRIO = {
 // ── Mapa ──
 let mapa;
 function iniciarMapa() {
-  mapa = L.map('mapa', { zoomControl: true }).setView([-2.9001, -79.0059], 13);
+  mapa = L.map('mapa', { zoomControl: true }).setView([-2.2200, -80.9100], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO', maxZoom: 19
   }).addTo(mapa);
+}
+
+// ── Pines fijos de las 4 sucursales, con conteo de incidencias ──
+async function cargarSucursalesEnMapa() {
+  try {
+    const r = await fetchAPI(`${API}/dashboard/por-sucursal`);
+    const datos = await r.json();
+    if (!datos.length) return;
+
+    const bounds = [];
+    datos.forEach(s => {
+      if (!s.latitud || !s.longitud) return;
+      bounds.push([s.latitud, s.longitud]);
+
+      const abiertas = Number(s.abiertas || 0);
+      const colorPin = abiertas > 0 ? '#ef4444' : '#22c55e';
+
+      const icono = L.divIcon({
+        className: '',
+        html: `
+          <div style="position:relative; width:34px; height:34px;">
+            <div style="width:34px;height:34px;border-radius:50% 50% 50% 0;background:${colorPin};transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-shop" style="transform:rotate(45deg); color:#fff; font-size:14px; margin:-2px 0 0 -2px;"></i>
+            </div>
+            ${abiertas > 0 ? `<div style="position:absolute; top:-6px; right:-6px; background:#fff; color:${colorPin}; border-radius:50%; width:18px; height:18px; font-size:.65rem; font-weight:700; display:flex; align-items:center; justify-content:center; border:1px solid ${colorPin};">${abiertas}</div>` : ''}
+          </div>`,
+        iconSize: [34, 34], iconAnchor: [17, 34],
+      });
+
+      L.marker([s.latitud, s.longitud], { icon: icono, zIndexOffset: 1000 })
+        .addTo(mapa)
+        .bindPopup(`
+          <div style="min-width:170px;">
+            <strong>${s.sucursal}</strong><br/>
+            <span style="color:#94a3b8;">${s.total} incidencia${s.total == 1 ? '' : 's'} total${s.total == 1 ? '' : 'es'}</span><br/>
+            <span style="color:${colorPin};">● ${abiertas} abierta${abiertas == 1 ? '' : 's'}</span>
+          </div>`);
+    });
+
+    if (bounds.length) mapa.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+  } catch (e) { console.error('Error sucursales en mapa:', e); }
 }
 
 function badgeEstado(estado) {
@@ -52,6 +93,14 @@ async function cargarResumen() {
 }
 
 // ── Marcadores en el mapa ──
+function _jitter(seed) {
+  // Pequeño desplazamiento determinístico (según el id) para que los puntos
+  // de una misma sucursal no queden apilados exactamente en el mismo pixel.
+  const x = Math.sin(seed) * 10000;
+  const frac = x - Math.floor(x);
+  return (frac - 0.5) * 0.006; // ~± 300m
+}
+
 async function cargarMarcadores() {
   try {
     const r    = await fetchAPI(`${API}/incidencias/mapa`);
@@ -59,12 +108,14 @@ async function cargarMarcadores() {
     datos.forEach(inc => {
       if (!inc.latitud || !inc.longitud) return;
       const c = COLOR_ESTADO[inc.estado] || { borde:'#94a3b8' };
+      const lat = Number(inc.latitud) + _jitter(inc.id_incidencia || Math.random() * 1000);
+      const lng = Number(inc.longitud) + _jitter((inc.id_incidencia || Math.random() * 1000) * 1.37);
       const ico = L.divIcon({
         className: '',
         html: `<div style="width:14px;height:14px;border-radius:50%;background:${c.borde};border:2px solid white;box-shadow:0 0 6px ${c.borde};"></div>`,
         iconSize: [14,14], iconAnchor: [7,7]
       });
-      L.marker([inc.latitud, inc.longitud], { icon: ico })
+      L.marker([lat, lng], { icon: ico })
         .addTo(mapa)
         .bindPopup(`
           <div style="min-width:180px;">
@@ -129,3 +180,4 @@ cargarResumen();
 cargarPorCategoria();
 cargarUltimas();
 cargarMarcadores();
+cargarSucursalesEnMapa();
