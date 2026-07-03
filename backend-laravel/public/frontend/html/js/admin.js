@@ -440,6 +440,9 @@ async function cargarUsuarios(pagina = 1) {
           <td style="color:var(--text-muted);font-size:.75rem;">${fmtDate(u.created_at)}</td>
           <td style="color:var(--text-muted);font-size:.75rem;">${fmtDatetime(u.ultima_presencia_at)}</td>
           <td>
+            ${u.rol === 'superadmin' ? `
+            <span class="small" style="color:var(--text-muted);"><i class="bi bi-shield-lock me-1"></i>No editable</span>
+            ` : `
             <button class="btn-icon me-1" title="${u.activo ? 'Desactivar' : 'Activar'}"
               onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
               <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
@@ -454,6 +457,7 @@ async function cargarUsuarios(pagina = 1) {
               onclick="abrirModalPermisosUsuario(${u.id_usuario}, '${esc(u.nombre)} ${esc(u.apellido ?? '')}')">
               <i class="bi bi-key"></i>
             </button>` : ''}
+            `}
           </td>
         </tr>
       `;
@@ -706,6 +710,7 @@ function fmtDatetime(d) {
 }
 
 function rolBadge(rol) {
+  if (rol === 'superadmin') return '<span class="badge-admin" style="background:#3d1f3d;color:#d291ff;">Superadmin</span>';
   return rol === 'admin'
     ? '<span class="badge-admin">Admin</span>'
     : '<span class="badge-usuario">Usuario</span>';
