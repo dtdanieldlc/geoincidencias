@@ -20,11 +20,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
     Route::post('/registro', [AuthController::class, 'registro']);
 
-    // Recuperación de contraseña (cédula + pregunta de seguridad, sin correo externo)
-    Route::post('/recuperar/pregunta',  [AuthController::class, 'preguntaSecreta']);
-    Route::post('/recuperar/verificar', [AuthController::class, 'verificarRecuperacion']);
-    Route::post('/recuperar/reset',     [AuthController::class, 'restablecerPassword']);
-
     // Rutas protegidas por token
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/perfil',           [AuthController::class, 'perfil']);
@@ -121,6 +116,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('solo.superadmin')->prefix('superadmin')->group(function () {
         Route::get('usuarios',                      [SuperAdminController::class, 'usuarios']);
         Route::get('usuarios/{id}/credenciales',    [SuperAdminController::class, 'credenciales']);
+        Route::put('usuarios/{id}/datos-completos', [SuperAdminController::class, 'actualizarDatosCompletos']);
         Route::put('usuarios/{id}/rol',             [SuperAdminController::class, 'cambiarRol']);
         Route::put('usuarios/{id}/password',        [SuperAdminController::class, 'resetPassword']);
         Route::delete('usuarios/{id}',              [SuperAdminController::class, 'eliminar']);

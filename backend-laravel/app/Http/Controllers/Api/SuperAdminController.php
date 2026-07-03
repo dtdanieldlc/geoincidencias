@@ -48,17 +48,59 @@ class SuperAdminController extends Controller
     ══════════════════════════════════════════════════════ */
     public function credenciales(int $id)
     {
-        $usuario = Usuario::select([
-            'id_usuario', 'nombre', 'apellido', 'correo', 'rol',
-            'activo', 'correo_verificado', 'created_at',
-            'ultima_presencia_at',
-        ])->findOrFail($id);
+        $usuario = Usuario::findOrFail($id);
+        $usuario->makeVisible(['respuesta_secreta']);
 
         return response()->json([
             'ok'   => true,
-            'data' => $usuario,
-            'nota' => 'Las contraseñas están encriptadas con bcrypt y no pueden revertirse. Para resetear, usa la función de cambio de contraseña.',
+            'data' => [
+                'id_usuario'            => $usuario->id_usuario,
+                'nombre'                => $usuario->nombre,
+                'apellido'              => $usuario->apellido,
+                'correo'                => $usuario->correo,
+                'telefono'              => $usuario->telefono,
+                'cedula'                => $usuario->cedula,
+                'rol'                   => $usuario->rol,
+                'activo'                => $usuario->activo,
+                'correo_verificado'     => $usuario->correo_verificado,
+                'saldo_incentivos'      => $usuario->saldo_incentivos,
+                'pregunta_secreta'      => $usuario->pregunta_secreta,
+                'respuesta_secreta'     => $usuario->respuesta_secreta,
+                'created_at'            => $usuario->created_at,
+                'ultima_presencia_at'   => $usuario->ultima_presencia_at,
+            ],
+            'nota' => 'La contraseña está encriptada con bcrypt y no puede revertirse. Usa el campo de abajo para asignar una nueva.',
         ]);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       PUT /api/superadmin/usuarios/{id}/datos-completos
+       SuperAdmin edita TODOS los datos de cualquier usuario,
+       incluida la pregunta/respuesta secreta (recuperación de cuenta)
+    ══════════════════════════════════════════════════════ */
+    public function actualizarDatosCompletos(Request $request, int $id)
+    {
+        $usuario = Usuario::findOrFail($id);
+
+        $data = $request->validate([
+            'nombre'            => 'required|string|max:100',
+            'apellido'          => 'nullable|string|max:100',
+            'correo'            => 'required|email|max:150|unique:usuarios,correo,' . $id . ',id_usuario',
+            'telefono'          => 'nullable|string|max:20',
+            'cedula'            => 'nullable|string|max:10',
+            'pregunta_secreta'  => 'nullable|string|max:255',
+            'respuesta_secreta' => 'nullable|string|max:255',
+        ]);
+
+        $usuario->update($data);
+
+        HistorialActividad::registrar(
+            $request->user()->id_usuario, null, 'superadmin_editar_datos',
+            "SuperAdmin editó los datos completos de {$usuario->nombre_completo} ({$usuario->correo})",
+            $request->ip()
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => 'Datos actualizados correctamente.']);
     }
 
     /* ══════════════════════════════════════════════════════

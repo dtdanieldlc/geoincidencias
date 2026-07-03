@@ -158,6 +158,7 @@
     <div class="admin-tabs">
       <button class="tab-btn active" id="tabSolicitudesBtn"><i class="bi bi-inbox"></i>Solicitudes pendientes</button>
       <button class="tab-btn" id="tabAsignarBtn"><i class="bi bi-sliders"></i>Asignar permisos directo</button>
+      <button class="tab-btn" id="tabDetalleBtn"><i class="bi bi-person-vcard"></i>Detalle de Usuarios</button>
     </div>
 
     <!-- ── Panel: Solicitudes pendientes ── -->
@@ -221,8 +222,102 @@
       </div>
     </div>
 
+    <!-- ── Panel: Detalle de Usuarios ── -->
+    <div id="panelDetalle" style="display:none">
+      <div class="mb-3">
+        <input type="text" id="buscarDetalleInput" class="form-control border-secondary text-white" style="background:#0d1117; max-width:340px;" placeholder="Buscar por nombre o correo…">
+      </div>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cédula verificada</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="tbodyDetalleUsuarios">
+            <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
+
+<!-- Modal: detalle completo / editar todo -->
+<div class="modal fade" id="modalDetalleUsuario" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0" style="background:#161b22; border:1px solid rgba(139,148,158,.25) !important;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(139,148,158,.25);">
+        <h6 class="modal-title text-white mb-0"><i class="bi bi-person-vcard me-2" style="color:#d291ff;"></i>Detalle completo — <span id="detalleNombreTitulo" class="fw-bold"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px;">
+        <input type="hidden" id="detalleIdUsuario"/>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Nombre</label>
+            <input type="text" id="detalleNombre" class="form-control border-secondary text-white" style="background:#0d1117;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Apellido</label>
+            <input type="text" id="detalleApellido" class="form-control border-secondary text-white" style="background:#0d1117;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Correo</label>
+            <input type="email" id="detalleCorreo" class="form-control border-secondary text-white" style="background:#0d1117;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Teléfono</label>
+            <input type="text" id="detalleTelefono" class="form-control border-secondary text-white" style="background:#0d1117;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Cédula</label>
+            <input type="text" id="detalleCedula" maxlength="10" class="form-control border-secondary text-white" style="background:#0d1117;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Rol / Registrado</label>
+            <input type="text" id="detalleInfoExtra" class="form-control border-secondary text-white" style="background:#0d1117;" disabled>
+          </div>
+        </div>
+
+        <div style="background:#0d1117; border:1px solid rgba(139,148,158,.25); border-radius:10px; padding:16px; margin-bottom:16px;">
+          <p class="small text-secondary mb-3"><i class="bi bi-shield-lock me-1" style="color:#e3b341;"></i>Pregunta de seguridad (para recuperación de cuenta)</p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Pregunta</label>
+              <input type="text" id="detallePregunta" class="form-control border-secondary text-white" style="background:#161b22;" placeholder="No configurada">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Respuesta</label>
+              <input type="text" id="detalleRespuesta" class="form-control border-secondary text-white" style="background:#161b22;" placeholder="No configurada">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#0d1117; border:1px solid rgba(139,148,158,.25); border-radius:10px; padding:16px;">
+          <p class="small text-secondary mb-3"><i class="bi bi-key me-1" style="color:#f85149;"></i>Restablecer contraseña (el usuario no puede acceder a su cuenta)</p>
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+              <label class="form-label text-secondary small text-uppercase">Nueva contraseña</label>
+              <input type="text" id="detalleNuevaPassword" class="form-control border-secondary text-white" style="background:#161b22;" placeholder="Mínimo 8 caracteres">
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-outline-danger btn-sm w-100" id="btnResetPasswordDetalle">Restablecer</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="msgDetalleUsuario" class="alert py-2 small mt-3" style="display:none;"></div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(139,148,158,.25);">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-danger btn-sm" id="btnGuardarDetalleUsuario" style="background:#5c2e5c; border-color:#5c2e5c;">
+          <i class="bi bi-check2 me-1"></i>Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: revisar solicitud -->
 <div class="modal fade" id="modalRevisarSolicitud" tabindex="-1">
