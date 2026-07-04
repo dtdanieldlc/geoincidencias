@@ -47,6 +47,10 @@ function aplicarVisibilidadPorPermisos() {
     if (puedeVer && !primerTabVisible) primerTabVisible = tab;
   });
 
+  // Historial no es un tab dentro de admin.html, es un link a otra página
+  const linkHistorial = document.getElementById('linkHistorial');
+  if (linkHistorial) linkHistorial.style.display = tienePermiso('historial', 'ver') ? '' : 'none';
+
   // Si la pestaña activa por defecto (incidencias) no tiene permiso de ver, cambia a la primera disponible
   if (!tienePermiso('incidencias', 'ver')) {
     cambiarTab(primerTabVisible || 'incidencias');
@@ -858,11 +862,10 @@ async function cargarUsuariosObjetivoPermisos() {
   const select = document.getElementById('selectUsuarioObjetivoPermiso');
   if (!select) return;
   try {
-    const r = await fetch(`${API}/admin/usuarios?por_pagina=100`, { headers: headers() });
-    const data = await r.json();
-    const usuarios = (data.data?.data ?? data.data ?? []).filter(u => u.rol !== 'superadmin');
+    const r = await fetch(`${API}/catalogos/usuarios`, { headers: headers() });
+    const usuarios = await r.json();
     select.innerHTML = '<option value="">Selecciona un usuario…</option>' +
-      usuarios.map(u => `<option value="${u.id_usuario}">${u.nombre} ${u.apellido || ''} — ${u.correo} (${u.rol === 'admin' ? 'Admin' : 'Usuario'})</option>`).join('');
+      usuarios.map(u => `<option value="${u.id}">${u.nombre} — ${u.correo} (${u.rol === 'admin' ? 'Admin' : 'Usuario'})</option>`).join('');
   } catch (e) {
     select.innerHTML = '<option value="">Error al cargar usuarios</option>';
   }

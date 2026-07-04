@@ -61,7 +61,8 @@ class CatalogosController extends Controller
     {
         return Usuario::where('activo', 1)
             ->orderBy('nombre')
-            ->selectRaw("id_usuario as id, CONCAT(nombre,' ',IFNULL(apellido,'')) as nombre")
+            ->where('rol', '!=', 'superadmin')
+            ->selectRaw("id_usuario as id, CONCAT(nombre,' ',IFNULL(apellido,'')) as nombre, correo, rol")
             ->get();
     }
 
