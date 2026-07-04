@@ -121,6 +121,18 @@ function cambiarTab(tab) {
     if (btn)   btn.classList.toggle('active', t === tab);
   });
 
+  // Mantener el link del sidebar sincronizado con la pestaña activa
+  const LINK_POR_TAB = {
+    incidencias: 'linkAdmin',
+    apoyos:      'linkApoyos',
+    usuarios:    'linkUsuarios',
+    permisos:    'linkPermisos',
+  };
+  Object.values(LINK_POR_TAB).forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  document.getElementById(LINK_POR_TAB[tab])?.classList.add('active');
+
   const titulo = document.getElementById('topbarTitle');
   if (titulo) titulo.textContent = TAB_TITLES[tab] ?? 'Administración';
 
