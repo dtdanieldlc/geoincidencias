@@ -262,7 +262,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 
   return `
     <a class="sb-brand" href="index.html">
-      <div class="sb-brand-icon"><img src="/logo_Domus_Center.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><i class="bi bi-geo-alt-fill text-white" style="display:none;"></i></div>
+      <div class="sb-brand-icon"><img src="../img/logo_domus_center.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><i class="bi bi-geo-alt-fill text-white" style="display:none;"></i></div>
       <div>
         <div class="sb-brand-name">DomusCenter</div>
         ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:rgba(168,85,247,.2);color:#d8b4fe;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
