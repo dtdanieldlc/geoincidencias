@@ -8,6 +8,52 @@ const token   = () => localStorage.getItem('gi_token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
 /* ══════════════════════════════════════════════════════════
+   PERMISOS REALES DEL ADMIN — se cargan una vez al iniciar
+   y controlan qué pestañas/botones aparecen de verdad
+══════════════════════════════════════════════════════════ */
+let misPermisosAdmin = {};
+
+async function cargarMisPermisosAdmin() {
+  try {
+    const r = await fetch(`${API}/mis-permisos`, { headers: headers() });
+    const data = await r.json();
+    misPermisosAdmin = data.permisos ?? {};
+  } catch (e) {
+    misPermisosAdmin = {};
+  }
+}
+
+function tienePermiso(modulo, accion = 'ver') {
+  if (esSuperAdminActual()) return true;
+  return !!misPermisosAdmin?.[modulo]?.[`puede_${accion}`];
+}
+
+function aplicarVisibilidadPorPermisos() {
+  if (esSuperAdminActual()) return; // el superadmin ve y puede todo, sin restricciones
+
+  const mapaTabs = [
+    { tabId: 'tabIncidenciasBtn', linkId: 'linkAdmin',    modulo: 'incidencias', tab: 'incidencias' },
+    { tabId: 'tabApoyosBtn',      linkId: 'linkApoyos',   modulo: 'incentivos',  tab: 'apoyos'       },
+    { tabId: 'tabUsuariosBtn',    linkId: 'linkUsuarios', modulo: 'usuarios',    tab: 'usuarios'     },
+  ];
+
+  let primerTabVisible = null;
+  mapaTabs.forEach(({ tabId, linkId, modulo, tab }) => {
+    const puedeVer = tienePermiso(modulo, 'ver');
+    const tabBtn = document.getElementById(tabId);
+    const link = document.getElementById(linkId);
+    if (tabBtn) tabBtn.style.display = puedeVer ? '' : 'none';
+    if (link) link.style.display = puedeVer ? '' : 'none';
+    if (puedeVer && !primerTabVisible) primerTabVisible = tab;
+  });
+
+  // Si la pestaña activa por defecto (incidencias) no tiene permiso de ver, cambia a la primera disponible
+  if (!tienePermiso('incidencias', 'ver')) {
+    cambiarTab(primerTabVisible || 'incidencias');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
    HEARTBEAT — presencia en tiempo real
 ══════════════════════════════════════════════════════════ */
 function startHeartbeat() {
@@ -167,12 +213,13 @@ async function cargarIncidenciasPendientes() {
         <td style="color:var(--text-muted)">${esc(i.creador_nombre ?? i.usuario ?? '—')}</td>
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(i.created_at)}</td>
         <td>
+          ${tienePermiso('incidencias', 'editar') ? `
           <button class="btn-icon success me-1" onclick="aprobarIncidencia(${i.id_incidencia})">
             <i class="bi bi-check2"></i> Aprobar
           </button>
           <button class="btn-icon danger" onclick="abrirModalRechazarInc(${i.id_incidencia})">
             <i class="bi bi-x"></i> Rechazar
-          </button>
+          </button>` : `<span class="small" style="color:var(--text-muted)">Sin permiso para editar</span>`}
         </td>
       </tr>
     `).join('');
@@ -222,10 +269,11 @@ async function cargarTodasIncidencias(pag = 1) {
         <td>${badgeEstadoAdmin(i.estado)}</td>
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(i.fecha_ocurrencia)}</td>
         <td>
+          ${tienePermiso('incidencias', 'editar') ? `
           <select class="form-select form-select-sm border-secondary text-white" style="background:#0d1117;width:auto;display:inline-block;"
                   onchange="cambiarEstadoIncidencia(${i.id_incidencia}, this.value)">
             ${ESTADOS_INCIDENCIA.map(e => `<option value="${e.id}" ${e.nombre === i.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}
-          </select>
+          </select>` : badgeEstadoAdmin(i.estado)}
         </td>
       </tr>
     `).join('');
@@ -334,12 +382,13 @@ async function cargarApoyosPendientes() {
         <td><strong style="color:#3fb950">$${parseFloat(a.monto_solicitado ?? a.monto ?? 0).toFixed(2)}</strong></td>
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(a.created_at)}</td>
         <td>
+          ${tienePermiso('incentivos', 'editar') ? `
           <button class="btn-icon success me-1" onclick="aprobarApoyo(${a.id_apoyo})">
             <i class="bi bi-check2"></i> Aprobar
           </button>
           <button class="btn-icon danger" onclick="abrirModalRechazarApoyo(${a.id_apoyo})">
             <i class="bi bi-x"></i> Rechazar
-          </button>
+          </button>` : `<span class="small" style="color:var(--text-muted)">Sin permiso para editar</span>`}
         </td>
       </tr>
     `).join('');
@@ -443,10 +492,11 @@ async function cargarUsuarios(pagina = 1) {
             ${u.rol === 'superadmin' ? `
             <span class="small" style="color:var(--text-muted);"><i class="bi bi-shield-lock me-1"></i>No editable</span>
             ` : `
+            ${tienePermiso('usuarios', 'editar') ? `
             <button class="btn-icon me-1" title="${u.activo ? 'Desactivar' : 'Activar'}"
               onclick="toggleActivo(${u.id_usuario}, ${u.activo})">
               <i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i>
-            </button>
+            </button>` : ''}
             ${esSuperAdminActual() ? `
             <button class="btn-icon me-1" title="Cambiar a ${u.rol === 'admin' ? 'usuario' : 'admin'}"
               onclick="cambiarRol(${u.id_usuario}, '${u.rol}', '${esc(u.nombre)} ${esc(u.apellido ?? '')}')">
@@ -731,10 +781,12 @@ function verifBadge(v) {
 /* ══════════════════════════════════════════════════════════
    INIT — DOMContentLoaded
 ══════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   exigirAdmin();
   initUsuarioActual();
   startHeartbeat();
+  await cargarMisPermisosAdmin();
+  aplicarVisibilidadPorPermisos();
   cargarIncidenciasPendientes();
   cargarTodasIncidencias();
   cargarApoyosPendientes();

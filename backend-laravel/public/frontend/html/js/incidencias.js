@@ -7,6 +7,7 @@ const POR_PAG    = 10;
 let mapaEditar, marcadorEditar;
 let incentivosPorPrioridad = {};
 let misApoyosSet = new Set();
+let misPermisosIncidencias = { puede_ver: true, puede_editar: false, puede_eliminar: false };
 
 const COLOR_ESTADO = {
   'Pendiente':  { bg:'rgba(239,68,68,.15)',   color:'#f87171' },
@@ -114,8 +115,8 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
         <div class="d-flex gap-1 flex-wrap">
           <button class="btn btn-sm btn-outline-light" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
           ${puedeApoyar ? `<button class="btn btn-sm btn-outline-danger" title="Apoyar ($${monto})" onclick="window.location.href='mis-apoyos.html'"><i class="bi bi-hand-thumbs-up"></i></button>` : ''}
-          ${esAdmin ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
-          ${esAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
+          ${(esAdmin && misPermisosIncidencias.puede_editar) ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
+          ${(esAdmin && misPermisosIncidencias.puede_eliminar) ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
         </div>
       </td>
     </tr>`;
@@ -260,7 +261,7 @@ function abrirEliminar(id, titulo) {
 }
 async function confirmarEliminar() {
   try {
-    const res  = await fetchAPI(`${API}/incidencias/${idEliminar}`, { method:'DELETE' });
+    const res  = await fetchAPI(`${API}/admin/incidencias/${idEliminar}`, { method:'DELETE' });
     const data = await res.json();
     bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
     if (res.ok && data.ok) { mostrarAlerta('Incidencia eliminada.','success'); cargarIncidencias(paginaActual); cargarContadores(); }
@@ -269,9 +270,23 @@ async function confirmarEliminar() {
   idEliminar = null;
 }
 
+// ── Permisos reales (para admin: qué puede editar/eliminar en Incidencias) ──
+async function cargarMisPermisosIncidencias() {
+  const u = getUsuario();
+  if (u.rol !== 'admin' && u.rol !== 'superadmin') return;
+  try {
+    const r = await fetchAPI(`${API}/mis-permisos`);
+    const data = await r.json();
+    misPermisosIncidencias = data.permisos?.incidencias || { puede_ver: true, puede_editar: false, puede_eliminar: false };
+  } catch (e) {
+    misPermisosIncidencias = { puede_ver: true, puede_editar: false, puede_eliminar: false };
+  }
+}
+
 // ── Init ──
 async function init() {
   inicializarBarraUsuario();
+  await cargarMisPermisosIncidencias();
   await cargarIncentivosYApoyos();
   poblarSelect(`${API}/catalogos/tipos`,   'filtroTipo');
   poblarSelect(`${API}/catalogos/estados`, 'filtroEstado');
