@@ -818,6 +818,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnConfirmarRechazoInc').addEventListener('click',   confirmarRechazoIncidencia);
   document.getElementById('btnConfirmarRechazoApoyo').addEventListener('click', confirmarRechazoApoyo);
+
+  // Si se llegó con ?tab=usuarios (o apoyos/permisos) desde otra página,
+  // abrir directamente ese panel en lugar de quedarse en "Incidencias".
+  const tabSolicitado = new URLSearchParams(location.search).get('tab');
+  if (tabSolicitado && document.getElementById(`tab${capitalize(tabSolicitado)}Btn`)) {
+    cambiarTab(tabSolicitado);
+  }
 });
 
 /* ══════════════════════════════════════════════════════════
