@@ -149,7 +149,13 @@ function capitalize(s) {
 ══════════════════════════════════════════════════════════ */
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop')?.classList.toggle('open');
 }
+
+document.getElementById('sidebarBackdrop')?.addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+});
 
 /* ══════════════════════════════════════════════════════════
    USUARIO ACTUAL (sidebar inferior)

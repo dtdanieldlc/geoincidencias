@@ -173,6 +173,8 @@
 
     /* ── Mobile ── */
     #sidebarToggle { display:none; background:none; border:none; color:#3b5166; font-size:1.3rem; cursor:pointer; }
+    #sidebarBackdrop { display:none; position:fixed; inset:0; background:rgba(11,35,64,.45); z-index:190; }
+    #sidebarBackdrop.open { display:block; }
     @media(max-width:768px) {
       #sidebar { transform: translateX(-100%); }
       #sidebar.open { transform: none; }
@@ -243,6 +245,8 @@
     </ul>
   </div>
 </nav>
+
+<div id="sidebarBackdrop"></div>
 
 <!-- ═══════════════════ MAIN ═══════════════════ -->
 <div id="main">
