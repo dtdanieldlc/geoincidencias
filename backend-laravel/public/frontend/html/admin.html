@@ -103,7 +103,7 @@
     .stat-card .sub   { font-size:.72rem; color: var(--text-muted); margin-top:4px; }
 
     /* ── Tabs ── */
-    .admin-tabs { display:flex; gap:6px; margin-bottom:20px; }
+    .admin-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
     .tab-btn {
       padding: 7px 16px; border:none; border-radius:8px;
       background: var(--bg-surface); color: var(--text-muted);
@@ -286,6 +286,7 @@
     <div id="panelIncidencias">
       <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Pendientes de aprobación</h6>
       <div class="data-table mb-4">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -297,10 +298,12 @@
             <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Todas las incidencias — cambiar estado</h6>
       <div class="data-table">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -312,6 +315,7 @@
             <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
         <div class="pagination-bar" id="paginacionTodasIncidencias"></div>
       </div>
     </div>
@@ -319,6 +323,7 @@
     <!-- ── Panel: Apoyos ── -->
     <div id="panelApoyos" style="display:none">
       <div class="data-table">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -330,6 +335,7 @@
             <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -367,6 +373,7 @@
 
       <!-- Tabla -->
       <div class="data-table">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -378,6 +385,7 @@
             <tr><td colspan="9" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
         <div class="pagination-bar" id="paginacionUsuarios"></div>
       </div>
 
@@ -395,6 +403,7 @@
             </select>
 
             <label class="form-label text-secondary small text-uppercase">Módulos y acciones</label>
+            <div class="table-responsive">
             <table style="width:100%; margin-bottom:14px;">
               <thead>
                 <tr>
@@ -406,6 +415,7 @@
               </thead>
               <tbody id="tbodyModulosPermisos"></tbody>
             </table>
+            </div>
 
             <label class="form-label text-secondary small text-uppercase">Motivo</label>
             <textarea id="motivoSolicitudPermiso" class="form-control border-secondary mb-2" style="background:#f4f7fb;" rows="3" placeholder="Explica por qué este usuario necesita estos permisos…"></textarea>
@@ -421,6 +431,7 @@
         <div class="col-lg-6">
           <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Mis solicitudes</h6>
           <div class="data-table">
+            <div class="table-responsive">
             <table>
               <thead>
                 <tr>
@@ -431,6 +442,7 @@
                 <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>

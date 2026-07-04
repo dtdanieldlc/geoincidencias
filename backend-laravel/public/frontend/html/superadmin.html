@@ -58,7 +58,7 @@
     #topbar .page-title { font-size:1rem; font-weight:700; color:#0b2340; font-family:'Sora',sans-serif; }
     #content { padding: 24px; flex:1; }
 
-    .admin-tabs { display:flex; gap:6px; margin-bottom:20px; }
+    .admin-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
     .tab-btn {
       padding: 7px 16px; border:none; border-radius:8px; background: var(--bg-surface); color: var(--text-muted);
       font-size:.82rem; font-weight:500; cursor:pointer; border: 1px solid var(--border); transition: all .15s;
@@ -168,6 +168,7 @@
     <!-- ── Panel: Solicitudes pendientes ── -->
     <div id="panelSolicitudes">
       <div class="data-table">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -179,6 +180,7 @@
             <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -192,6 +194,7 @@
               <option value="">Selecciona un usuario…</option>
             </select>
 
+            <div class="table-responsive">
             <table style="width:100%; margin-bottom:14px;">
               <thead>
                 <tr>
@@ -203,6 +206,7 @@
               </thead>
               <tbody id="tbodyModulosAsignar"></tbody>
             </table>
+            </div>
 
             <div id="msgAsignarPermiso" class="alert py-2 small mt-2" style="display:none;"></div>
 
@@ -215,12 +219,14 @@
         <div class="col-lg-6">
           <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Permisos actuales del usuario</h6>
           <div class="data-table">
+            <div class="table-responsive">
             <table>
               <thead><tr><th>Módulo</th><th class="text-center">Ver</th><th class="text-center">Editar</th><th class="text-center">Eliminar</th></tr></thead>
               <tbody id="tbodyPermisosActuales">
                 <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)">Selecciona un usuario</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
@@ -232,6 +238,7 @@
         <input type="text" id="buscarDetalleInput" class="form-control border-secondary" style="background:#f4f7fb; max-width:340px;" placeholder="Buscar por nombre o correo…">
       </div>
       <div class="data-table">
+        <div class="table-responsive">
         <table>
           <thead>
             <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cédula verificada</th><th>Acciones</th></tr>
@@ -240,6 +247,7 @@
             <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -339,6 +347,7 @@
         <p class="small mb-3" id="revisarMotivo" style="background:#f4f7fb; padding:10px; border-radius:8px;"></p>
 
         <p class="small text-secondary mb-2">Permisos solicitados (edítalos si quieres modificarlos antes de aprobar):</p>
+        <div class="table-responsive">
         <table style="width:100%; margin-bottom:14px;">
           <thead>
             <tr>
@@ -350,6 +359,7 @@
           </thead>
           <tbody id="tbodyModulosRevisar"></tbody>
         </table>
+        </div>
 
         <label class="form-label text-secondary small text-uppercase">Respuesta (opcional)</label>
         <textarea id="revisarRespuesta" class="form-control border-secondary" style="background:#f4f7fb;" rows="2" placeholder="Comentario para el admin solicitante…"></textarea>
