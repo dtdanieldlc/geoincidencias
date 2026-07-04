@@ -3,9 +3,9 @@ exigirSesion();
 // API ya está definida globalmente en auth-guard.js
 
 const COLOR_ESTADO = {
-  'Abierta':    { bg:'rgba(239,68,68,.15)',   color:'#f87171',  borde:'#ef4444' },
-  'En proceso': { bg:'rgba(245,158,11,.15)',  color:'#fbbf24',  borde:'#f59e0b' },
-  'Resuelta':   { bg:'rgba(34,197,94,.15)',   color:'#4ade80',  borde:'#22c55e' },
+  'Abierta':    { bg:'rgba(239,68,68,.15)',   color:'#dc2626',  borde:'#ef4444' },
+  'En proceso': { bg:'rgba(245,158,11,.15)',  color:'#d97706',  borde:'#f59e0b' },
+  'Resuelta':   { bg:'rgba(34,197,94,.15)',   color:'#16a34a',  borde:'#22c55e' },
   'Cerrada':    { bg:'rgba(148,163,184,.15)', color:'#94a3b8',  borde:'#64748b' },
 };
 const COLOR_PRIO = {
@@ -138,17 +138,17 @@ async function cargarPorCategoria() {
   try {
     const r    = await fetchAPI(`${API}/dashboard/por-tipo`);
     const datos = await r.json();
-    const colores = ['#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9'];
+    const colores = ['#dc2626','#fb923c','#d97706','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9'];
     const max  = datos.reduce((m,d) => Math.max(m, d.total), 0);
     const html = datos.map((d,i) => {
       const c   = colores[i % colores.length];
       const pct = max > 0 ? Math.round((d.total/max)*100) : 0;
       return `
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="small text-white">${d.tipo}</span>
+          <span class="small">${d.tipo}</span>
           <strong class="small">${d.total}</strong>
         </div>
-        <div class="progress mb-3" style="height:5px;background:#0d1117;">
+        <div class="progress mb-3" style="height:5px;background:#f4f7fb;">
           <div class="progress-bar" style="width:${pct}%;background:${c};border-radius:4px;"></div>
         </div>`;
     }).join('');
@@ -162,7 +162,7 @@ async function cargarUltimas() {
     const r    = await fetchAPI(`${API}/dashboard/ultimas`);
     const datos = await r.json();
     const html = datos.map(inc => `
-      <tr style="border-color:#21262d;">
+      <tr style="border-color:#e2e8f0;">
         <td class="border-secondary py-3">
           <div class="fw-semibold small">${inc.titulo}</div>
           <div class="text-secondary" style="font-size:.78rem;">#${inc.id_incidencia}</div>

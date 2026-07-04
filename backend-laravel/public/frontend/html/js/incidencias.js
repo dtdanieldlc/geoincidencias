@@ -10,9 +10,9 @@ let misApoyosSet = new Set();
 let misPermisosIncidencias = { puede_ver: true, puede_editar: false, puede_eliminar: false };
 
 const COLOR_ESTADO = {
-  'Pendiente':  { bg:'rgba(239,68,68,.15)',   color:'#f87171' },
-  'En proceso': { bg:'rgba(245,158,11,.15)',  color:'#fbbf24' },
-  'Resuelto':   { bg:'rgba(34,197,94,.15)',   color:'#4ade80' },
+  'Pendiente':  { bg:'rgba(239,68,68,.15)',   color:'#dc2626' },
+  'En proceso': { bg:'rgba(245,158,11,.15)',  color:'#d97706' },
+  'Resuelto':   { bg:'rgba(34,197,94,.15)',   color:'#16a34a' },
   'Cerrado':    { bg:'rgba(148,163,184,.15)', color:'#94a3b8' },
 };
 const COLOR_PRIO = { 'Alta':'#ef4444','Media':'#eab308','Baja':'#22c55e' };
@@ -99,7 +99,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
     const puedeApoyar = inc.estado !== 'Cerrado' && !yaApoya;
 
     return `
-    <tr style="border-color:#21262d;">
+    <tr style="border-color:#e2e8f0;">
       <td class="border-secondary text-secondary small">${(pagina-1)*por_pagina+i+1}</td>
       <td class="border-secondary py-3">
         <div class="fw-semibold small">${inc.titulo}</div>

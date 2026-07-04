@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    verificar-correo.js — Verificación de correo electrónico
-   GeoIncidencias
+   DomusCenter
 ═══════════════════════════════════════════════════════════ */
 
 const API = 'https://geoincidencias-production.up.railway.app/api';

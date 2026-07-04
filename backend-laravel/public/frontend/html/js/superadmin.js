@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   superadmin.js — Panel de SuperAdmin · GeoIncidencias
+   superadmin.js — Panel de SuperAdmin · DomusCenter
    Depende de: Bootstrap 5, auth-guard.js
 ═══════════════════════════════════════════════════════════ */
 
@@ -317,8 +317,8 @@ async function guardarAsignacion() {
 ══════════════════════════════════════════════════════════ */
 function mostrarToast(mensaje, tipo = 'success') {
   const toast = document.getElementById('toast');
-  const colores = { success: '#0d3321', danger: '#3d1f1f' };
-  const textos  = { success: '#3fb950', danger: '#f85149' };
+  const colores = { success: '#e6f8ee', danger: '#fbe9e9' };
+  const textos  = { success: '#16a34a', danger: '#dc2626' };
   toast.style.background = colores[tipo] ?? colores.success;
   toast.style.color = textos[tipo] ?? textos.success;
   toast.style.border = `1px solid ${textos[tipo] ?? textos.success}`;
@@ -355,9 +355,9 @@ function _renderDetalleUsuarios(lista) {
     return;
   }
   const rolBadgeMap = {
-    superadmin: '<span class="badge" style="background:#3d1f3d;color:#d291ff;">Superadmin</span>',
-    admin:      '<span class="badge" style="background:#2d1f47;color:#a78bfa;">Admin</span>',
-    usuario:    '<span class="badge" style="background:#21262d;color:#8b949e;">Usuario</span>',
+    superadmin: '<span class="badge" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>',
+    admin:      '<span class="badge" style="background:#f3e8fd;color:#a78bfa;">Admin</span>',
+    usuario:    '<span class="badge" style="background:#eef4f8;color:#64748b;">Usuario</span>',
   };
   tbody.innerHTML = lista.map(u => `
     <tr>

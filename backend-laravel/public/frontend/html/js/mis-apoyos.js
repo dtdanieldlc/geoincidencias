@@ -19,10 +19,10 @@ function badgePrio(p) {
   return `<span class="badge" style="background:${c}20;color:${c};border:1px solid ${c}40;padding:4px 8px;font-size:.72rem;">${p}</span>`;
 }
 const COLOR_ESTADO_PAGO = {
-  'pendiente_aprobacion': { bg:'rgba(245,158,11,.15)', color:'#fbbf24', label:'Pendiente' },
-  'aprobado':             { bg:'rgba(34,197,94,.15)',  color:'#4ade80', label:'Aprobado' },
-  'pagado':               { bg:'rgba(34,197,94,.15)',  color:'#4ade80', label:'Pagado' },
-  'rechazado':            { bg:'rgba(239,68,68,.15)',  color:'#f87171', label:'Rechazado' },
+  'pendiente_aprobacion': { bg:'rgba(245,158,11,.15)', color:'#d97706', label:'Pendiente' },
+  'aprobado':             { bg:'rgba(34,197,94,.15)',  color:'#16a34a', label:'Aprobado' },
+  'pagado':               { bg:'rgba(34,197,94,.15)',  color:'#16a34a', label:'Pagado' },
+  'rechazado':            { bg:'rgba(239,68,68,.15)',  color:'#dc2626', label:'Rechazado' },
 };
 function badgeEstadoPago(e) {
   const c = COLOR_ESTADO_PAGO[e] || { bg:'rgba(148,163,184,.15)', color:'#94a3b8', label:e };
@@ -61,7 +61,7 @@ async function cargarDisponibles() {
       const monto = incentivosPorPrioridad[inc.prioridad] || 0;
       const yaApoya = apoyosYaMarcados.has(inc.id_incidencia);
       return `
-        <tr style="border-color:#21262d;">
+        <tr style="border-color:#e2e8f0;">
           <td class="border-secondary small fw-semibold">${inc.titulo}</td>
           <td class="border-secondary small text-secondary">${inc.zona}</td>
           <td class="border-secondary">${badgePrio(inc.prioridad)}</td>
@@ -114,7 +114,7 @@ async function cargarMisApoyos() {
     const r = await fetchAPI(`${API}/apoyos/mis-apoyos`);
     const datos = await r.json();
     const html = datos.map(a => `
-      <tr style="border-color:#21262d;">
+      <tr style="border-color:#e2e8f0;">
         <td class="border-secondary small fw-semibold">${a.incidencia_titulo}</td>
         <td class="border-secondary"><span class="text-success fw-bold">$${parseFloat(a.monto_incentivo).toFixed(2)}</span></td>
         <td class="border-secondary">${badgeEstadoPago(a.estado_pago)}</td>

@@ -69,7 +69,7 @@ async function cargarHistorial(pag=1) {
     document.getElementById('infoRegistrosHist').textContent = `Mostrando ${datos.length} de ${total} registros`;
 
     const html = datos.map(h => `
-      <tr style="border-color:#21262d;">
+      <tr style="border-color:#e2e8f0;">
         <td class="border-secondary small text-secondary">${new Date(h.fecha_hora).toLocaleString('es-EC')}</td>
         <td class="border-secondary small fw-semibold">${h.usuario || 'Sistema'}</td>
         <td class="border-secondary small"><i class="bi ${iconoAccion(h.accion)} me-1"></i>${h.accion.replace(/_/g,' ')}</td>

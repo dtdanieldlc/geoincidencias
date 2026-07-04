@@ -49,16 +49,16 @@ function crearPanelNotificaciones() {
   panel.id = 'panelNotificaciones';
   panel.style.cssText = `
     display:none; position:fixed; top:60px; right:16px; width:340px; max-height:480px;
-    background:#161b22; border:1px solid #30363d; border-radius:10px;
+    background:#ffffff; border:1px solid rgba(11,35,64,.08); border-radius:10px;
     box-shadow:0 8px 32px rgba(0,0,0,.5); z-index:9999; overflow:hidden; flex-direction:column;
   `;
   panel.innerHTML = `
-    <div style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-weight:600; color:#e6edf3;">🔔 Notificaciones</span>
-      <button onclick="marcarTodasLeidas()" style="background:none;border:none;color:#58a6ff;font-size:.8rem;cursor:pointer;">Marcar todas leídas</button>
+    <div style="padding:12px 16px; border-bottom:1px solid rgba(11,35,64,.08); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:600; color:#0b2340;">🔔 Notificaciones</span>
+      <button onclick="marcarTodasLeidas()" style="background:none;border:none;color:#0d9488;font-size:.8rem;cursor:pointer;">Marcar todas leídas</button>
     </div>
     <div id="listaNotificaciones" style="overflow-y:auto; max-height:380px; padding:8px 0;">
-      <div style="text-align:center;padding:24px;color:#8b949e;">Cargando...</div>
+      <div style="text-align:center;padding:24px;color:#64748b;">Cargando...</div>
     </div>
   `;
   document.body.appendChild(panel);
@@ -87,27 +87,27 @@ async function cargarNotificaciones() {
     const r = await fetchAPI(`${API}/notificaciones`);
     const datos = await r.json();
     if (!datos.length) {
-      lista.innerHTML = '<div style="text-align:center;padding:24px;color:#8b949e;"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:8px;"></i>Sin notificaciones</div>';
+      lista.innerHTML = '<div style="text-align:center;padding:24px;color:#64748b;"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:8px;"></i>Sin notificaciones</div>';
       return;
     }
     lista.innerHTML = datos.map(n => `
       <div onclick="marcarNotifLeida(${n.id_notificacion}, this)"
-           style="padding:10px 16px; border-bottom:1px solid #21262d; cursor:pointer;
-                  background:${n.leida ? 'transparent' : 'rgba(88,166,255,.06)'};
+           style="padding:10px 16px; border-bottom:1px solid rgba(11,35,64,.08); cursor:pointer;
+                  background:${n.leida ? 'transparent' : 'rgba(20,184,166,.08)'};
                   transition:background .2s;"
-           onmouseover="this.style.background='rgba(255,255,255,.04)'"
-           onmouseout="this.style.background='${n.leida ? 'transparent' : 'rgba(88,166,255,.06)'}'">
+           onmouseover="this.style.background='rgba(11,35,64,.04)'"
+           onmouseout="this.style.background='${n.leida ? 'transparent' : 'rgba(20,184,166,.08)'}'">
         <div style="display:flex;gap:10px;align-items:flex-start;">
           <span style="font-size:1.2rem;margin-top:2px;">${n.leida ? '🔘' : '🔵'}</span>
           <div style="flex:1;min-width:0;">
-            <div style="color:#e6edf3;font-size:.85rem;line-height:1.4;">${n.mensaje}</div>
-            <div style="color:#8b949e;font-size:.75rem;margin-top:4px;">${new Date(n.fecha).toLocaleString('es-EC')}</div>
+            <div style="color:#0b2340;font-size:.85rem;line-height:1.4;">${n.mensaje}</div>
+            <div style="color:#64748b;font-size:.75rem;margin-top:4px;">${new Date(n.fecha).toLocaleString('es-EC')}</div>
           </div>
         </div>
       </div>
     `).join('');
   } catch(e) {
-    lista.innerHTML = '<div style="text-align:center;padding:24px;color:#f87171;">Error al cargar</div>';
+    lista.innerHTML = '<div style="text-align:center;padding:24px;color:#dc2626;">Error al cargar</div>';
   }
 }
 

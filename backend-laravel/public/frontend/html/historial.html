@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>GeoIncidencias – Historial de Actividad</title>
+  <title>DomusCenter – Historial de Actividad</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
 </head>
 <body>
 
 
-<div class="container-fluid px-4 py-4" style="background:#0d1117;min-height:100vh;">
+<div class="container-fluid px-4 py-4" style="background:#f4f7fb;min-height:100vh;">
 
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
@@ -20,27 +20,27 @@
   </div>
 
   <!-- Filtros -->
-  <div class="rounded-3 border border-secondary border-opacity-25 p-3 mb-3" style="background:#161b22;">
+  <div class="rounded-3 border border-secondary border-opacity-25 p-3 mb-3" style="background:#ffffff;">
     <div class="row g-2 align-items-end">
       <div class="col-12 col-sm-6 col-lg-3">
         <label class="form-label text-secondary small mb-1"><i class="bi bi-person me-1"></i>Usuario</label>
-        <select id="filtroUsuario" class="form-select form-select-sm border-secondary text-white" style="background:#0d1117;" onchange="cargarHistorial()">
+        <select id="filtroUsuario" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarHistorial()">
           <option value="">Todos</option>
         </select>
       </div>
       <div class="col-12 col-sm-6 col-lg-3">
         <label class="form-label text-secondary small mb-1"><i class="bi bi-lightning me-1"></i>Acción</label>
-        <select id="filtroAccion" class="form-select form-select-sm border-secondary text-white" style="background:#0d1117;" onchange="cargarHistorial()">
+        <select id="filtroAccion" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarHistorial()">
           <option value="">Todas</option>
         </select>
       </div>
       <div class="col-6 col-sm-4 col-lg-2">
         <label class="form-label text-secondary small mb-1">Desde</label>
-        <input type="date" id="filtroDesde" class="form-control form-control-sm border-secondary text-white" style="background:#0d1117;" onchange="cargarHistorial()"/>
+        <input type="date" id="filtroDesde" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" onchange="cargarHistorial()"/>
       </div>
       <div class="col-6 col-sm-4 col-lg-2">
         <label class="form-label text-secondary small mb-1">Hasta</label>
-        <input type="date" id="filtroHasta" class="form-control form-control-sm border-secondary text-white" style="background:#0d1117;" onchange="cargarHistorial()"/>
+        <input type="date" id="filtroHasta" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" onchange="cargarHistorial()"/>
       </div>
       <div class="col-12 col-sm-4 col-lg-2">
         <button class="btn btn-outline-secondary btn-sm w-100" onclick="limpiarFiltrosHistorial()"><i class="bi bi-x-lg me-1"></i>Limpiar</button>
@@ -49,9 +49,9 @@
   </div>
 
   <!-- Tabla -->
-  <div class="rounded-3 border border-secondary border-opacity-25 overflow-hidden" style="background:#161b22;">
+  <div class="rounded-3 border border-secondary border-opacity-25 overflow-hidden" style="background:#ffffff;">
     <div class="table-responsive">
-      <table class="table table-dark table-hover align-middle mb-0" style="--bs-table-bg:#161b22;">
+      <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
             <th class="text-secondary fw-normal small text-uppercase border-secondary">Fecha y hora</th>

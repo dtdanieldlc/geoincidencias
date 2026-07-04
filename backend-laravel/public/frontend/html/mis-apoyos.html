@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>GeoIncidencias – Mis Apoyos</title>
+  <title>DomusCenter – Mis Apoyos</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
 </head>
@@ -15,7 +15,7 @@
 <!-- Modal marcar apoyo -->
 <div class="modal fade" id="modalApoyar" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content border border-secondary" style="background:#161b22;color:#e6edf3;">
+    <div class="modal-content border border-secondary" style="background:#ffffff;color:#0b2340;">
       <div class="modal-header border-secondary">
         <h6 class="modal-title"><i class="bi bi-hand-thumbs-up text-danger me-2"></i>Marcar apoyo voluntario</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -25,7 +25,7 @@
         <p class="small">Vas a marcar que apoyarás presencialmente en: <strong id="apoyarIncTitulo"></strong></p>
         <p class="small text-secondary">Incentivo estimado: <span id="apoyarIncMonto" class="text-success fw-bold"></span> (sujeto a aprobación del administrador tras confirmar tu asistencia)</p>
         <label class="form-label text-secondary small text-uppercase">Comentario (opcional)</label>
-        <textarea id="apoyarComentario" class="form-control border-secondary text-white" style="background:#0d1117;" rows="2" placeholder="Ej: Puedo ir esta tarde a partir de las 3pm…"></textarea>
+        <textarea id="apoyarComentario" class="form-control border-secondary" style="background:#f4f7fb;" rows="2" placeholder="Ej: Puedo ir esta tarde a partir de las 3pm…"></textarea>
       </div>
       <div class="modal-footer border-secondary">
         <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
@@ -35,7 +35,7 @@
   </div>
 </div>
 
-<div class="container-fluid px-4 py-4" style="background:#0d1117;min-height:100vh;">
+<div class="container-fluid px-4 py-4" style="background:#f4f7fb;min-height:100vh;">
 
   <div class="mb-4">
     <h4 class="fw-bold mb-0"><i class="bi bi-hand-thumbs-up text-danger me-2"></i>Mis Apoyos e Incentivos</h4>
@@ -45,32 +45,32 @@
   <!-- Saldo -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-lg-4">
-      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#161b22;">
+      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#ffffff;">
         <div id="saldoPagado" class="display-6 fw-bold text-success">$0.00</div>
         <div class="text-secondary small">Total ganado (pagado)</div>
       </div>
     </div>
     <div class="col-6 col-lg-4">
-      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#161b22;">
+      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#ffffff;">
         <div id="saldoPendiente" class="display-6 fw-bold text-warning">$0.00</div>
         <div class="text-secondary small">Pendiente de aprobación</div>
       </div>
     </div>
     <div class="col-12 col-lg-4">
-      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#161b22;">
-        <div id="apoyosCompletados" class="display-6 fw-bold text-white">0</div>
+      <div class="rounded-3 p-3 border border-secondary border-opacity-25 text-center" style="background:#ffffff;">
+        <div id="apoyosCompletados" class="display-6 fw-bold">0</div>
         <div class="text-secondary small">Apoyos completados</div>
       </div>
     </div>
   </div>
 
   <!-- Incidencias disponibles para apoyar -->
-  <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#161b22;">
+  <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
     <div class="px-3 py-2 border-bottom border-secondary border-opacity-25">
       <span class="small text-secondary text-uppercase fw-semibold"><i class="bi bi-megaphone me-1"></i>Incidencias activas — puedes ofrecerte a apoyar</span>
     </div>
     <div class="table-responsive">
-      <table class="table table-dark table-hover align-middle mb-0" style="--bs-table-bg:#161b22;">
+      <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
             <th class="text-secondary fw-normal small text-uppercase border-secondary">Título</th>
@@ -89,12 +89,12 @@
   </div>
 
   <!-- Historial de mis apoyos -->
-  <div class="rounded-3 border border-secondary border-opacity-25" style="background:#161b22;">
+  <div class="rounded-3 border border-secondary border-opacity-25" style="background:#ffffff;">
     <div class="px-3 py-2 border-bottom border-secondary border-opacity-25">
       <span class="small text-secondary text-uppercase fw-semibold"><i class="bi bi-clock-history me-1"></i>Historial de mis apoyos</span>
     </div>
     <div class="table-responsive">
-      <table class="table table-dark table-hover align-middle mb-0" style="--bs-table-bg:#161b22;">
+      <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
             <th class="text-secondary fw-normal small text-uppercase border-secondary">Incidencia</th>

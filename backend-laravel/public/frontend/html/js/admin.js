@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   admin.js — Panel de Administración · GeoIncidencias
+   admin.js — Panel de Administración · DomusCenter
    Depende de: Bootstrap 5, auth-guard.js
 ═══════════════════════════════════════════════════════════ */
 
@@ -83,9 +83,9 @@ let _toastTimer;
 
 function showToast(msg, type = 'success') {
   const colores = {
-    success: { bg: '#0d4429', color: '#3fb950', border: '#2ea04326' },
-    error:   { bg: '#3d1212', color: '#f85149', border: '#f8514926' },
-    warning: { bg: '#3d2e00', color: '#e3b341', border: '#e3b34126' },
+    success: { bg: '#e6f8ee', color: '#16a34a', border: '#2ea04326' },
+    error:   { bg: '#fbe9e9', color: '#dc2626', border: '#dc262626' },
+    warning: { bg: '#fef3e0', color: '#d97706', border: '#d9770626' },
   };
   const c = colores[type] ?? colores.success;
   const t = document.getElementById('toast');
@@ -202,7 +202,7 @@ async function cargarIncidenciasPendientes() {
       return;
     }
 
-    const prioColor = { alta: '#f85149', media: '#e3b341', baja: '#3fb950' };
+    const prioColor = { alta: '#dc2626', media: '#d97706', baja: '#16a34a' };
 
     tbody.innerHTML = items.map(i => `
       <tr>
@@ -210,7 +210,7 @@ async function cargarIncidenciasPendientes() {
         <td style="color:var(--text-muted)">${esc(i.tipo_nombre ?? i.tipo ?? '—')}</td>
         <td style="color:var(--text-muted)">${esc(i.zona_nombre ?? i.zona ?? '—')}</td>
         <td>
-          <span style="color:${prioColor[i.prioridad] ?? '#8b949e'};font-weight:600;font-size:.8rem;">
+          <span style="color:${prioColor[i.prioridad] ?? '#64748b'};font-weight:600;font-size:.8rem;">
             ${esc((i.prioridad ?? '—').toUpperCase())}
           </span>
         </td>
@@ -258,7 +258,7 @@ async function cargarTodasIncidencias(pag = 1) {
       return;
     }
 
-    const prioColor = { Alta: '#f85149', Media: '#e3b341', Baja: '#3fb950' };
+    const prioColor = { Alta: '#dc2626', Media: '#d97706', Baja: '#16a34a' };
 
     tbody.innerHTML = items.map(i => `
       <tr>
@@ -266,7 +266,7 @@ async function cargarTodasIncidencias(pag = 1) {
         <td style="color:var(--text-muted)">${esc(i.tipo ?? '—')}</td>
         <td style="color:var(--text-muted)">${esc(i.zona ?? '—')}</td>
         <td>
-          <span style="color:${prioColor[i.prioridad] ?? '#8b949e'};font-weight:600;font-size:.8rem;">
+          <span style="color:${prioColor[i.prioridad] ?? '#64748b'};font-weight:600;font-size:.8rem;">
             ${esc((i.prioridad ?? '—').toUpperCase())}
           </span>
         </td>
@@ -274,7 +274,7 @@ async function cargarTodasIncidencias(pag = 1) {
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(i.fecha_ocurrencia)}</td>
         <td>
           ${tienePermiso('incidencias', 'editar') ? `
-          <select class="form-select form-select-sm border-secondary text-white" style="background:#0d1117;width:auto;display:inline-block;"
+          <select class="form-select form-select-sm border-secondary" style="background:#f4f7fb;width:auto;display:inline-block;"
                   onchange="cambiarEstadoIncidencia(${i.id_incidencia}, this.value)">
             ${ESTADOS_INCIDENCIA.map(e => `<option value="${e.id}" ${e.nombre === i.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}
           </select>` : badgeEstadoAdmin(i.estado)}
@@ -291,12 +291,12 @@ async function cargarTodasIncidencias(pag = 1) {
 
 function badgeEstadoAdmin(estado) {
   const colores = {
-    'Pendiente':  { bg: 'rgba(248,81,73,.15)',  color: '#f87171' },
-    'En proceso': { bg: 'rgba(227,179,65,.15)', color: '#e3b341' },
-    'Resuelto':   { bg: 'rgba(63,185,80,.15)',  color: '#3fb950' },
-    'Cerrado':    { bg: 'rgba(139,148,158,.15)',color: '#8b949e' },
+    'Pendiente':  { bg: 'rgba(248,81,73,.15)',  color: '#dc2626' },
+    'En proceso': { bg: 'rgba(227,179,65,.15)', color: '#d97706' },
+    'Resuelto':   { bg: 'rgba(63,185,80,.15)',  color: '#16a34a' },
+    'Cerrado':    { bg: 'rgba(139,148,158,.15)',color: '#64748b' },
   };
-  const c = colores[estado] ?? { bg: 'rgba(139,148,158,.15)', color: '#8b949e' };
+  const c = colores[estado] ?? { bg: 'rgba(139,148,158,.15)', color: '#64748b' };
   return `<span class="badge rounded-pill" style="background:${c.bg};color:${c.color};padding:5px 10px;font-size:.72rem;">${esc(estado ?? '—')}</span>`;
 }
 
@@ -383,7 +383,7 @@ async function cargarApoyosPendientes() {
         <td><strong>${esc(a.incidencia_titulo ?? a.incidencia ?? '—')}</strong></td>
         <td style="color:var(--text-muted)">${esc(a.usuario_nombre ?? a.usuario ?? '—')}</td>
         <td style="color:var(--text-muted);font-size:.8rem;">${esc(a.comentario ?? '—')}</td>
-        <td><strong style="color:#3fb950">$${parseFloat(a.monto_solicitado ?? a.monto ?? 0).toFixed(2)}</strong></td>
+        <td><strong style="color:#16a34a">$${parseFloat(a.monto_solicitado ?? a.monto ?? 0).toFixed(2)}</strong></td>
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(a.created_at)}</td>
         <td>
           ${tienePermiso('incentivos', 'editar') ? `
@@ -479,8 +479,8 @@ async function cargarUsuarios(pagina = 1) {
       const estaOnline  = ultimaPresencia > 0 && (ahora - ultimaPresencia) < 60000;
       const paginaLabel = (u.ultima_pagina ?? '').replace('.html', '') || '—';
       const badgeOnline = estaOnline
-        ? `<span style="color:#3fb950;font-size:.78rem;font-weight:600;" title="En línea · ${esc(u.ultima_pagina ?? '')}">🟢 ${esc(paginaLabel)}</span>`
-        : `<span style="color:#8b949e;font-size:.78rem;">⚫ Desconectado</span>`;
+        ? `<span style="color:#16a34a;font-size:.78rem;font-weight:600;" title="En línea · ${esc(u.ultima_pagina ?? '')}">🟢 ${esc(paginaLabel)}</span>`
+        : `<span style="color:#64748b;font-size:.78rem;">⚫ Desconectado</span>`;
 
       return `
         <tr>
@@ -590,13 +590,13 @@ function _initModalDegradar() {
   div.innerHTML = `
     <div class="modal fade" id="modalDegradarRol" tabindex="-1">
       <div class="modal-dialog">
-        <div class="modal-content border-0" style="background:#161b22;">
+        <div class="modal-content border-0" style="background:#ffffff;">
           <div class="modal-header border-secondary">
             <h6 class="modal-title"><i class="bi bi-shield-minus me-2"></i>Quitar rol de administrador</h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <p class="small text-white mb-0">¿Quitar el rol de administrador a <strong id="degradarNombre"></strong>? Pasará a rol <strong>Usuario</strong> y perderá acceso al panel de administración (sus permisos guardados quedan sin efecto, no se borran).</p>
+            <p class="small mb-0">¿Quitar el rol de administrador a <strong id="degradarNombre"></strong>? Pasará a rol <strong>Usuario</strong> y perderá acceso al panel de administración (sus permisos guardados quedan sin efecto, no se borran).</p>
           </div>
           <div class="modal-footer border-secondary">
             <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
@@ -634,7 +634,7 @@ function _initModalPromover() {
   div.innerHTML = `
     <div class="modal fade" id="modalPromoverAdmin" tabindex="-1">
       <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0" style="background:#161b22;">
+        <div class="modal-content border-0" style="background:#ffffff;">
           <div class="modal-header border-secondary">
             <h6 class="modal-title"><i class="bi bi-shield-plus me-2"></i>Convertir en administrador a <span id="promoverNombre"></span></h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -764,7 +764,7 @@ function fmtDatetime(d) {
 }
 
 function rolBadge(rol) {
-  if (rol === 'superadmin') return '<span class="badge-admin" style="background:#3d1f3d;color:#d291ff;">Superadmin</span>';
+  if (rol === 'superadmin') return '<span class="badge-admin" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>';
   return rol === 'admin'
     ? '<span class="badge-admin">Admin</span>'
     : '<span class="badge-usuario">Usuario</span>';
@@ -932,10 +932,10 @@ function mostrarMsgPermiso(texto, tipo) {
 }
 
 const ESTADO_BADGE = {
-  pendiente:  '<span class="badge" style="background:#3d2e00;color:#e3b341;">Pendiente</span>',
-  aprobado:   '<span class="badge" style="background:#0d3321;color:#3fb950;">Aprobado</span>',
-  rechazado:  '<span class="badge" style="background:#3d1f1f;color:#f85149;">Rechazado</span>',
-  modificado: '<span class="badge" style="background:#1f3347;color:#58a6ff;">Modificado</span>',
+  pendiente:  '<span class="badge" style="background:#fef3e0;color:#d97706;">Pendiente</span>',
+  aprobado:   '<span class="badge" style="background:#e6f8ee;color:#16a34a;">Aprobado</span>',
+  rechazado:  '<span class="badge" style="background:#fbe9e9;color:#dc2626;">Rechazado</span>',
+  modificado: '<span class="badge" style="background:#e3f7f4;color:#0d9488;">Modificado</span>',
 };
 
 async function cargarMisSolicitudesPermisos() {
@@ -982,9 +982,9 @@ function _initModalPermisosUsuario() {
   div.innerHTML = `
     <div class="modal fade" id="modalPermisosUsuario" tabindex="-1">
       <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0" style="background:#161b22; border:1px solid rgba(139,148,158,.25) !important;">
+        <div class="modal-content border-0" style="background:#ffffff; border:1px solid rgba(139,148,158,.25) !important;">
           <div class="modal-header" style="border-bottom:1px solid rgba(139,148,158,.25);">
-            <h6 class="modal-title text-white mb-0"><i class="bi bi-key me-2" style="color:#d291ff;"></i>Permisos de <span id="modalPermisosNombre" class="fw-bold"></span></h6>
+            <h6 class="modal-title mb-0"><i class="bi bi-key me-2" style="color:#9333ea;"></i>Permisos de <span id="modalPermisosNombre" class="fw-bold"></span></h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body" style="padding:20px 24px;">
@@ -995,17 +995,17 @@ function _initModalPermisosUsuario() {
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiarModalPermisos">Limpiar</button>
               </div>
             </div>
-            <div id="alertaSinPermisosModal" class="alert py-2 small mb-3" style="display:none; background:#1f2937; border:1px solid rgba(139,148,158,.25); color:#e3b341;">
+            <div id="alertaSinPermisosModal" class="alert py-2 small mb-3" style="display:none; background:#eef4f8; border:1px solid rgba(139,148,158,.25); color:#d97706;">
               <i class="bi bi-info-circle me-1"></i>Este usuario todavía no tiene ningún permiso asignado.
             </div>
-            <div style="background:#0d1117; border:1px solid rgba(139,148,158,.25); border-radius:10px; overflow:hidden;">
+            <div style="background:#f4f7fb; border:1px solid rgba(139,148,158,.25); border-radius:10px; overflow:hidden;">
               <table style="width:100%; border-collapse:collapse;">
                 <thead>
-                  <tr style="background:#1f2937;">
-                    <th style="text-align:left; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Módulo</th>
-                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Ver</th>
-                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Editar</th>
-                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#8b949e; font-weight:600;">Eliminar</th>
+                  <tr style="background:#eef4f8;">
+                    <th style="text-align:left; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600;">Módulo</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600;">Ver</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600;">Editar</th>
+                    <th style="text-align:center; padding:10px 16px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600;">Eliminar</th>
                   </tr>
                 </thead>
                 <tbody id="tbodyModalPermisosUsuario"></tbody>
@@ -1015,7 +1015,7 @@ function _initModalPermisosUsuario() {
           </div>
           <div class="modal-footer" style="border-top:1px solid rgba(139,148,158,.25);">
             <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-danger btn-sm" id="btnGuardarPermisosModal" style="background:#5c2e5c; border-color:#5c2e5c;">
+            <button class="btn btn-danger btn-sm" id="btnGuardarPermisosModal" style="background:#f3e8fd; border-color:#f3e8fd;">
               <i class="bi bi-check2 me-1"></i>Guardar permisos
             </button>
           </div>
@@ -1056,7 +1056,7 @@ async function abrirModalPermisosUsuario(idUsuario, nombre) {
       const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
       return `
         <tr style="background:${bg}; border-top:1px solid rgba(139,148,158,.12);">
-          <td style="padding:10px 16px; color:#e6edf3; font-size:.85rem;">${m.label}</td>
+          <td style="padding:10px 16px; color:#0b2340; font-size:.85rem;">${m.label}</td>
           <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpv" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_ver ? 'checked' : ''}></td>
           <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpe" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_editar ? 'checked' : ''}></td>
           <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpd" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_eliminar ? 'checked' : ''}></td>

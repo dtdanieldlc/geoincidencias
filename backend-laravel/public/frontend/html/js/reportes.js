@@ -64,13 +64,13 @@ function renderKPIs(d) {
   document.getElementById('kpiCriticas').textContent       = d.criticas || 0;
 }
 
-const COLORES = ['#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9'];
+const COLORES = ['#dc2626','#fb923c','#d97706','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9'];
 const chartOpts = (type) => ({
   responsive: true, maintainAspectRatio: true,
   plugins: { legend: { labels: { color:'#94a3b8', font:{ size:11 } } } },
   scales: type==='pie' || type==='doughnut' ? {} : {
-    x: { ticks:{ color:'#64748b' }, grid:{ color:'#21262d' } },
-    y: { ticks:{ color:'#64748b' }, grid:{ color:'#21262d' }, beginAtZero:true },
+    x: { ticks:{ color:'#64748b' }, grid:{ color:'#e2e8f0' } },
+    y: { ticks:{ color:'#64748b' }, grid:{ color:'#e2e8f0' }, beginAtZero:true },
   }
 });
 
@@ -83,7 +83,7 @@ function renderChartEstado(datos) {
       labels: datos.map(d=>d.estado),
       datasets:[{ data: datos.map(d=>d.total),
         backgroundColor: ['rgba(239,68,68,.7)','rgba(245,158,11,.7)','rgba(34,197,94,.7)','rgba(148,163,184,.7)'],
-        borderColor: '#161b22', borderWidth:2 }]
+        borderColor: '#ffffff', borderWidth:2 }]
     },
     options: { ...chartOpts('doughnut'), cutout:'65%' }
   });
@@ -140,14 +140,14 @@ function renderTablaResponsables(datos) {
   const html = datos.map(r => {
     const tasa = r.asignadas > 0 ? Math.round((r.resueltas/r.asignadas)*100) : 0;
     return `
-      <tr style="border-color:#21262d;">
+      <tr style="border-color:#e2e8f0;">
         <td class="border-secondary small fw-semibold">${r.responsable}</td>
         <td class="border-secondary small text-center">${r.asignadas}</td>
         <td class="border-secondary small text-center text-success">${r.resueltas}</td>
         <td class="border-secondary small text-center text-warning">${r.en_proceso}</td>
         <td class="border-secondary small text-center">${tasa}%</td>
         <td class="border-secondary" style="min-width:120px;">
-          <div class="progress" style="height:6px;background:#0d1117;">
+          <div class="progress" style="height:6px;background:#f4f7fb;">
             <div class="progress-bar bg-danger" style="width:${tasa}%;border-radius:4px;"></div>
           </div>
         </td>

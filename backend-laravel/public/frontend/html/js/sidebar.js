@@ -12,21 +12,26 @@
   style.id = 'sidebar-styles';
   style.textContent = `
     :root {
-      --bg-base:    #0d1117;
-      --bg-surface: #161b22;
-      --bg-hover:   #1f2937;
-      --border:     rgba(139,148,158,.25);
-      --text-muted: #8b949e;
-      --accent:     #f85149;
+      --navy:       #0b2340;
+      --navy-2:     #123a63;
+      --teal:       #14b8a6;
+      --teal-dark:  #0d9488;
+      --bg-page:    #f4f7fb;
+      --bg-surface: #ffffff;
+      --bg-hover:   #eef4f8;
+      --border:     rgba(11,35,64,.08);
+      --text:       #0b2340;
+      --text-muted: #64748b;
+      --accent:     #dc2626;
       --sidebar-w:  220px;
     }
 
     * { box-sizing: border-box; }
 
     body {
-      background: var(--bg-base);
-      color: #e6edf3;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       display: flex;
       min-height: 100vh;
       margin: 0;
@@ -36,8 +41,8 @@
     #gi-sidebar {
       width: var(--sidebar-w);
       min-height: 100vh;
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border);
+      background: linear-gradient(170deg, var(--navy) 0%, var(--navy-2) 60%, #0c4f47 150%);
+      border-right: 1px solid rgba(255,255,255,.06);
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -47,19 +52,22 @@
     }
     #gi-sidebar .sb-brand {
       padding: 18px 16px 14px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,.1);
       display: flex; align-items: center; gap: 10px;
       text-decoration: none;
     }
     #gi-sidebar .sb-brand-icon {
-      background: var(--accent); border-radius: 8px;
+      background: linear-gradient(145deg, var(--teal), var(--teal-dark));
+      box-shadow: 0 4px 12px -4px rgba(20,184,166,.6);
+      border-radius: 8px;
       width: 32px; height: 32px; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    #gi-sidebar .sb-brand-name { font-weight: 700; font-size: .95rem; color: #e6edf3; }
+    #gi-sidebar .sb-brand-name { font-weight: 700; font-size: .95rem; color: #fff; font-family: 'Sora', sans-serif; }
+    #gi-sidebar .sb-brand-name .text-teal { color: var(--teal) !important; }
     #gi-sidebar .sb-brand-badge {
-      font-size: .6rem; background: #1f3347; color: #58a6ff;
+      font-size: .6rem; background: rgba(20,184,166,.18); color: #5eead4;
       padding: 2px 6px; border-radius: 4px; font-weight: 600;
     }
 
@@ -68,7 +76,7 @@
       font-size: .65rem;
       text-transform: uppercase;
       letter-spacing: .08em;
-      color: var(--text-muted);
+      color: rgba(255,255,255,.4);
       font-weight: 600;
     }
     .sb-link {
@@ -76,13 +84,13 @@
       padding: 8px 14px;
       border-radius: 8px;
       margin: 1px 8px;
-      color: #cdd9e5;
+      color: rgba(255,255,255,.78);
       text-decoration: none;
       font-size: .875rem;
       transition: background .15s;
     }
-    .sb-link:hover  { background: var(--bg-hover); color: #fff; }
-    .sb-link.active { background: var(--bg-hover); color: var(--accent); font-weight: 600; }
+    .sb-link:hover  { background: rgba(255,255,255,.08); color: #fff; }
+    .sb-link.active { background: rgba(20,184,166,.16); color: #5eead4; font-weight: 600; }
     .sb-link .bi    { font-size: 1rem; width: 18px; text-align: center; }
     .sb-link .sb-badge {
       margin-left: auto; font-size: .6rem; min-width: 18px;
@@ -92,7 +100,7 @@
     /* ── Bottom user card ── */
     #gi-sidebar-bottom {
       margin-top: auto;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,.1);
       padding: 10px 8px;
     }
     .sb-user-card {
@@ -101,14 +109,14 @@
       cursor: pointer; transition: background .15s;
       position: relative;
     }
-    .sb-user-card:hover { background: var(--bg-hover); }
+    .sb-user-card:hover { background: rgba(255,255,255,.08); }
 
     .sb-avatar {
       width: 34px; height: 34px; border-radius: 50%;
-      background: #1f3347;
+      background: rgba(20,184,166,.2);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      font-size: .85rem; color: #58a6ff; font-weight: 700;
+      font-size: .85rem; color: #5eead4; font-weight: 700;
       overflow: hidden;
     }
     .sb-avatar img {
@@ -118,36 +126,37 @@
     .sb-user-info .sb-name {
       font-size: .8rem; font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      color: #e6edf3;
+      color: #fff;
     }
-    .sb-user-info .sb-role { font-size: .68rem; color: var(--text-muted); }
+    .sb-user-info .sb-role { font-size: .68rem; color: rgba(255,255,255,.5); }
 
     /* Dropdown del user card */
     .sb-user-dropdown {
       display: none;
       position: absolute;
       bottom: 100%; left: 0; right: 0;
-      background: #1f2937;
-      border: 1px solid var(--border);
+      background: var(--navy-2);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 8px;
       margin-bottom: 4px;
       overflow: hidden;
       z-index: 300;
+      box-shadow: 0 12px 28px -8px rgba(11,35,64,.5);
     }
     .sb-user-dropdown.open { display: block; }
     .sb-user-dropdown a,
     .sb-user-dropdown button {
       display: flex; align-items: center; gap: 8px;
       padding: 9px 14px;
-      color: #cdd9e5; text-decoration: none;
+      color: rgba(255,255,255,.8); text-decoration: none;
       font-size: .83rem;
       background: none; border: none; width: 100%; cursor: pointer;
       transition: background .15s;
     }
     .sb-user-dropdown a:hover,
-    .sb-user-dropdown button:hover { background: var(--bg-hover); }
-    .sb-user-dropdown button { color: var(--accent); }
-    .sb-divider { border-top: 1px solid var(--border); margin: 2px 0; }
+    .sb-user-dropdown button:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .sb-user-dropdown button { color: #f87171; }
+    .sb-divider { border-top: 1px solid rgba(255,255,255,.1); margin: 2px 0; }
 
     /* ── Main wrapper ── */
     #gi-main {
@@ -160,20 +169,21 @@
 
     /* ── Topbar ── */
     #gi-topbar {
-      height: 52px;
+      height: 56px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px;
       position: sticky; top: 0; z-index: 100;
     }
-    #gi-topbar .gi-page-title { font-size: 1rem; font-weight: 600; }
+    #gi-topbar .gi-page-title { font-size: 1rem; font-weight: 700; color: var(--navy); font-family: 'Sora', sans-serif; }
     .gi-topbar-actions { display: flex; align-items: center; gap: 14px; }
 
     .gi-notif-btn {
       position: relative; background: none; border: none;
-      color: #cdd9e5; font-size: 1.2rem; cursor: pointer; padding: 4px;
+      color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px;
     }
+    .gi-notif-btn:hover { color: var(--teal-dark); }
     .gi-notif-btn .notif-dot {
       position: absolute; top: 2px; right: 2px;
       width: 8px; height: 8px; border-radius: 50%;
@@ -184,7 +194,7 @@
     /* ── Sidebar toggle mobile ── */
     #gi-sidebar-toggle {
       display: none; background: none; border: none;
-      color: #cdd9e5; font-size: 1.3rem; cursor: pointer;
+      color: var(--navy); font-size: 1.3rem; cursor: pointer;
     }
 
     @media (max-width: 768px) {
@@ -193,6 +203,15 @@
       #gi-main { margin-left: 0; }
       #gi-sidebar-toggle { display: block; }
     }
+
+    /* ── Retoques de tema claro para el contenido de cada página ── */
+    [style*="background:#ffffff"] { box-shadow: 0 2px 10px -4px rgba(11,35,64,.07); }
+    .table { color: var(--text); }
+    .table > :not(caption) > * > * { border-bottom-color: var(--border) !important; }
+    .btn-outline-secondary { color: var(--text-muted); border-color: var(--border); }
+    .btn-outline-secondary:hover { background: var(--bg-hover); color: var(--text); border-color: var(--border); }
+    .form-control, .form-select { color: var(--text); }
+    .modal-content { background: var(--bg-surface); color: var(--text); }
   `;
   document.head.appendChild(style);
 })();
@@ -213,7 +232,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 
   const adminLinks = [
     { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
-    { id: 'apoyos',   href: 'admin.html',    icon: 'bi-cash-coin',    label: 'Incentivos',   badge: '<span class="sb-badge" style="background:#3d2e00;color:#e3b341;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html';" },
+    { id: 'apoyos',   href: 'admin.html',    icon: 'bi-cash-coin',    label: 'Incentivos',   badge: '<span class="sb-badge" style="background:rgba(217,119,6,.18);color:#fbbf24;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html';" },
     { id: 'usuarios', href: 'admin.html',    icon: 'bi-people',       label: 'Usuarios',     onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html';" },
     { id: 'permisos', href: 'admin.html',    icon: 'bi-key',          label: 'Solicitar Permisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html';" },
     { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial'     },
@@ -245,8 +264,8 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
     <a class="sb-brand" href="index.html">
       <div class="sb-brand-icon"><img src="/logo_Domus_Center.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><i class="bi bi-geo-alt-fill text-white" style="display:none;"></i></div>
       <div>
-        <div class="sb-brand-name">GeoIncidencias</div>
-        ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:#3d1f3d;color:#d291ff;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
+        <div class="sb-brand-name">DomusCenter</div>
+        ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:rgba(168,85,247,.2);color:#d8b4fe;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
       </div>
     </a>
 
@@ -318,7 +337,7 @@ function initSidebar(paginaActiva) {
   topbar.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;">
       <button id="gi-sidebar-toggle" onclick="toggleGiSidebar()"><i class="bi bi-list"></i></button>
-      <span class="gi-page-title">${_TITULOS[paginaActiva] ?? 'GeoIncidencias'}</span>
+      <span class="gi-page-title">${_TITULOS[paginaActiva] ?? 'DomusCenter'}</span>
     </div>
     <div class="gi-topbar-actions">
       <button class="gi-notif-btn" id="btnNotificaciones" title="Notificaciones">

@@ -89,7 +89,7 @@ function tarjeta(i) {
 
   // Etiqueta de aprobación para incidencias aún en revisión
   const aprobacionBadge = i.estado_aprobacion === 'pendiente_revision'
-    ? `<span style="background:rgba(245,158,11,.15);color:#fbbf24;padding:3px 8px;border-radius:12px;font-size:.73rem;border:1px solid rgba(245,158,11,.3);">
+    ? `<span style="background:rgba(245,158,11,.15);color:#d97706;padding:3px 8px;border-radius:12px;font-size:.73rem;border:1px solid rgba(245,158,11,.3);">
          <i class="bi bi-clock me-1"></i>En revisión
        </span>`
     : '';
@@ -106,7 +106,7 @@ function tarjeta(i) {
           </span>
           <span class="text-secondary" style="font-size:.78rem;">#${i.id_incidencia}</span>
         </div>
-        <h6 class="fw-semibold mb-1" style="color:#e6edf3;">${i.titulo}</h6>
+        <h6 class="fw-semibold mb-1" style="color:#0b2340;">${i.titulo}</h6>
         <div class="text-secondary" style="font-size:.82rem;">
           ${i.tipo  ? `<span><i class="bi bi-tag me-1"></i>${i.tipo}</span> · ` : ''}
           ${i.zona  ? `<span><i class="bi bi-geo-alt me-1"></i>${i.zona}</span> · ` : ''}
@@ -119,11 +119,11 @@ function tarjeta(i) {
           : ''}
       </div>
       <div class="text-end">
-        <div style="font-size:.75rem;color:#8b949e;">Reportado el</div>
-        <div style="font-size:.85rem;color:#e6edf3;">${fecha}</div>
+        <div style="font-size:.75rem;color:#64748b;">Reportado el</div>
+        <div style="font-size:.85rem;color:#0b2340;">${fecha}</div>
       </div>
     </div>
-    <div class="mt-3 pt-3" style="border-top:1px solid #21262d;">
+    <div class="mt-3 pt-3" style="border-top:1px solid #e2e8f0;">
       <div class="d-flex align-items-center flex-wrap gap-1" style="font-size:.75rem;">
         ${timelineEstado(i.estado)}
       </div>
@@ -139,12 +139,12 @@ function timelineEstado(estadoActual) {
   const idx = pasos.indexOf(estadoActual);
   return pasos.map((paso, i) => {
     const ok    = i <= idx;
-    const color = ok ? '#4ade80' : '#374151';
+    const color = ok ? '#16a34a' : '#94a3b8';
     const w     = (i === idx) ? '700' : '400';
     return `
       <div class="d-flex align-items-center">
         <span style="color:${color};font-weight:${w};">${ok ? '●' : '○'} ${paso}</span>
-        ${i < pasos.length - 1 ? `<span style="color:#374151;margin:0 8px;">──</span>` : ''}
+        ${i < pasos.length - 1 ? `<span style="color:#94a3b8;margin:0 8px;">──</span>` : ''}
       </div>`;
   }).join('');
 }
