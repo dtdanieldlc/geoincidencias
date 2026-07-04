@@ -47,7 +47,7 @@
       flex-direction: column;
       position: fixed;
       top: 0; left: 0;
-      z-index: 200;
+      z-index: 1200;
       transition: transform .25s ease;
     }
     #gi-sidebar .sb-brand {
@@ -140,7 +140,7 @@
       border-radius: 8px;
       margin-bottom: 4px;
       overflow: hidden;
-      z-index: 300;
+      z-index: 1210;
       box-shadow: 0 12px 28px -8px rgba(11,35,64,.5);
     }
     .sb-user-dropdown.open { display: block; }
@@ -203,6 +203,26 @@
       #gi-main { margin-left: 0; }
       #gi-sidebar-toggle { display: block; }
     }
+
+    /* ── Fix: Leaflet crea sus propios z-index internos (controles, popups
+       llegan hasta ~1000) que NO están contenidos en un stacking context
+       propio, así que "se salían" por encima del sidebar en móvil.
+       Forzamos que cada mapa cree su propio stacking context aislado. ── */
+    .leaflet-container {
+      position: relative;
+      z-index: 0;
+      isolation: isolate;
+    }
+
+    /* ── Backdrop del sidebar en móvil ── */
+    #gi-sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11,35,64,.45);
+      z-index: 1100;
+    }
+    #gi-sidebar-backdrop.open { display: block; }
 
     /* ── Retoques de tema claro para el contenido de cada página ── */
     [style*="background:#ffffff"] { box-shadow: 0 2px 10px -4px rgba(11,35,64,.07); }
@@ -325,6 +345,15 @@ function initSidebar(paginaActiva) {
   sidebar.id = 'gi-sidebar';
   sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin);
   document.body.prepend(sidebar);
+
+  // 1b. Backdrop para cerrar el sidebar tocando fuera (solo móvil)
+  const backdrop = document.createElement('div');
+  backdrop.id = 'gi-sidebar-backdrop';
+  backdrop.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+  });
+  document.body.prepend(backdrop);
 
   // 2. Envolver contenido existente en #gi-main + topbar
   const contenidoExistente = Array.from(document.body.children).filter(el => el.id !== 'gi-sidebar');
@@ -461,6 +490,7 @@ function actualizarFotoSidebar(fotoUrl) {
 // ════════════════════════════════════════════════════════
 function toggleGiSidebar() {
   document.getElementById('gi-sidebar')?.classList.toggle('open');
+  document.getElementById('gi-sidebar-backdrop')?.classList.toggle('open');
 }
 
 function toggleSbDropdown() {
