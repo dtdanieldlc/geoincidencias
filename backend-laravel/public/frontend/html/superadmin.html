@@ -21,7 +21,7 @@
       --sidebar-w:  220px;
     }
     * { box-sizing: border-box; }
-    body { background: var(--bg-base); color: #0b2340; font-family: 'Inter', -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; display:flex; min-height:100vh; margin:0; }
+    body { background: var(--bg-base); color: #0b2340; font-family: 'Inter', -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; display:flex; min-height:100vh; margin:0; overflow-x: hidden; }
 
     #sidebar {
       width: var(--sidebar-w); min-height: 100vh; background: linear-gradient(170deg, var(--navy) 0%, var(--navy-2) 60%, #0c4f47 150%);
@@ -49,7 +49,7 @@
     .user-info .name { font-size:.8rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; }
     .user-info .role { font-size:.68rem; color: rgba(255,255,255,.5); }
 
-    #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-width: 0; }
     #topbar {
       height: 56px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
       display: flex; align-items:center; justify-content:space-between; padding: 0 24px;
