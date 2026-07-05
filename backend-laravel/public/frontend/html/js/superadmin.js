@@ -7,14 +7,21 @@ const token   = () => localStorage.getItem('gi_token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
 const MODULOS_DISPONIBLES = [
-  { id: 'dashboard',   label: 'Dashboard'   },
-  { id: 'incidencias', label: 'Incidencias' },
-  { id: 'usuarios',    label: 'Usuarios'    },
-  { id: 'incentivos',  label: 'Incentivos'  },
-  { id: 'apoyos',      label: 'Apoyos'      },
-  { id: 'reportes',    label: 'Reportes'    },
-  { id: 'historial',   label: 'Historial'   },
+  { id: 'incidencias', label: 'Incidencias', acciones: ['ver', 'editar', 'eliminar'] },
+  { id: 'usuarios',    label: 'Usuarios',    acciones: ['ver', 'editar'] },
+  { id: 'incentivos',  label: 'Incentivos',  acciones: ['ver', 'editar'] },
+  { id: 'historial',   label: 'Historial',   acciones: ['ver'] },
 ];
+
+// Checkbox si el módulo realmente implementa esa acción en el backend, o un
+// guion si no aplica (ej. "Eliminar" para Usuarios/Incentivos, "Editar"/
+// "Eliminar" para Historial, que es solo un log de auditoría).
+function _celdaPermiso(modulo, accion, claseCheckbox, checked = false) {
+  if (!modulo.acciones.includes(accion)) {
+    return `<span class="text-muted" style="opacity:.4;">—</span>`;
+  }
+  return `<input type="checkbox" class="form-check-input ${claseCheckbox}" data-modulo="${modulo.id}" ${checked ? 'checked' : ''}>`;
+}
 
 let modalRevisar;
 let usuarioAsignarActual = null;
@@ -76,9 +83,9 @@ function construirFilasModulos(tbodyId) {
   tbody.innerHTML = MODULOS_DISPONIBLES.map(m => `
     <tr>
       <td>${m.label}</td>
-      <td class="text-center"><input type="checkbox" class="form-check-input mv" data-modulo="${m.id}"></td>
-      <td class="text-center"><input type="checkbox" class="form-check-input me" data-modulo="${m.id}"></td>
-      <td class="text-center"><input type="checkbox" class="form-check-input md" data-modulo="${m.id}"></td>
+      <td class="text-center">${_celdaPermiso(m, 'ver', 'mv')}</td>
+      <td class="text-center">${_celdaPermiso(m, 'editar', 'me')}</td>
+      <td class="text-center">${_celdaPermiso(m, 'eliminar', 'md')}</td>
     </tr>
   `).join('');
 }
@@ -166,9 +173,9 @@ async function abrirModalRevisar(id) {
       return `
         <tr>
           <td class="small">${m.label}</td>
-          <td class="text-center"><input type="checkbox" class="form-check-input rv" data-modulo="${m.id}" ${p.puede_ver ? 'checked' : ''}></td>
-          <td class="text-center"><input type="checkbox" class="form-check-input re" data-modulo="${m.id}" ${p.puede_editar ? 'checked' : ''}></td>
-          <td class="text-center"><input type="checkbox" class="form-check-input rd" data-modulo="${m.id}" ${p.puede_eliminar ? 'checked' : ''}></td>
+          <td class="text-center">${_celdaPermiso(m, 'ver', 'rv', p.puede_ver)}</td>
+          <td class="text-center">${_celdaPermiso(m, 'editar', 're', p.puede_editar)}</td>
+          <td class="text-center">${_celdaPermiso(m, 'eliminar', 'rd', p.puede_eliminar)}</td>
         </tr>
       `;
     }).join('');

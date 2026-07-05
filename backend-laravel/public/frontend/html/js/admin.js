@@ -705,9 +705,9 @@ function _abrirModalPromover(id, nombre) {
   tbody.innerHTML = MODULOS_DISPONIBLES.map(m => `
     <tr>
       <td class="small">${m.label}</td>
-      <td class="text-center"><input type="checkbox" class="form-check-input ppv" data-modulo="${m.id}"></td>
-      <td class="text-center"><input type="checkbox" class="form-check-input ppe" data-modulo="${m.id}"></td>
-      <td class="text-center"><input type="checkbox" class="form-check-input ppd" data-modulo="${m.id}"></td>
+      <td class="text-center">${_celdaPermiso(m, 'ver', 'ppv')}</td>
+      <td class="text-center">${_celdaPermiso(m, 'editar', 'ppe')}</td>
+      <td class="text-center">${_celdaPermiso(m, 'eliminar', 'ppd')}</td>
     </tr>
   `).join('');
 
@@ -849,14 +849,21 @@ document.addEventListener('DOMContentLoaded', async () => {
    PANEL: SOLICITAR PERMISOS (solo admin, no superadmin)
 ══════════════════════════════════════════════════════════ */
 const MODULOS_DISPONIBLES = [
-  { id: 'dashboard',   label: 'Dashboard'   },
-  { id: 'incidencias', label: 'Incidencias' },
-  { id: 'usuarios',    label: 'Usuarios'    },
-  { id: 'incentivos',  label: 'Incentivos'  },
-  { id: 'apoyos',      label: 'Apoyos'      },
-  { id: 'reportes',    label: 'Reportes'    },
-  { id: 'historial',   label: 'Historial'   },
+  { id: 'incidencias', label: 'Incidencias', acciones: ['ver', 'editar', 'eliminar'] },
+  { id: 'usuarios',    label: 'Usuarios',    acciones: ['ver', 'editar'] },
+  { id: 'incentivos',  label: 'Incentivos',  acciones: ['ver', 'editar'] },
+  { id: 'historial',   label: 'Historial',   acciones: ['ver'] },
 ];
+
+// Celda de una tabla de permisos: checkbox si el módulo realmente tiene esa
+// acción implementada en el backend, o un guion si no aplica (ej. "Eliminar"
+// para Usuarios/Incentivos, o "Editar"/"Eliminar" para Historial).
+function _celdaPermiso(modulo, accion, claseCheckbox, checked = false) {
+  if (!modulo.acciones.includes(accion)) {
+    return `<span class="text-muted" style="opacity:.4;">—</span>`;
+  }
+  return `<input type="checkbox" class="form-check-input ${claseCheckbox}" data-modulo="${modulo.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${checked ? 'checked' : ''}>`;
+}
 
 let _permisosPanelInicializado = false;
 
@@ -872,9 +879,9 @@ async function initPanelPermisos() {
     tbody.innerHTML = MODULOS_DISPONIBLES.map(m => `
       <tr>
         <td>${m.label}</td>
-        <td class="text-center"><input type="checkbox" class="form-check-input perm-ver"      data-modulo="${m.id}"></td>
-        <td class="text-center"><input type="checkbox" class="form-check-input perm-editar"   data-modulo="${m.id}"></td>
-        <td class="text-center"><input type="checkbox" class="form-check-input perm-eliminar" data-modulo="${m.id}"></td>
+        <td class="text-center">${_celdaPermiso(m, 'ver', 'perm-ver')}</td>
+        <td class="text-center">${_celdaPermiso(m, 'editar', 'perm-editar')}</td>
+        <td class="text-center">${_celdaPermiso(m, 'eliminar', 'perm-eliminar')}</td>
       </tr>
     `).join('');
   }
@@ -1082,9 +1089,9 @@ async function abrirModalPermisosUsuario(idUsuario, nombre) {
       return `
         <tr style="background:${bg}; border-top:1px solid rgba(139,148,158,.12);">
           <td style="padding:10px 16px; color:#0b2340; font-size:.85rem;">${m.label}</td>
-          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpv" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_ver ? 'checked' : ''}></td>
-          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpe" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_editar ? 'checked' : ''}></td>
-          <td style="text-align:center; padding:10px 16px;"><input type="checkbox" class="form-check-input mpd" data-modulo="${m.id}" style="width:1.15em;height:1.15em;cursor:pointer;" ${p.puede_eliminar ? 'checked' : ''}></td>
+          <td style="text-align:center; padding:10px 16px;">${_celdaPermiso(m, 'ver', 'mpv', p.puede_ver)}</td>
+          <td style="text-align:center; padding:10px 16px;">${_celdaPermiso(m, 'editar', 'mpe', p.puede_editar)}</td>
+          <td style="text-align:center; padding:10px 16px;">${_celdaPermiso(m, 'eliminar', 'mpd', p.puede_eliminar)}</td>
         </tr>
       `;
     }).join('');
