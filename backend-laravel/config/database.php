@@ -18,6 +18,11 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            // Ecuador (America/Guayaquil) es UTC-5 todo el año, sin horario de verano.
+            // Sin esto, los defaults `useCurrent()` de las migraciones (historial_actividad,
+            // incidencias, apoyos, permisos, usuarios, etc.) usan el reloj UTC del servidor
+            // de BD en vez de la hora local, y todo se muestra ~5 horas adelantado.
+            'timezone' => env('DB_TIMEZONE', '-05:00'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

@@ -35,8 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
-    Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware('solo.admin');
-    Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware('solo.admin');
+    Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
+    Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::put('incidencias/{id}/rechazar',           [IncidenciasController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::get('incidencias/mis-reportes',            [IncidenciasController::class, 'misReportes']);
@@ -76,8 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/ultimas',    [DashboardController::class, 'ultimas']);
 
     // ── Historial & Notificaciones ───────────────────────────────
-    Route::get('historial',                   [HistorialController::class, 'index']);
-    Route::get('historial/acciones',          [HistorialController::class, 'acciones']);
+    Route::get('historial',                   [HistorialController::class, 'index'])->middleware(['solo.admin', 'permiso:historial,ver']);
+    Route::get('historial/acciones',          [HistorialController::class, 'acciones'])->middleware(['solo.admin', 'permiso:historial,ver']);
     Route::get('notificaciones',              [NotificacionesController::class, 'index']);
     Route::get('notificaciones/no-leidas',    [NotificacionesController::class, 'noLeidas']);
     Route::put('notificaciones/{id}/leida',   [NotificacionesController::class, 'marcarLeida']);
