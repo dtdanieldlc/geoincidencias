@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>DomusCenter – Registrar Incidencia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spin { display:inline-block; animation:spin .8s linear infinite; }
+    #mapaRegistrar { height: 420px; border-radius: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+
+
+<div id="alerta" class="position-fixed top-0 end-0 p-3" style="z-index:9999;display:none;"></div>
+
+<div class="container-fluid px-4 py-4" style="background:#f4f7fb;min-height:100vh;">
+  <div class="mb-4">
+    <h4 class="fw-bold mb-0">Registrar Nueva Incidencia</h4>
+    <small class="text-secondary">Completa todos los campos obligatorios y ubica la incidencia en el mapa</small>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- COLUMNA IZQUIERDA - Mapa + Ubicación Interna -->
+    <div class="col-lg-7">
+      <!-- Sucursal -->
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-shop text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Sucursal</span>
+        </div>
+        <div class="p-3">
+          <label class="form-label text-secondary small text-uppercase">¿En qué sucursal ocurrió? <span class="text-danger">*</span></label>
+          <select id="id_sucursal" class="form-select border-secondary" style="background:#f4f7fb;">
+            <option value="">Seleccionar sucursal…</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mapa -->
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-pin-map text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Ubicación de la sucursal</span>
+        </div>
+        <div class="p-3">
+          <div id="mapaRegistrar" class="mb-3"></div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label text-secondary small text-uppercase">Latitud</label>
+              <input type="text" id="latitud" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" readonly/>
+            </div>
+            <div class="col-6">
+              <label class="form-label text-secondary small text-uppercase">Longitud</label>
+              <input type="text" id="longitud" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" readonly/>
+            </div>
+          </div>
+          <small class="text-secondary mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Se marca automáticamente al elegir la sucursal.</small>
+        </div>
+      </div>
+
+      <!-- Ubicación Interna (debajo del mapa) -->
+      <div class="rounded-3 border border-secondary border-opacity-25" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-geo-alt text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Ubicación interna</span>
+        </div>
+        <div class="p-3">
+          <label class="form-label text-secondary small text-uppercase">Zona / Área <span class="text-danger">*</span></label>
+          <select id="id_zona" class="form-select border-secondary" style="background:#f4f7fb;" disabled>
+            <option value="">Primero selecciona una sucursal…</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA - Formulario + Reportante -->
+    <div class="col-lg-5">
+
+      <!-- Información de la incidencia -->
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Información de la incidencia</span>
+        </div>
+        <div class="p-4">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label text-secondary small text-uppercase">Título <span class="text-danger">*</span></label>
+              <input type="text" id="titulo" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Describe brevemente la incidencia…"/>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label text-secondary small text-uppercase">Tipo <span class="text-danger">*</span></label>
+              <select id="id_tipo" class="form-select border-secondary" style="background:#f4f7fb;" onchange="cargarSubtipos()">
+                <option value="">Seleccionar tipo…</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label text-secondary small text-uppercase">Subtipo</label>
+              <select id="id_subtipo" class="form-select border-secondary" style="background:#f4f7fb;">
+                <option value="">Selecciona primero un tipo…</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label text-secondary small text-uppercase">Prioridad <span class="text-danger">*</span></label>
+              <select id="prioridad" class="form-select border-secondary" style="background:#f4f7fb;">
+                <option value="">Seleccionar prioridad…</option>
+                <option value="Baja">🟢 Baja</option>
+                <option value="Media">🟡 Media</option>
+                <option value="Alta">🔴 Alta</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label text-secondary small text-uppercase">Descripción detallada</label>
+              <textarea id="descripcion" class="form-control border-secondary" style="background:#f4f7fb;" rows="4" placeholder="Detalla la situación..."></textarea>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label text-secondary small text-uppercase">Fecha de ocurrencia <span class="text-danger">*</span></label>
+              <input type="date" id="fecha_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label text-secondary small text-uppercase">Hora</label>
+              <input type="time" id="hora_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos del reportante -->
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-megaphone text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Datos del reportante</span>
+        </div>
+        <div class="p-3">
+          <div class="mb-3">
+            <label class="form-label text-secondary small text-uppercase">Nombre</label>
+            <input type="text" id="reportante_nombre" class="form-control border-secondary" style="background:#f4f7fb;"/>
+          </div>
+          <div>
+            <label class="form-label text-secondary small text-uppercase">Contacto</label>
+            <input type="text" id="reportante_contacto" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Teléfono o correo"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="d-grid gap-2">
+        <button id="btnGuardar" class="btn btn-danger btn-lg" onclick="guardarIncidencia()">
+          <i class="bi bi-floppy2 me-2"></i>Registrar incidencia
+        </button>
+        <a href="incidencias.html" class="btn btn-outline-secondary btn-lg">
+          <i class="bi bi-x-lg me-2"></i>Cancelar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./js/auth-guard.js"></script>
+<script src="./js/sidebar.js"></script>
+<script src="./js/registrar.js"></script>
+<script>document.addEventListener("DOMContentLoaded",()=>initSidebar("registrar"));</script>
+</body>
+</html>
