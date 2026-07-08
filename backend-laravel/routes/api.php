@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
+    Route::get('incidencias/facetas',                 [IncidenciasController::class, 'facetas']);
     Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
@@ -89,7 +90,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportes/por-estado',      [ReportesController::class, 'porEstado']);
     Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
     Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
+    Route::get('reportes/por-sucursal',    [ReportesController::class, 'porSucursal']);
     Route::get('reportes/exportar-pdf', [ReportesController::class, 'exportarPdf']);
+    Route::get('reportes/exportar-csv', [ReportesController::class, 'exportarCsv']);
 
     // ── Mis permisos (cualquier usuario autenticado) ──────────────
     Route::get('mis-permisos', [PermisosController::class, 'misPermisos']);

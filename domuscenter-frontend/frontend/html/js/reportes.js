@@ -1,7 +1,7 @@
 // frontend/js/reportes.js
 exigirSesion();
 
-let chartEstado, chartCategoria, chartPrioridad, chartTendencia;
+let chartEstado, chartCategoria, chartPrioridad, chartTendencia, chartSucursal;
 
 // ── Período rápido ──
 function aplicarPeriodoRapido() {
@@ -35,16 +35,19 @@ async function cargarReportes() {
   const hasta = document.getElementById('rHasta').value;
   const tipo  = document.getElementById('rTipo').value;
   const zona  = document.getElementById('rZona').value;
+  const sucursal = document.getElementById('rSucursal').value;
   if (desde) params.append('desde', desde);
   if (hasta) params.append('hasta', hasta);
   if (tipo)  params.append('tipo',  tipo);
   if (zona)  params.append('zona',  zona);
+  if (sucursal) params.append('sucursal', sucursal);
 
   try {
-    const [resumen, porTipo, porEstado, tendencia, porResponsable] = await Promise.all([
+    const [resumen, porTipo, porEstado, porSucursal, tendencia, porResponsable] = await Promise.all([
       fetchAPI(`${API}/reportes/resumen?${params}`).then(r=>r.json()),
       fetchAPI(`${API}/reportes/por-categoria?${params}`).then(r=>r.json()),
       fetchAPI(`${API}/reportes/por-estado?${params}`).then(r=>r.json()),
+      fetchAPI(`${API}/reportes/por-sucursal?${params}`).then(r=>r.json()),
       fetchAPI(`${API}/reportes/tendencia?${params}`).then(r=>r.json()),
       fetchAPI(`${API}/reportes/por-responsable?${params}`).then(r=>r.json()),
     ]);
@@ -52,6 +55,7 @@ async function cargarReportes() {
     renderChartEstado(porEstado);
     renderChartCategoria(porTipo);
     renderChartPrioridad(resumen.por_prioridad || []);
+    renderChartSucursal(porSucursal);
     renderChartTendencia(tendencia);
     renderTablaResponsables(porResponsable);
   } catch(e) { console.error('Error reportes:', e); }
@@ -119,6 +123,24 @@ function renderChartPrioridad(datos) {
   });
 }
 
+function renderChartSucursal(datos) {
+  const ctx = document.getElementById('chartSucursal');
+  if (chartSucursal) chartSucursal.destroy();
+  chartSucursal = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: datos.map(d=>d.sucursal),
+      datasets:[
+        { label:'Total', data: datos.map(d=>d.total),
+          backgroundColor:'rgba(56,189,248,.6)', borderColor:'#38bdf8', borderWidth:1, borderRadius:4 },
+        { label:'Críticas (Alta)', data: datos.map(d=>d.criticas),
+          backgroundColor:'rgba(239,68,68,.7)', borderColor:'#ef4444', borderWidth:1, borderRadius:4 },
+      ]
+    },
+    options: chartOpts('bar')
+  });
+}
+
 function renderChartTendencia(datos) {
   const ctx = document.getElementById('chartTendencia');
   if (chartTendencia) chartTendencia.destroy();
@@ -165,10 +187,12 @@ async function exportarPDF() {
     const hasta = document.getElementById('rHasta').value;
     const tipo  = document.getElementById('rTipo').value;
     const zona  = document.getElementById('rZona').value;
+    const sucursal = document.getElementById('rSucursal').value;
     if (desde) params.append('desde', desde);
     if (hasta) params.append('hasta', hasta);
     if (tipo)  params.append('tipo',  tipo);
     if (zona)  params.append('zona',  zona);
+    if (sucursal) params.append('sucursal', sucursal);
 
     const r = await fetchAPI(`${API}/reportes/exportar-pdf?${params}`);
     if (!r.ok) throw new Error();
@@ -179,8 +203,32 @@ async function exportarPDF() {
   } catch(e) { alert('Error al exportar el reporte.'); }
 }
 
+async function exportarCSV() {
+  try {
+    const params = new URLSearchParams();
+    const desde = document.getElementById('rDesde').value;
+    const hasta = document.getElementById('rHasta').value;
+    const tipo  = document.getElementById('rTipo').value;
+    const zona  = document.getElementById('rZona').value;
+    const sucursal = document.getElementById('rSucursal').value;
+    if (desde) params.append('desde', desde);
+    if (hasta) params.append('hasta', hasta);
+    if (tipo)  params.append('tipo',  tipo);
+    if (zona)  params.append('zona',  zona);
+    if (sucursal) params.append('sucursal', sucursal);
+
+    const r = await fetchAPI(`${API}/reportes/exportar-csv?${params}`);
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `reporte-geoincidencias-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  } catch(e) { alert('Error al exportar el CSV.'); }
+}
+
 // ── Init ──
 inicializarBarraUsuario();
 poblarSelect(`${API}/catalogos/tipos`, 'rTipo');
 poblarSelect(`${API}/catalogos/zonas`, 'rZona');
+poblarSelect(`${API}/catalogos/sucursales`, 'rSucursal');
 aplicarPeriodoRapido();

@@ -16,7 +16,28 @@ class ReportesController extends Controller
         if ($hasta = $request->query('hasta'))  $query->whereDate('i.fecha_ocurrencia', '<=', $hasta);
         if ($tipo = $request->query('tipo'))    $query->where('i.id_tipo', $tipo);
         if ($zona = $request->query('zona'))    $query->where('i.id_zona', $zona);
+        if ($sucursal = $request->query('sucursal')) {
+            $query->whereIn('i.id_zona', function ($q) use ($sucursal) {
+                $q->select('id_zona')->from('zonas')->where('id_ciudad', $sucursal);
+            });
+        }
         return $query;
+    }
+
+    public function porSucursal(Request $request)
+    {
+        $query = DB::table('incidencias as i')
+            ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad');
+        $query = $this->aplicarFiltros($query, $request);
+
+        $datos = $query->groupBy('c.id_ciudad', 'c.nombre')
+            ->orderByDesc(DB::raw('COUNT(*)'))
+            ->select('c.nombre as sucursal', DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as criticas"))
+            ->get();
+
+        return response()->json($datos);
     }
 
     public function resumen(Request $request)
@@ -165,5 +186,52 @@ class ReportesController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('reporte-geoincidencias-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  GET /api/reportes/exportar-csv
+    //  Descarga el detalle de incidencias del período filtrado en CSV
+    //  (útil para abrir en Excel y hacer análisis propios).
+    // ──────────────────────────────────────────────────────────────
+    public function exportarCsv(Request $request)
+    {
+        $detalleQuery = DB::table('incidencias as i')
+            ->join('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
+            ->leftJoin('subtipos_incidencia as st', 'i.id_subtipo', '=', 'st.id_subtipo')
+            ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
+            ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->leftJoin('usuarios as uc', 'i.id_usuario_creador', '=', 'uc.id_usuario')
+            ->select([
+                'i.id_incidencia', 'i.titulo', 'i.descripcion', 'i.prioridad',
+                'ti.nombre as tipo', 'st.nombre as subtipo', 'e.nombre as estado',
+                'c.nombre as sucursal', 'z.nombre as zona',
+                'i.fecha_ocurrencia', 'i.fecha_resolucion', 'i.tiempo_resolucion_horas',
+                'i.reportante_nombre',
+                DB::raw("CONCAT(uc.nombre,' ',IFNULL(uc.apellido,'')) as creado_por"),
+            ]);
+        $detalleQuery = $this->aplicarFiltros($detalleQuery, $request);
+        $filas = $detalleQuery->orderBy('i.fecha_ocurrencia', 'desc')->get();
+
+        $columnas = ['ID','Título','Descripción','Prioridad','Tipo','Subtipo','Estado','Sucursal','Zona','Fecha ocurrencia','Fecha resolución','Horas resolución','Reportante','Creado por'];
+
+        $callback = function () use ($filas, $columnas) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM para acentos en Excel
+            fputcsv($out, $columnas);
+            foreach ($filas as $f) {
+                fputcsv($out, [
+                    $f->id_incidencia, $f->titulo, $f->descripcion, $f->prioridad,
+                    $f->tipo, $f->subtipo, $f->estado, $f->sucursal, $f->zona,
+                    $f->fecha_ocurrencia, $f->fecha_resolucion, $f->tiempo_resolucion_horas,
+                    $f->reportante_nombre, trim($f->creado_por ?? ''),
+                ]);
+            }
+            fclose($out);
+        };
+
+        return response()->streamDownload($callback, 'reporte-geoincidencias-' . now()->format('Y-m-d') . '.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }

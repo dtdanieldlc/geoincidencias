@@ -70,6 +70,7 @@ public function index(Request $request)
     if ($estado = $request->query('estado'))      $query->where('incidencias.id_estado_actual', $estado);
     if ($prioridad = $request->query('prioridad'))$query->where('incidencias.prioridad', $prioridad);
     if ($zona = $request->query('zona'))          $query->where('incidencias.id_zona', $zona);
+    if ($sucursal = $request->query('sucursal'))  $query->where('c.id_ciudad', $sucursal);
 
     if ($desde = $request->query('desde'))        $query->whereDate('incidencias.fecha_ocurrencia', '>=', $desde);
     if ($hasta = $request->query('hasta'))        $query->whereDate('incidencias.fecha_ocurrencia', '<=', $hasta);
@@ -104,6 +105,56 @@ public function index(Request $request)
             ->get(['incidencias.id_incidencia', 'incidencias.titulo', 'ti.nombre as tipo', 'e.nombre as estado', 'e.color as color_estado', 'z.nombre as zona', 'incidencias.latitud', 'incidencias.longitud']);
 
         return response()->json($datos);
+    }
+
+    // GET /api/incidencias/facetas
+    // Búsqueda por facetas: para cada filtro (tipo, estado, prioridad, zona,
+    // sucursal) calcula qué valores siguen dando al menos un resultado si se
+    // aplican los DEMÁS filtros activos (sin incluir ese mismo filtro). El
+    // frontend usa esto para deshabilitar en los <select> las opciones que
+    // darían 0 resultados, sin tener que adivinarlo por ensayo y error.
+    public function facetas(Request $request)
+    {
+        $usuario  = $request->user();
+        $verTodas = $request->boolean('todas') && $usuario->rol === 'admin';
+
+        $construir = function (array $excluir) use ($request, $verTodas) {
+            $query = $this->baseQuery();
+            if (! $verTodas) {
+                $query->where('incidencias.estado_aprobacion', 'aprobada');
+            }
+
+            if (($buscar = $request->query('buscar')) && !in_array('buscar', $excluir)) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('incidencias.titulo', 'like', "%$buscar%")
+                      ->orWhere('incidencias.descripcion', 'like', "%$buscar%");
+                });
+            }
+            if (($tipo = $request->query('tipo')) && !in_array('tipo', $excluir))
+                $query->where('incidencias.id_tipo', $tipo);
+            if (($estado = $request->query('estado')) && !in_array('estado', $excluir))
+                $query->where('incidencias.id_estado_actual', $estado);
+            if (($prioridad = $request->query('prioridad')) && !in_array('prioridad', $excluir))
+                $query->where('incidencias.prioridad', $prioridad);
+            if (($zona = $request->query('zona')) && !in_array('zona', $excluir))
+                $query->where('incidencias.id_zona', $zona);
+            if (($sucursal = $request->query('sucursal')) && !in_array('sucursal', $excluir))
+                $query->where('c.id_ciudad', $sucursal);
+            if (($desde = $request->query('desde')) && !in_array('desde', $excluir))
+                $query->whereDate('incidencias.fecha_ocurrencia', '>=', $desde);
+            if (($hasta = $request->query('hasta')) && !in_array('hasta', $excluir))
+                $query->whereDate('incidencias.fecha_ocurrencia', '<=', $hasta);
+
+            return $query;
+        };
+
+        return response()->json([
+            'tipos'       => $construir(['tipo'])->distinct()->pluck('incidencias.id_tipo'),
+            'estados'     => $construir(['estado'])->distinct()->pluck('incidencias.id_estado_actual'),
+            'prioridades' => $construir(['prioridad'])->distinct()->pluck('incidencias.prioridad'),
+            'zonas'       => $construir(['zona'])->distinct()->pluck('incidencias.id_zona'),
+            'sucursales'  => $construir(['sucursal'])->distinct()->pluck('c.id_ciudad'),
+        ]);
     }
 
     // GET /api/incidencias/pendientes-aprobacion

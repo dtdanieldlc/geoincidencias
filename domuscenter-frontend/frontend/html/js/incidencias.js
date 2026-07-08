@@ -49,6 +49,7 @@ async function cargarIncidencias(pag = 1) {
   const estado     = document.getElementById('filtroEstado').value;
   const prioridad  = document.getElementById('filtroPrioridad').value;
   const zona       = document.getElementById('filtroZona').value;
+  const sucursal   = document.getElementById('filtroSucursal').value;
   const desde      = document.getElementById('filtroDesde').value;
   const hasta      = document.getElementById('filtroHasta').value;
 
@@ -58,10 +59,9 @@ async function cargarIncidencias(pag = 1) {
   if (estado)    params.append('estado', estado);
   if (prioridad) params.append('prioridad', prioridad);
   if (zona)      params.append('zona', zona);
+  if (sucursal)  params.append('sucursal', sucursal);
   if (desde)     params.append('desde', desde);
   if (hasta)     params.append('hasta', hasta);
-
-  console.log('🔍 Filtros enviados:', Object.fromEntries(params)); // Para depurar
 
   // Mostrar cargando
   document.getElementById('tbodyIncidencias').innerHTML = 
@@ -77,11 +77,38 @@ async function cargarIncidencias(pag = 1) {
       document.getElementById('tbodyIncidencias').innerHTML = 
         '<tr><td colspan="9" class="text-center text-warning py-4">No se recibieron datos</td></tr>';
     }
+    actualizarFacetas(params);
   } catch (e) {
     console.error('Error al cargar incidencias:', e);
     document.getElementById('tbodyIncidencias').innerHTML = 
       '<tr><td colspan="9" class="text-center text-danger py-4">Error de conexión con el servidor</td></tr>';
   }
+}
+
+// ── Filtros dinámicos (faceted search): deshabilita opciones sin resultados ──
+async function actualizarFacetas(paramsActuales) {
+  try {
+    const r = await fetchAPI(`${API}/incidencias/facetas?${paramsActuales.toString()}`);
+    const f = await r.json();
+
+    const aplicar = (selectId, disponibles) => {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const disponiblesStr = (disponibles || []).map(String);
+      Array.from(sel.options).forEach(opt => {
+        if (opt.value === '') return; // "Todos" siempre habilitado
+        const habilitado = disponiblesStr.includes(opt.value) || opt.selected;
+        opt.disabled = !habilitado;
+        opt.style.color = habilitado ? '' : '#9ca3af';
+      });
+    };
+
+    aplicar('filtroTipo', f.tipos);
+    aplicar('filtroEstado', f.estados);
+    aplicar('filtroPrioridad', f.prioridades);
+    aplicar('filtroZona', f.zonas);
+    aplicar('filtroSucursal', f.sucursales);
+  } catch (e) { /* si falla, no se deshabilita nada */ }
 }
 function renderTabla({ datos, total, pagina, por_pagina }) {
   document.getElementById('infoRegistros').textContent = `Mostrando ${datos.length} de ${total} incidencias`;
@@ -141,8 +168,10 @@ function renderPaginacion(total, pagina, por_pagina) {
 }
 
 function limpiarFiltros() {
-  ['buscar','filtroTipo','filtroEstado','filtroPrioridad','filtroZona','filtroDesde','filtroHasta']
+  ['buscar','filtroTipo','filtroEstado','filtroPrioridad','filtroZona','filtroSucursal','filtroDesde','filtroHasta']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.querySelectorAll('#filtroTipo option, #filtroEstado option, #filtroPrioridad option, #filtroZona option, #filtroSucursal option')
+    .forEach(opt => { opt.disabled = false; opt.style.color = ''; });
   cargarIncidencias();
 }
 
@@ -291,6 +320,7 @@ async function init() {
   poblarSelect(`${API}/catalogos/tipos`,   'filtroTipo');
   poblarSelect(`${API}/catalogos/estados`, 'filtroEstado');
   poblarSelect(`${API}/catalogos/zonas`,   'filtroZona');
+  poblarSelect(`${API}/catalogos/sucursales`, 'filtroSucursal');
   poblarSelect(`${API}/catalogos/tipos`,   'edit_id_tipo');
   poblarSelect(`${API}/catalogos/estados`, 'edit_id_estado');
   poblarSelect(`${API}/catalogos/zonas`,   'edit_id_zona');
