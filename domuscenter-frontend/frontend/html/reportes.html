@@ -19,12 +19,19 @@
       <small class="text-secondary">Análisis de incidencias por período, categoría, zona y responsable</small>
     </div>
     <div class="dropdown">
-      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      <button class="btn btn-sm text-white" style="background:#0b2340;" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="bi bi-download me-1"></i>Exportar reporte
       </button>
-      <ul class="dropdown-menu dropdown-menu-end">
-        <li><button class="dropdown-item" onclick="exportarPDF()"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i>PDF ejecutivo (con gráficos)</button></li>
-        <li><button class="dropdown-item" onclick="exportarCSV()"><i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>CSV detallado (para Excel)</button></li>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li><h6 class="dropdown-header">Reportes en PDF</h6></li>
+        <li><button class="dropdown-item py-2" onclick="exportarResumenPDF()">
+          <i class="bi bi-file-earmark-bar-graph me-2" style="color:#14b8a6;"></i>
+          <span class="d-inline-block"><span class="d-block">Resumen Ejecutivo</span><span class="d-block small text-secondary">KPIs y análisis por categoría, estado, prioridad, sucursal y tendencia</span></span>
+        </button></li>
+        <li><button class="dropdown-item py-2" onclick="exportarDetallePDF()">
+          <i class="bi bi-file-earmark-text me-2" style="color:#0b2340;"></i>
+          <span class="d-inline-block"><span class="d-block">Detalle de Incidencias</span><span class="d-block small text-secondary">Listado completo con todos los campos, uno por incidencia</span></span>
+        </button></li>
       </ul>
     </div>
   </div>

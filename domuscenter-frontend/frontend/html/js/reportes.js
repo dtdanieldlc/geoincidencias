@@ -180,51 +180,34 @@ function renderTablaResponsables(datos) {
 }
 
 //EXPORTAR PDF
-async function exportarPDF() {
-  try {
-    const params = new URLSearchParams();
-    const desde = document.getElementById('rDesde').value;
-    const hasta = document.getElementById('rHasta').value;
-    const tipo  = document.getElementById('rTipo').value;
-    const zona  = document.getElementById('rZona').value;
-    const sucursal = document.getElementById('rSucursal').value;
-    if (desde) params.append('desde', desde);
-    if (hasta) params.append('hasta', hasta);
-    if (tipo)  params.append('tipo',  tipo);
-    if (zona)  params.append('zona',  zona);
-    if (sucursal) params.append('sucursal', sucursal);
+function _paramsActuales() {
+  const params = new URLSearchParams();
+  const desde = document.getElementById('rDesde').value;
+  const hasta = document.getElementById('rHasta').value;
+  const tipo  = document.getElementById('rTipo').value;
+  const zona  = document.getElementById('rZona').value;
+  const sucursal = document.getElementById('rSucursal').value;
+  if (desde) params.append('desde', desde);
+  if (hasta) params.append('hasta', hasta);
+  if (tipo)  params.append('tipo',  tipo);
+  if (zona)  params.append('zona',  zona);
+  if (sucursal) params.append('sucursal', sucursal);
+  return params;
+}
 
-    const r = await fetchAPI(`${API}/reportes/exportar-pdf?${params}`);
+async function _descargarPdf(endpoint, nombreArchivo) {
+  try {
+    const r = await fetchAPI(`${API}/reportes/${endpoint}?${_paramsActuales()}`);
     if (!r.ok) throw new Error();
     const blob = await r.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = `reporte-geoincidencias-${new Date().toISOString().split('T')[0]}.pdf`; a.click();
+    a.href = url; a.download = `${nombreArchivo}-${new Date().toISOString().split('T')[0]}.pdf`; a.click();
   } catch(e) { alert('Error al exportar el reporte.'); }
 }
 
-async function exportarCSV() {
-  try {
-    const params = new URLSearchParams();
-    const desde = document.getElementById('rDesde').value;
-    const hasta = document.getElementById('rHasta').value;
-    const tipo  = document.getElementById('rTipo').value;
-    const zona  = document.getElementById('rZona').value;
-    const sucursal = document.getElementById('rSucursal').value;
-    if (desde) params.append('desde', desde);
-    if (hasta) params.append('hasta', hasta);
-    if (tipo)  params.append('tipo',  tipo);
-    if (zona)  params.append('zona',  zona);
-    if (sucursal) params.append('sucursal', sucursal);
-
-    const r = await fetchAPI(`${API}/reportes/exportar-csv?${params}`);
-    if (!r.ok) throw new Error();
-    const blob = await r.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `reporte-geoincidencias-${new Date().toISOString().split('T')[0]}.csv`; a.click();
-  } catch(e) { alert('Error al exportar el CSV.'); }
-}
+function exportarResumenPDF()  { _descargarPdf('exportar-pdf-resumen', 'resumen-ejecutivo-geoincidencias'); }
+function exportarDetallePDF()  { _descargarPdf('exportar-pdf-detalle', 'detalle-incidencias-geoincidencias'); }
 
 // ── Init ──
 inicializarBarraUsuario();

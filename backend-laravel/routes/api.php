@@ -91,8 +91,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
     Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
     Route::get('reportes/por-sucursal',    [ReportesController::class, 'porSucursal']);
-    Route::get('reportes/exportar-pdf', [ReportesController::class, 'exportarPdf']);
-    Route::get('reportes/exportar-csv', [ReportesController::class, 'exportarCsv']);
+    Route::get('reportes/exportar-pdf-resumen', [ReportesController::class, 'exportarPdfResumen']);
+    Route::get('reportes/exportar-pdf-detalle', [ReportesController::class, 'exportarPdfDetalle']);
 
     // ── Mis permisos (cualquier usuario autenticado) ──────────────
     Route::get('mis-permisos', [PermisosController::class, 'misPermisos']);
