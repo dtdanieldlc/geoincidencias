@@ -86,10 +86,14 @@ async function cargarIncidencias(pag = 1) {
 }
 
 // ── Filtros dinámicos (faceted search): deshabilita opciones sin resultados ──
+let _facetasRequestId = 0;
 async function actualizarFacetas(paramsActuales) {
+  const miId = ++_facetasRequestId; // si llega otra petición más nueva, esta se descarta
   try {
     const r = await fetchAPI(`${API}/incidencias/facetas?${paramsActuales.toString()}`);
     const f = await r.json();
+
+    if (miId !== _facetasRequestId) return; // respuesta vieja/fuera de orden: ignorar
 
     const aplicar = (selectId, disponibles) => {
       const sel = document.getElementById(selectId);
@@ -108,7 +112,17 @@ async function actualizarFacetas(paramsActuales) {
     aplicar('filtroPrioridad', f.prioridades);
     aplicar('filtroZona', f.zonas);
     aplicar('filtroSucursal', f.sucursales);
-  } catch (e) { /* si falla, no se deshabilita nada */ }
+  } catch (e) {
+    console.error('Error al calcular filtros disponibles:', e);
+    if (miId === _facetasRequestId) {
+      // Si falló, no dejar opciones deshabilitadas por error: mejor mostrarlas todas habilitadas.
+      ['filtroTipo','filtroEstado','filtroPrioridad','filtroZona','filtroSucursal'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        Array.from(sel.options).forEach(opt => { opt.disabled = false; opt.style.color = ''; });
+      });
+    }
+  }
 }
 function renderTabla({ datos, total, pagina, por_pagina }) {
   document.getElementById('infoRegistros').textContent = `Mostrando ${datos.length} de ${total} incidencias`;

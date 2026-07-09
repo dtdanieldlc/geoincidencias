@@ -101,6 +101,58 @@
     </tr>
 </table>
 
+<div class="sec-title">Resumen por Prioridad y Sucursal</div>
+<table class="resumen-cols">
+    <tr>
+        <td>
+            <table class="mini-table">
+                <tr><th>Prioridad</th><th style="text-align:right;">Total</th></tr>
+                @forelse($porPrioridad as $p)
+                <tr><td>{{ $p->prioridad }}</td><td style="text-align:right;">{{ $p->total }}</td></tr>
+                @empty
+                <tr><td colspan="2">Sin datos</td></tr>
+                @endforelse
+            </table>
+        </td>
+        <td>
+            <table class="mini-table">
+                <tr><th>Sucursal</th><th style="text-align:right;">Total</th><th style="text-align:right;">Críticas</th></tr>
+                @forelse($porSucursal as $s)
+                <tr><td>{{ $s->sucursal }}</td><td style="text-align:right;">{{ $s->total }}</td><td style="text-align:right;">{{ $s->criticas }}</td></tr>
+                @empty
+                <tr><td colspan="3">Sin datos</td></tr>
+                @endforelse
+            </table>
+        </td>
+    </tr>
+</table>
+
+<div class="sec-title">Tendencia Mensual y Por Responsable</div>
+<table class="resumen-cols">
+    <tr>
+        <td>
+            <table class="mini-table">
+                <tr><th>Mes</th><th style="text-align:right;">Incidencias</th></tr>
+                @forelse($tendencia as $t)
+                <tr><td>{{ $t->mes }}</td><td style="text-align:right;">{{ $t->total }}</td></tr>
+                @empty
+                <tr><td colspan="2">Sin datos</td></tr>
+                @endforelse
+            </table>
+        </td>
+        <td>
+            <table class="mini-table">
+                <tr><th>Responsable</th><th style="text-align:right;">Asignadas</th><th style="text-align:right;">Resueltas</th></tr>
+                @forelse($porResponsable as $r)
+                <tr><td>{{ $r->responsable }}</td><td style="text-align:right;">{{ $r->asignadas }}</td><td style="text-align:right;">{{ $r->resueltas }}</td></tr>
+                @empty
+                <tr><td colspan="3">Sin datos</td></tr>
+                @endforelse
+            </table>
+        </td>
+    </tr>
+</table>
+
 <div class="sec-title">Detalle de Incidencias ({{ count($incidencias) }})</div>
 <table class="tabla">
     <thead>
