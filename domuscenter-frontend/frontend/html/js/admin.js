@@ -489,7 +489,8 @@ async function cargarUsuarios(pagina = 1) {
 
     const ahora = Date.now();
 
-    tbody.innerHTML = items.map(u => {
+    tbody.innerHTML = items.map((u, idx) => {
+      const numFila = (uPagActual - 1) * 15 + idx + 1;
       // ── Presencia online ──
       const ultimaPresencia = u.ultima_presencia_at
         ? new Date(u.ultima_presencia_at).getTime()
@@ -502,7 +503,7 @@ async function cargarUsuarios(pagina = 1) {
 
       return `
         <tr>
-          <td style="color:var(--text-muted);font-size:.78rem;">#${u.id_usuario}</td>
+          <td style="color:var(--text-muted);font-size:.78rem;" title="ID interno: ${u.id_usuario}">#${numFila}</td>
           <td><strong>${esc(u.nombre)} ${esc(u.apellido ?? '')}</strong></td>
           <td style="color:var(--text-muted);font-size:.82rem;">${esc(u.correo)}</td>
           <td>${rolBadge(u.rol)}</td>

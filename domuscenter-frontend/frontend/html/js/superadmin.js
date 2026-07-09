@@ -371,9 +371,9 @@ function _renderDetalleUsuarios(lista) {
     admin:      '<span class="badge" style="background:#f3e8fd;color:#a78bfa;">Admin</span>',
     usuario:    '<span class="badge" style="background:#eef4f8;color:#64748b;">Usuario</span>',
   };
-  tbody.innerHTML = lista.map(u => `
+  tbody.innerHTML = lista.map((u, idx) => `
     <tr>
-      <td class="small text-secondary">#${u.id_usuario}</td>
+      <td class="small text-secondary" title="ID interno: ${u.id_usuario}">#${idx + 1}</td>
       <td>${u.nombre} ${u.apellido || ''}</td>
       <td class="small">${u.correo}</td>
       <td>${rolBadgeMap[u.rol] || u.rol}</td>
