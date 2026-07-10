@@ -10,6 +10,7 @@ use App\Models\IncidenciaComentario;
 use App\Models\IncidenciaFoto;
 use App\Models\Notificacion;
 use App\Models\Usuario;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -89,8 +90,6 @@ public function index(Request $request)
         'total' => $total,
         'pagina' => $pagina,
         'por_pagina' => $porPagina,
-        'debug_filtros' => $request->all(),
-        'debug_sql' => $query->toSql(),
     ]);
     }
 
@@ -157,6 +156,28 @@ public function index(Request $request)
         ]);
     }
 
+    // GET /api/incidencias/posibles-duplicados?tipo=&zona=
+    // Antes de registrar, avisa (sin bloquear) si ya existe algo muy
+    // parecido: mismo tipo + misma zona, reportado en las últimas 48h y
+    // que todavía no está resuelto/cerrado. Evita que 3 personas reporten
+    // por separado "se fue la luz" en la misma sucursal el mismo día.
+    public function posiblesDuplicados(Request $request)
+    {
+        $request->validate(['tipo' => 'required|integer', 'zona' => 'required|integer']);
+
+        $similares = $this->baseQuery()
+            ->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision'])
+            ->whereNotIn('e.nombre', ['Resuelto', 'Cerrado'])
+            ->where('incidencias.id_tipo', $request->query('tipo'))
+            ->where('incidencias.id_zona', $request->query('zona'))
+            ->where('incidencias.fecha_registro', '>=', now()->subHours(48))
+            ->orderByDesc('incidencias.fecha_registro')
+            ->limit(5)
+            ->get(['incidencias.id_incidencia', 'incidencias.titulo', 'incidencias.fecha_registro', 'e.nombre as estado', 'incidencias.reportante_nombre']);
+
+        return response()->json(['datos' => $similares]);
+    }
+
     // GET /api/incidencias/pendientes-aprobacion
     public function pendientesAprobacion()
     {
@@ -184,6 +205,33 @@ public function index(Request $request)
 
             return response()->json($inc);
         }
+
+    // GET /api/incidencias/{id}/ficha-pdf
+    // Ficha en PDF de UNA sola incidencia: todos sus datos, comentarios y
+    // enlaces a las fotos de evidencia. Pensado para imprimir o adjuntar
+    // en un reporte a terceros (ej. autoridades, en casos de seguridad).
+    public function fichaPdf(int $id)
+    {
+        $inc = $this->baseQuery()->where('incidencias.id_incidencia', $id)->first();
+        if (! $inc) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $comentarios = IncidenciaComentario::with('usuario:id_usuario,nombre,apellido')
+            ->where('id_incidencia', $id)->orderBy('fecha')->get();
+
+        $fotos = IncidenciaFoto::where('id_incidencia', $id)->get()
+            ->map(fn ($f) => Storage::disk('public')->url($f->ruta));
+
+        $pdf = Pdf::loadView('reportes.ficha-incidencia', [
+            'inc'         => $inc,
+            'comentarios' => $comentarios,
+            'fotos'       => $fotos,
+            'generadoEn'  => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('ficha-incidencia-' . $id . '.pdf');
+    }
 
     // POST /api/incidencias
     public function store(Request $request)
@@ -246,6 +294,29 @@ public function index(Request $request)
                 'titulo' => 'Nueva incidencia por revisar',
                 'mensaje' => "\"{$incidencia->titulo}\" necesita tu aprobación.",
             ]);
+        }
+
+        // ── Alerta inmediata por correo para incidencias críticas ──
+        // Prioridad Alta + un tipo "crítico" (por defecto: Seguridad, Accidentes)
+        // dispara un correo al instante, sin esperar la cola de aprobación del
+        // panel admin — la vida/seguridad no debería esperar ese trámite.
+        // Configurable con las variables de entorno TIPOS_CRITICOS y
+        // ALERTA_SEGURIDAD_EMAILS (correos separados por coma).
+        if ($incidencia->prioridad === 'Alta') {
+            $tiposCriticos = array_map('trim', explode(',', env('TIPOS_CRITICOS', 'Seguridad,Accidentes')));
+            $nombreTipo = $incidencia->tipo?->nombre;
+            $destinatarios = array_filter(array_map('trim', explode(',', env('ALERTA_SEGURIDAD_EMAILS', ''))));
+
+            if ($nombreTipo && in_array($nombreTipo, $tiposCriticos) && count($destinatarios) > 0) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($destinatarios)
+                        ->send(new \App\Mail\AlertaIncidenciaCritica($incidencia));
+                } catch (\Throwable $e) {
+                    // No dejar que un problema de correo (SMTP no configurado, etc.)
+                    // impida registrar la incidencia.
+                    \Illuminate\Support\Facades\Log::warning('No se pudo enviar la alerta de incidencia crítica: ' . $e->getMessage());
+                }
+            }
         }
 
         return response()->json([
@@ -368,6 +439,75 @@ public function index(Request $request)
         );
 
         return response()->json(['ok' => true, 'mensaje' => 'Incidencia rechazada.']);
+    }
+
+    // PUT /api/incidencias/aprobar-lote  { ids: [1,2,3] }
+    public function aprobarLote(Request $request)
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'integer']);
+        $usuario = $request->user();
+        $ok = 0;
+
+        foreach (Incidencia::whereIn('id_incidencia', $request->ids)->get() as $incidencia) {
+            $incidencia->update([
+                'estado_aprobacion' => 'aprobada',
+                'id_admin_revisor'  => $usuario->id_usuario,
+                'fecha_revision'    => now(),
+            ]);
+
+            if ($incidencia->id_usuario_creador) {
+                Notificacion::create([
+                    'id_usuario'    => $incidencia->id_usuario_creador,
+                    'id_incidencia' => $incidencia->id_incidencia,
+                    'titulo'        => 'Incidencia aprobada',
+                    'mensaje'       => "Tu incidencia \"{$incidencia->titulo}\" fue aprobada y ya es visible.",
+                ]);
+            }
+
+            HistorialActividad::registrar(
+                $usuario->id_usuario, $incidencia->id_incidencia, 'aprobo_incidencia',
+                "Admin {$usuario->nombre_completo} aprobó la incidencia #{$incidencia->id_incidencia} (acción en lote)", $request->ip()
+            );
+            $ok++;
+        }
+
+        return response()->json(['ok' => true, 'mensaje' => "$ok incidencia(s) aprobada(s)."]);
+    }
+
+    // PUT /api/incidencias/rechazar-lote  { ids: [1,2,3], motivo: '...' }
+    public function rechazarLote(Request $request)
+    {
+        $request->validate(['ids' => 'required|array|min:1', 'ids.*' => 'integer']);
+        $usuario = $request->user();
+        $motivo  = $request->input('motivo');
+        $ok = 0;
+
+        foreach (Incidencia::whereIn('id_incidencia', $request->ids)->get() as $incidencia) {
+            $incidencia->update([
+                'estado_aprobacion' => 'rechazada',
+                'id_admin_revisor'  => $usuario->id_usuario,
+                'fecha_revision'    => now(),
+                'motivo_rechazo'    => $motivo,
+            ]);
+
+            if ($incidencia->id_usuario_creador) {
+                Notificacion::create([
+                    'id_usuario'    => $incidencia->id_usuario_creador,
+                    'id_incidencia' => $incidencia->id_incidencia,
+                    'titulo'        => 'Incidencia rechazada',
+                    'mensaje'       => "Tu incidencia \"{$incidencia->titulo}\" fue rechazada. Motivo: " . ($motivo ?: 'No especificado'),
+                ]);
+            }
+
+            HistorialActividad::registrar(
+                $usuario->id_usuario, $incidencia->id_incidencia, 'rechazo_incidencia',
+                "Admin {$usuario->nombre_completo} rechazó la incidencia #{$incidencia->id_incidencia} (acción en lote). Motivo: " . ($motivo ?: 'N/A'),
+                $request->ip()
+            );
+            $ok++;
+        }
+
+        return response()->json(['ok' => true, 'mensaje' => "$ok incidencia(s) rechazada(s)."]);
     }
 
     // GET /api/incidencias/exportar/csv

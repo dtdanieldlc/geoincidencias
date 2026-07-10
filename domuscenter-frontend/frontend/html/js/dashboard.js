@@ -95,6 +95,13 @@ async function cargarResumen() {
       document.getElementById('pctEnProceso').textContent = `${((d.en_proceso/t)*100).toFixed(1)}% del total`;
       document.getElementById('pctResueltas').textContent = `${((d.resueltas/t)*100).toFixed(1)}% del total`;
     }
+
+    const vencidas = d.vencidas || 0;
+    const banner = document.getElementById('alertaVencidas');
+    if (banner) {
+      document.getElementById('cntVencidas').textContent = vencidas;
+      banner.classList.toggle('d-none', vencidas === 0);
+    }
   } catch(e) { console.error('Error resumen:', e); }
 }
 

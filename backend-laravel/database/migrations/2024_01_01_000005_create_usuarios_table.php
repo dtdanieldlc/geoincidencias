@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('apellido', 100)->nullable();
             $table->string('correo', 150)->unique();
             $table->string('password', 255);
-            $table->enum('rol', ['admin', 'usuario'])->default('usuario');
+            $table->enum('rol', ['superadmin', 'admin', 'usuario'])->default('usuario');
             $table->string('telefono', 20)->nullable();
             $table->decimal('saldo_incentivos', 10, 2)->default(0.00);
             $table->boolean('activo')->default(true);

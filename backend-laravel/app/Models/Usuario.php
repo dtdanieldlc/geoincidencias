@@ -31,6 +31,7 @@ class Usuario extends Authenticatable
 
     protected $casts = [
         'password'           => 'hashed',
+        'respuesta_secreta'  => 'hashed',
         'saldo_incentivos'   => 'decimal:2',
         'activo'             => 'boolean',
         'correo_verificado'  => 'boolean',

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -145,7 +146,7 @@ class AuthController extends Controller
         // La pregunta secreta solo se puede configurar una vez (no se sobrescribe si ya existe)
         if ($request->filled('respuesta_secreta') && empty($usuario->pregunta_secreta)) {
             $usuario->pregunta_secreta  = $request->pregunta_secreta;
-            $usuario->respuesta_secreta = $request->respuesta_secreta;
+            $usuario->respuesta_secreta = strtolower(trim($request->respuesta_secreta)); // el cast 'hashed' la encripta al guardar
         }
 
         $usuario->save();
@@ -226,5 +227,104 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['ok' => true, 'mensaje' => 'Sesión cerrada.']);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  RECUPERACIÓN DE CONTRASEÑA (cédula + pregunta secreta)
+    //  Estos 3 pasos ya estaban armados en el frontend (login.js) y
+    //  en la tabla usuarios (migración add_recuperacion_cuenta), pero
+    //  nunca se habían conectado en el backend — el modal "¿Olvidaste
+    //  tu contraseña?" simplemente fallaba en silencio.
+    // ══════════════════════════════════════════════════════════════
+
+    // POST /api/auth/recuperar/pregunta  { correo, cedula }
+    public function recuperarPregunta(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'correo' => 'required|email',
+            'cedula' => 'required|string',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
+        }
+
+        $usuario = Usuario::where('correo', $request->correo)
+            ->where('cedula', $request->cedula)
+            ->first();
+
+        // Mensaje genérico a propósito: no revelar si el correo existe o no.
+        if (! $usuario || empty($usuario->pregunta_secreta)) {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'No encontramos una cuenta con esos datos, o todavía no configuraste tu pregunta de seguridad en "Mi Perfil".',
+            ], 404);
+        }
+
+        return response()->json(['ok' => true, 'pregunta_secreta' => $usuario->pregunta_secreta]);
+    }
+
+    // POST /api/auth/recuperar/verificar  { correo, cedula, respuesta_secreta }
+    public function recuperarVerificar(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'correo'            => 'required|email',
+            'cedula'            => 'required|string',
+            'respuesta_secreta' => 'required|string',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
+        }
+
+        $usuario = Usuario::where('correo', $request->correo)
+            ->where('cedula', $request->cedula)
+            ->first();
+
+        $respuesta = strtolower(trim($request->respuesta_secreta));
+
+        if (! $usuario || empty($usuario->respuesta_secreta) || ! Hash::check($respuesta, $usuario->respuesta_secreta)) {
+            return response()->json(['ok' => false, 'mensaje' => 'La respuesta no es correcta.'], 422);
+        }
+
+        // Token de un solo uso, 15 minutos de validez. Se guarda hasheado
+        // (igual que una contraseña) para que ni con acceso a la BD alguien
+        // pueda generar un reset válido sin haber pasado por este paso.
+        $tokenPlano = Str::random(48);
+        $usuario->reset_token        = hash('sha256', $tokenPlano);
+        $usuario->reset_token_expira = now()->addMinutes(15);
+        $usuario->save();
+
+        return response()->json(['ok' => true, 'token' => $tokenPlano]);
+    }
+
+    // POST /api/auth/recuperar/reset  { token, password_nuevo }
+    public function recuperarReset(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token'          => 'required|string',
+            'password_nuevo' => 'required|string|min:6',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
+        }
+
+        $usuario = Usuario::where('reset_token', hash('sha256', $request->token))
+            ->where('reset_token_expira', '>', now())
+            ->first();
+
+        if (! $usuario) {
+            return response()->json(['ok' => false, 'mensaje' => 'El enlace de recuperación expiró o no es válido. Vuelve a intentarlo.'], 422);
+        }
+
+        $usuario->password           = $request->password_nuevo; // cast 'hashed' lo encripta solo
+        $usuario->reset_token        = null;
+        $usuario->reset_token_expira = null;
+        $usuario->save();
+
+        // Por seguridad: cerrar cualquier sesión activa que tuviera con la contraseña anterior.
+        $usuario->tokens()->delete();
+
+        HistorialActividad::registrar($usuario->id_usuario, null, 'password_recuperado', 'Usuario recuperó su contraseña vía pregunta secreta.', $request->ip());
+
+        return response()->json(['ok' => true, 'mensaje' => 'Contraseña actualizada correctamente.']);
     }
 }

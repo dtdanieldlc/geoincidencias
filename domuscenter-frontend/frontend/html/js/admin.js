@@ -216,7 +216,7 @@ async function cargarIncidenciasPendientes() {
     else                  { badge.style.display = 'none'; }
 
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)">No hay incidencias pendientes ✓</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5" style="color:var(--text-muted)">No hay incidencias pendientes ✓</td></tr>';
       return;
     }
 
@@ -224,6 +224,7 @@ async function cargarIncidenciasPendientes() {
 
     tbody.innerHTML = items.map(i => `
       <tr>
+        <td><input type="checkbox" class="chk-pend-inc" value="${i.id_incidencia}" onchange="actualizarBarraLoteInc()"></td>
         <td><strong>${esc(i.titulo)}</strong></td>
         <td style="color:var(--text-muted)">${esc(i.tipo_nombre ?? i.tipo ?? '—')}</td>
         <td style="color:var(--text-muted)">${esc(i.zona_nombre ?? i.zona ?? '—')}</td>
@@ -245,10 +246,54 @@ async function cargarIncidenciasPendientes() {
         </td>
       </tr>
     `).join('');
+    actualizarBarraLoteInc();
 
   } catch {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-5">Error al cargar incidencias</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-5">Error al cargar incidencias</td></tr>';
   }
+}
+
+// ── Selección en lote (Incidencias pendientes) ──
+function toggleTodasPendInc(origen) {
+  document.querySelectorAll('.chk-pend-inc').forEach(chk => chk.checked = origen.checked);
+  actualizarBarraLoteInc();
+}
+
+function actualizarBarraLoteInc() {
+  const seleccionadas = document.querySelectorAll('.chk-pend-inc:checked');
+  const barra = document.getElementById('barraLoteIncidencias');
+  if (!barra) return;
+  barra.classList.toggle('d-none', seleccionadas.length === 0);
+  document.getElementById('cntSeleccionadasInc').textContent = seleccionadas.length;
+}
+
+async function aprobarLoteIncidencias() {
+  const ids = Array.from(document.querySelectorAll('.chk-pend-inc:checked')).map(c => Number(c.value));
+  if (!ids.length) return;
+  if (!confirm(`¿Aprobar ${ids.length} incidencia(s) seleccionada(s)?`)) return;
+  try {
+    await fetch(`${API}/incidencias/aprobar-lote`, {
+      method: 'PUT', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    mostrarAlerta(`${ids.length} incidencia(s) aprobada(s).`, 'success');
+    cargarIncidenciasPendientes();
+  } catch { mostrarAlerta('Error al aprobar en lote.', 'danger'); }
+}
+
+async function rechazarLoteIncidencias() {
+  const ids = Array.from(document.querySelectorAll('.chk-pend-inc:checked')).map(c => Number(c.value));
+  if (!ids.length) return;
+  const motivo = prompt(`Vas a rechazar ${ids.length} incidencia(s). Escribe el motivo (opcional):`, '');
+  if (motivo === null) return; // canceló
+  try {
+    await fetch(`${API}/incidencias/rechazar-lote`, {
+      method: 'PUT', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, motivo }),
+    });
+    mostrarAlerta(`${ids.length} incidencia(s) rechazada(s).`, 'success');
+    cargarIncidenciasPendientes();
+  } catch { mostrarAlerta('Error al rechazar en lote.', 'danger'); }
 }
 
 /* ══════════════════════════════════════════════════════════

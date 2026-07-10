@@ -17,8 +17,15 @@ Route::get('/health', fn () => response()->json(['ok' => true, 'mensaje' => 'Bac
 
 // ── Autenticación (pública) ───────────────────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('/login',    [AuthController::class, 'login']);
-    Route::post('/registro', [AuthController::class, 'registro']);
+    Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:6,1');
+    Route::post('/registro', [AuthController::class, 'registro'])->middleware('throttle:6,1');
+
+    // Recuperación de contraseña (cédula + pregunta secreta)
+    Route::prefix('recuperar')->middleware('throttle:6,1')->group(function () {
+        Route::post('/pregunta',  [AuthController::class, 'recuperarPregunta']);
+        Route::post('/verificar', [AuthController::class, 'recuperarVerificar']);
+        Route::post('/reset',     [AuthController::class, 'recuperarReset']);
+    });
 
     // Rutas protegidas por token
     Route::middleware('auth:sanctum')->group(function () {
@@ -36,16 +43,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
     Route::get('incidencias/facetas',                 [IncidenciasController::class, 'facetas']);
+    Route::get('incidencias/posibles-duplicados',      [IncidenciasController::class, 'posiblesDuplicados']);
     Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::put('incidencias/{id}/aprobar',            [IncidenciasController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::put('incidencias/{id}/rechazar',           [IncidenciasController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
+    Route::put('incidencias/aprobar-lote',            [IncidenciasController::class, 'aprobarLote'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
+    Route::put('incidencias/rechazar-lote',           [IncidenciasController::class, 'rechazarLote'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::get('incidencias/mis-reportes',            [IncidenciasController::class, 'misReportes']);
     Route::get('incidencias/{id}/comentarios',        [IncidenciasController::class, 'comentarios']);
     Route::post('incidencias/{id}/comentarios',       [IncidenciasController::class, 'agregarComentario']);
     Route::get('incidencias/{id}/fotos',              [IncidenciasController::class, 'fotos']);
     Route::post('incidencias/{id}/fotos',             [IncidenciasController::class, 'agregarFoto']);
     Route::delete('incidencias/{id}/fotos/{idFoto}',  [IncidenciasController::class, 'eliminarFoto']);
+    Route::get('incidencias/{id}/ficha-pdf',           [IncidenciasController::class, 'fichaPdf']);
     Route::apiResource('incidencias', IncidenciasController::class)->except(['destroy', 'update']);
     Route::match(['put', 'patch'], 'incidencias/{id}', [IncidenciasController::class, 'update'])
         ->middleware(['solo.admin', 'permiso:incidencias,editar']);
@@ -75,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/por-zona',   [DashboardController::class, 'porZona']);
     Route::get('dashboard/por-sucursal', [DashboardController::class, 'porSucursal']);
     Route::get('dashboard/ultimas',    [DashboardController::class, 'ultimas']);
+    Route::get('dashboard/vencidas',   [DashboardController::class, 'vencidas']);
 
     // ── Historial & Notificaciones ───────────────────────────────
     Route::get('historial',                   [HistorialController::class, 'index'])->middleware(['solo.admin', 'permiso:historial,ver']);

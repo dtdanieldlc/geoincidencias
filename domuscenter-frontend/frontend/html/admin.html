@@ -288,18 +288,26 @@
 
     <!-- ── Panel: Incidencias ── -->
     <div id="panelIncidencias">
-      <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;">Pendientes de aprobación</h6>
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <h6 class="text-secondary text-uppercase small mb-0" style="letter-spacing:.06em;">Pendientes de aprobación</h6>
+        <div id="barraLoteIncidencias" class="d-none">
+          <span class="small text-secondary me-2"><span id="cntSeleccionadasInc">0</span> seleccionada(s)</span>
+          <button class="btn btn-sm btn-success me-1" onclick="aprobarLoteIncidencias()"><i class="bi bi-check2-all me-1"></i>Aprobar seleccionadas</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="rechazarLoteIncidencias()"><i class="bi bi-x-lg me-1"></i>Rechazar seleccionadas</button>
+        </div>
+      </div>
       <div class="data-table mb-4">
         <div class="table-responsive">
         <table>
           <thead>
             <tr>
+              <th style="width:36px;"><input type="checkbox" id="chkTodasPendInc" onchange="toggleTodasPendInc(this)"></th>
               <th>Título</th><th>Tipo</th><th>Zona</th><th>Prioridad</th>
               <th>Reportado por</th><th>Fecha</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyPendIncidencias">
-            <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+            <tr><td colspan="8" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
         </div>

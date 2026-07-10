@@ -113,6 +113,28 @@ async function cargarSubtipos() {
       selSubtipo.appendChild(opt);
     });
   } catch(e) {}
+  verificarPosiblesDuplicados();
+}
+
+// ── Aviso (no bloqueante) de incidencias muy parecidas ya reportadas ──
+async function verificarPosiblesDuplicados() {
+  const idTipo = document.getElementById('id_tipo').value;
+  const idZona = document.getElementById('id_zona').value;
+  const aviso  = document.getElementById('avisoDuplicados');
+  if (!aviso) return;
+  if (!idTipo || !idZona) { aviso.classList.add('d-none'); return; }
+
+  try {
+    const r = await fetchAPI(`${API}/incidencias/posibles-duplicados?tipo=${idTipo}&zona=${idZona}`);
+    const { datos } = await r.json();
+    if (!datos || datos.length === 0) { aviso.classList.add('d-none'); return; }
+
+    document.getElementById('listaDuplicados').innerHTML = datos.map(d => {
+      const fecha = new Date(d.fecha_registro).toLocaleDateString('es-EC', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      return `• <strong>${d.titulo}</strong> — ${d.estado} · ${fecha}`;
+    }).join('<br>');
+    aviso.classList.remove('d-none');
+  } catch (e) { aviso.classList.add('d-none'); }
 }
 
 function marcarError(id) {

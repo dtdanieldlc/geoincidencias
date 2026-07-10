@@ -74,7 +74,7 @@
         </div>
         <div class="p-3">
           <label class="form-label text-secondary small text-uppercase">Zona / Área <span class="text-danger">*</span></label>
-          <select id="id_zona" class="form-select border-secondary" style="background:#f4f7fb;" disabled>
+          <select id="id_zona" class="form-select border-secondary" style="background:#f4f7fb;" disabled onchange="verificarPosiblesDuplicados()">
             <option value="">Primero selecciona una sucursal…</option>
           </select>
         </div>
@@ -147,6 +147,18 @@
           <div>
             <label class="form-label text-secondary small text-uppercase">Contacto</label>
             <input type="text" id="reportante_contacto" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Teléfono o correo"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviso de posibles duplicados -->
+      <div id="avisoDuplicados" class="d-none rounded-3 p-3 mb-3" style="background:#fffbeb; border:1px solid #fde68a;">
+        <div class="d-flex align-items-start gap-2">
+          <i class="bi bi-exclamation-triangle-fill" style="color:#d97706;"></i>
+          <div class="flex-grow-1">
+            <div class="fw-semibold small" style="color:#92400e;">Ya hay reportes parecidos recientes en esta zona</div>
+            <div id="listaDuplicados" class="small mt-1" style="color:#92400e;"></div>
+            <div class="small mt-1" style="color:#a16207;">Puedes seguir registrando si es un caso distinto, o apoyar el existente desde "Incidencias".</div>
           </div>
         </div>
       </div>

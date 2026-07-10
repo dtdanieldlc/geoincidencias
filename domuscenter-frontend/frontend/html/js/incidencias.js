@@ -124,6 +124,17 @@ async function actualizarFacetas(paramsActuales) {
     }
   }
 }
+async function descargarFichaPdf(id) {
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/ficha-pdf`);
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `ficha-incidencia-${id}.pdf`; a.click();
+  } catch (e) { alert('No se pudo descargar la ficha.'); }
+}
+
 function renderTabla({ datos, total, pagina, por_pagina }) {
   document.getElementById('infoRegistros').textContent = `Mostrando ${datos.length} de ${total} incidencias`;
   if (!datos.length) {
@@ -155,6 +166,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
       <td class="border-secondary">
         <div class="d-flex gap-1 flex-wrap">
           <button class="btn btn-sm btn-outline-light" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-sm btn-outline-secondary" title="Descargar ficha (PDF)" onclick="descargarFichaPdf(${inc.id_incidencia})"><i class="bi bi-file-earmark-pdf"></i></button>
           ${puedeApoyar ? `<button class="btn btn-sm btn-outline-danger" title="Apoyar ($${monto})" onclick="window.location.href='mis-apoyos.html'"><i class="bi bi-hand-thumbs-up"></i></button>` : ''}
           ${(esAdmin && misPermisosIncidencias.puede_editar) ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
           ${(esAdmin && misPermisosIncidencias.puede_eliminar) ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}

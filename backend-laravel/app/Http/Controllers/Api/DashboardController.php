@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    // Horas máximas antes de considerar "vencida" una incidencia de prioridad
+    // Alta que sigue sin resolverse. Ajustable según el SLA real del cliente.
+    const SLA_HORAS_ALTA = 48;
+
     public function resumen()
     {
         $r = DB::table('incidencias as i')
@@ -19,11 +23,40 @@ class DashboardController extends Controller
                 SUM(CASE WHEN e.nombre='Resuelto' THEN 1 ELSE 0 END) as resueltas,
                 SUM(CASE WHEN e.nombre='Cerrado' THEN 1 ELSE 0 END) as cerradas,
                 SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as alta_prioridad,
-                SUM(CASE WHEN i.estado_aprobacion='pendiente_revision' THEN 1 ELSE 0 END) as pendientes_aprobacion
+                SUM(CASE WHEN i.estado_aprobacion='pendiente_revision' THEN 1 ELSE 0 END) as pendientes_aprobacion,
+                SUM(CASE WHEN i.prioridad='Alta' AND e.nombre NOT IN ('Resuelto','Cerrado')
+                    AND TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) > " . self::SLA_HORAS_ALTA . "
+                    THEN 1 ELSE 0 END) as vencidas
             ")
             ->first();
 
         return response()->json($r);
+    }
+
+    // GET /api/dashboard/vencidas
+    // Incidencias de prioridad Alta que llevan más de SLA_HORAS_ALTA horas
+    // sin resolverse — para el widget de "atención urgente" del dashboard.
+    public function vencidas()
+    {
+        $datos = DB::table('incidencias as i')
+            ->join('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
+            ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
+            ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->where('i.estado_aprobacion', 'aprobada')
+            ->where('i.prioridad', 'Alta')
+            ->whereNotIn('e.nombre', ['Resuelto', 'Cerrado'])
+            ->whereRaw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) > ?', [self::SLA_HORAS_ALTA])
+            ->orderBy('i.fecha_ocurrencia')
+            ->select(
+                'i.id_incidencia', 'i.titulo', 'ti.nombre as tipo',
+                'z.nombre as zona', 'c.nombre as sucursal', 'e.nombre as estado',
+                'i.fecha_ocurrencia',
+                DB::raw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) as horas_transcurridas')
+            )
+            ->get();
+
+        return response()->json(['datos' => $datos, 'sla_horas' => self::SLA_HORAS_ALTA]);
     }
 
     public function porTipo()
