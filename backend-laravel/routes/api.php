@@ -59,7 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('incidencias/{id}/fotos',              [IncidenciasController::class, 'fotos']);
     Route::post('incidencias/{id}/fotos',             [IncidenciasController::class, 'agregarFoto']);
     Route::delete('incidencias/{id}/fotos/{idFoto}',  [IncidenciasController::class, 'eliminarFoto']);
-    Route::get('incidencias/{id}/ficha-pdf',           [IncidenciasController::class, 'fichaPdf']);
+    Route::get('incidencias/{id}/ficha-pdf',           [IncidenciasController::class, 'fichaPdf'])->middleware('solo.admin');
     Route::apiResource('incidencias', IncidenciasController::class)->except(['destroy', 'update']);
     Route::match(['put', 'patch'], 'incidencias/{id}', [IncidenciasController::class, 'update'])
         ->middleware(['solo.admin', 'permiso:incidencias,editar']);
