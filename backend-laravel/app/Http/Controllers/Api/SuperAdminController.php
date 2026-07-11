@@ -42,6 +42,53 @@ class SuperAdminController extends Controller
     }
 
     /* ══════════════════════════════════════════════════════
+       POST /api/superadmin/usuarios
+       SuperAdmin crea un usuario nuevo con cualquier rol.
+       Queda activo y con correo verificado (lo crea un admin).
+    ══════════════════════════════════════════════════════ */
+    public function crear(Request $request)
+    {
+        $data = $request->validate([
+            'nombre'   => 'required|string|max:100',
+            'apellido' => 'nullable|string|max:100',
+            'correo'   => 'required|email|max:150|unique:usuarios,correo',
+            'password' => 'required|string|min:8',
+            'telefono' => 'nullable|string|max:20',
+            'cedula'   => 'nullable|string|max:10',
+            'rol'      => 'required|in:superadmin,admin,usuario',
+        ]);
+
+        $usuario = Usuario::create([
+            'nombre'            => $data['nombre'],
+            'apellido'          => $data['apellido'] ?? null,
+            'correo'            => $data['correo'],
+            'password'          => bcrypt($data['password']),
+            'telefono'          => $data['telefono'] ?? null,
+            'cedula'            => $data['cedula'] ?? null,
+            'rol'               => $data['rol'],
+            'activo'            => true,
+            'correo_verificado' => true,
+        ]);
+
+        HistorialActividad::registrar(
+            $request->user()->id_usuario, null, 'superadmin_crear_usuario',
+            "SuperAdmin creó al usuario {$usuario->nombre_completo} ({$usuario->correo}) con rol {$usuario->rol}",
+            $request->ip()
+        );
+
+        return response()->json([
+            'ok'      => true,
+            'mensaje' => "Usuario {$usuario->nombre_completo} creado correctamente.",
+            'data'    => [
+                'id_usuario' => $usuario->id_usuario,
+                'nombre'     => $usuario->nombre_completo,
+                'correo'     => $usuario->correo,
+                'rol'        => $usuario->rol,
+            ],
+        ], 201);
+    }
+
+    /* ══════════════════════════════════════════════════════
        GET /api/superadmin/usuarios/{id}/credenciales
        Muestra correo del usuario (password siempre hasheado,
        no se puede mostrar en texto plano por seguridad)
@@ -157,7 +204,16 @@ class SuperAdminController extends Controller
 
         $nombre = $usuario->nombre_completo;
         $correo = $usuario->correo;
-        $usuario->delete();
+
+        try {
+            $usuario->tokens()->delete();
+            $usuario->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => "No se puede eliminar a {$nombre} porque tiene incidencias o actividad asociada. Puedes desactivar su cuenta en su lugar.",
+            ], 409);
+        }
 
         HistorialActividad::registrar(
             $superadmin->id_usuario, null, 'superadmin_eliminar_usuario',

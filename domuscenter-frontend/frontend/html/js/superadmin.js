@@ -43,6 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnResetPasswordDetalle').addEventListener('click', resetPasswordDetalle);
   document.getElementById('buscarDetalleInput').addEventListener('input', filtrarDetalleUsuarios);
 
+  document.getElementById('btnGuardarCrearUsuario').addEventListener('click', crearUsuario);
+  document.getElementById('modalCrearUsuario').addEventListener('show.bs.modal', () => {
+    ['crearNombre','crearApellido','crearCorreo','crearPassword','crearTelefono','crearCedula'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('crearRol').value = 'usuario';
+    document.getElementById('msgCrearUsuario').style.display = 'none';
+  });
+
   document.getElementById('selectUsuarioAsignar').addEventListener('change', onCambiarUsuarioAsignar);
   document.getElementById('btnGuardarAsignacion').addEventListener('click', guardarAsignacion);
 
@@ -381,7 +390,8 @@ function _renderDetalleUsuarios(lista) {
       <td>
         ${u.rol === 'superadmin'
           ? '<span class="small" style="color:var(--text-muted)">No editable</span>'
-          : `<button class="btn-icon" title="Ver / editar todo" onclick="abrirModalDetalle(${u.id_usuario})"><i class="bi bi-eye"></i> Ver detalle</button>`}
+          : `<button class="btn-icon" title="Ver / editar todo" onclick="abrirModalDetalle(${u.id_usuario})"><i class="bi bi-eye"></i> Ver detalle</button>
+             <button class="btn-icon text-danger" title="Eliminar usuario" onclick="eliminarUsuarioDetalle(${u.id_usuario}, '${(u.nombre + ' ' + (u.apellido || '')).replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>`}
       </td>
     </tr>
   `).join('');
@@ -491,5 +501,81 @@ async function resetPasswordDetalle() {
     msgEl.className = 'alert alert-danger py-2 small mt-3';
     msgEl.textContent = 'Error de conexión.';
     msgEl.style.display = 'block';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   CREAR USUARIO — solo SuperAdmin
+══════════════════════════════════════════════════════════ */
+async function crearUsuario() {
+  const msgEl = document.getElementById('msgCrearUsuario');
+  const btn   = document.getElementById('btnGuardarCrearUsuario');
+
+  const body = {
+    nombre:   document.getElementById('crearNombre').value.trim(),
+    apellido: document.getElementById('crearApellido').value.trim(),
+    correo:   document.getElementById('crearCorreo').value.trim(),
+    password: document.getElementById('crearPassword').value,
+    rol:      document.getElementById('crearRol').value,
+    telefono: document.getElementById('crearTelefono').value.trim(),
+    cedula:   document.getElementById('crearCedula').value.trim(),
+  };
+
+  if (!body.nombre || !body.correo || !body.password) {
+    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.textContent = 'Nombre, correo y contraseña son obligatorios.';
+    msgEl.style.display = 'block';
+    return;
+  }
+  if (body.password.length < 8) {
+    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.textContent = 'La contraseña debe tener mínimo 8 caracteres.';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/superadmin/usuarios`, {
+      method: 'POST', headers: headers(), body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    msgEl.className = `alert py-2 small mt-3 ${data.ok ? 'alert-success' : 'alert-danger'}`;
+    msgEl.textContent = data.mensaje || (data.ok ? 'Usuario creado.' : 'Error al crear el usuario.');
+    msgEl.style.display = 'block';
+
+    if (data.ok) {
+      _detalleUsuariosCargados = false;
+      cargarDetalleUsuarios();
+      setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('modalCrearUsuario'))?.hide(), 1200);
+    }
+  } catch (e) {
+    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.textContent = 'Error de conexión.';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ELIMINAR USUARIO — solo SuperAdmin
+══════════════════════════════════════════════════════════ */
+async function eliminarUsuarioDetalle(id, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre} de forma permanente? Esta acción no se puede deshacer.`)) return;
+
+  try {
+    const r = await fetch(`${API}/superadmin/usuarios/${id}`, {
+      method: 'DELETE', headers: headers(),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      _detalleUsuariosCargados = false;
+      cargarDetalleUsuarios();
+    } else {
+      alert(data.mensaje || 'No se pudo eliminar el usuario.');
+    }
+  } catch (e) {
+    alert('Error de conexión al eliminar el usuario.');
   }
 }

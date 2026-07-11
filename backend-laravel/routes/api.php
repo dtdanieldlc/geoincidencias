@@ -137,6 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── SuperAdmin exclusivo ──────────────────────────────────────
     Route::middleware('solo.superadmin')->prefix('superadmin')->group(function () {
         Route::get('usuarios',                      [SuperAdminController::class, 'usuarios']);
+        Route::post('usuarios',                     [SuperAdminController::class, 'crear']);
         Route::get('usuarios/{id}/credenciales',    [SuperAdminController::class, 'credenciales']);
         Route::put('usuarios/{id}/datos-completos', [SuperAdminController::class, 'actualizarDatosCompletos']);
         Route::put('usuarios/{id}/rol',             [SuperAdminController::class, 'cambiarRol']);

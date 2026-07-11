@@ -238,8 +238,11 @@
 
     <!-- ── Panel: Detalle de Usuarios ── -->
     <div id="panelDetalle" style="display:none">
-      <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <input type="text" id="buscarDetalleInput" class="form-control border-secondary" style="background:#f4f7fb; max-width:340px;" placeholder="Buscar por nombre o correo…">
+        <button class="btn btn-danger btn-sm" style="background:#f3e8fd;border-color:#f3e8fd;" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+          <i class="bi bi-person-plus me-1"></i>Crear usuario
+        </button>
       </div>
       <div class="data-table">
         <div class="table-responsive">
@@ -329,6 +332,61 @@
         <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
         <button class="btn btn-danger btn-sm" id="btnGuardarDetalleUsuario" style="background:#f3e8fd; border-color:#f3e8fd;">
           <i class="bi bi-check2 me-1"></i>Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: crear usuario -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0" style="background:#ffffff; border:1px solid rgba(139,148,158,.25) !important;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(139,148,158,.25);">
+        <h6 class="modal-title mb-0"><i class="bi bi-person-plus me-2" style="color:#9333ea;"></i>Crear nuevo usuario</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px;">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Nombre *</label>
+            <input type="text" id="crearNombre" class="form-control border-secondary" style="background:#f4f7fb;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Apellido</label>
+            <input type="text" id="crearApellido" class="form-control border-secondary" style="background:#f4f7fb;">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label text-secondary small text-uppercase">Correo *</label>
+            <input type="email" id="crearCorreo" class="form-control border-secondary" style="background:#f4f7fb;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Contraseña *</label>
+            <input type="text" id="crearPassword" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Mínimo 8 caracteres">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Rol *</label>
+            <select id="crearRol" class="form-select border-secondary" style="background:#f4f7fb;">
+              <option value="usuario">Usuario</option>
+              <option value="admin">Admin</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Teléfono</label>
+            <input type="text" id="crearTelefono" class="form-control border-secondary" style="background:#f4f7fb;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-secondary small text-uppercase">Cédula</label>
+            <input type="text" id="crearCedula" maxlength="10" class="form-control border-secondary" style="background:#f4f7fb;">
+          </div>
+        </div>
+        <div id="msgCrearUsuario" class="alert py-2 small mt-3" style="display:none;"></div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(139,148,158,.25);">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" id="btnGuardarCrearUsuario" style="background:#f3e8fd; border-color:#f3e8fd;">
+          <i class="bi bi-check2 me-1"></i>Crear usuario
         </button>
       </div>
     </div>
