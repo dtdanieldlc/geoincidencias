@@ -1,6 +1,44 @@
 // frontend/js/login.js
 const API = 'https://geoincidencias-production.up.railway.app/api';
 
+// ────────────────────────────────────────────────────────────────
+//  Inicio de sesión con Google (Google Identity Services)
+// ────────────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID = '342117746744-j5gber9k4e4db7ciutf7ghd167re4uoi.apps.googleusercontent.com';
+
+window.addEventListener('load', () => {
+  if (!window.google || !document.getElementById('googleBtnLogin')) return;
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: manejarRespuestaGoogle,
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById('googleBtnLogin'),
+    { theme: 'outline', size: 'large', width: 320, text: 'continue_with', locale: 'es' }
+  );
+});
+
+async function manejarRespuestaGoogle(respuesta) {
+  try {
+    const res  = await fetch(`${API}/auth/google`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ credential: respuesta.credential })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      localStorage.setItem('gi_token', data.token);
+      localStorage.setItem('gi_usuario', JSON.stringify(data.usuario));
+      window.location.href = 'index.html';
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo iniciar sesión con Google.', 'danger');
+    }
+  } catch (e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  }
+}
+
 function mostrarAlerta(msg, tipo='danger') {
   const el = document.getElementById('alerta');
   el.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show shadow-lg border-0" role="alert">

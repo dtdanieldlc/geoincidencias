@@ -172,6 +172,14 @@
 
           <button id="btnLogin" class="btn btn-teal w-100 py-2 fw-semibold" onclick="iniciarSesion()">Entrar</button>
 
+          <div class="d-flex align-items-center gap-2 my-3">
+            <hr class="flex-grow-1">
+            <span class="text-muted small">o</span>
+            <hr class="flex-grow-1">
+          </div>
+
+          <div id="googleBtnLogin" class="d-flex justify-content-center"></div>
+
           <p class="text-center text-muted small mt-4 mb-0">
             ¿No tienes una cuenta? <a class="link-teal" onclick="cambiarVista('registro')">Regístrate</a>
           </p>
@@ -319,6 +327,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   // Muestra/oculta la contraseña en cualquier input de tipo password.
   function togglePass(inputId, btn){

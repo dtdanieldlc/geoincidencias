@@ -7,6 +7,7 @@ use App\Models\HistorialActividad;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -45,6 +46,87 @@ class AuthController extends Controller
         HistorialActividad::registrar(
             $usuario->id_usuario, null, 'login',
             "Usuario {$datosUsuario['nombre']} inició sesión", $request->ip()
+        );
+
+        return response()->json([
+            'ok'      => true,
+            'token'   => $token,
+            'usuario' => $datosUsuario,
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  POST /api/auth/google   { credential }
+    //  "credential" es el ID Token (JWT) que entrega Google Identity
+    //  Services en el navegador. Lo validamos contra Google, y si el
+    //  correo ya existe hacemos login; si no existe, se crea la cuenta.
+    // ──────────────────────────────────────────────────────────────
+    public function google(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'credential' => 'required|string',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Token de Google no recibido.'], 400);
+        }
+
+        // Verificamos el ID Token directamente con Google (sin librerías extra).
+        $resp = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $request->credential,
+        ]);
+
+        if (! $resp->ok()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Token de Google inválido o expirado.'], 401);
+        }
+
+        $payload = $resp->json();
+
+        // El token debe haber sido emitido para TU aplicación (Client ID).
+        if (($payload['aud'] ?? null) !== env('GOOGLE_CLIENT_ID')) {
+            return response()->json(['ok' => false, 'mensaje' => 'Token de Google no corresponde a esta aplicación.'], 401);
+        }
+
+        if (($payload['email_verified'] ?? 'false') === 'false') {
+            return response()->json(['ok' => false, 'mensaje' => 'El correo de Google no está verificado.'], 401);
+        }
+
+        $correo = $payload['email'];
+
+        $usuario = Usuario::where('correo', $correo)->first();
+
+        if (! $usuario) {
+            $usuario = Usuario::create([
+                'nombre'            => $payload['given_name'] ?? ($payload['name'] ?? 'Usuario'),
+                'apellido'          => $payload['family_name'] ?? null,
+                'correo'            => $correo,
+                'password'          => Hash::make(Str::random(32)), // no se usa, el login es solo por Google
+                'rol'               => 'usuario',
+                'activo'            => true,
+                'correo_verificado' => true,
+            ]);
+
+            HistorialActividad::registrar(
+                $usuario->id_usuario, null, 'registro_usuario',
+                "Nuevo usuario registrado vía Google: {$usuario->nombre} ({$usuario->correo})", $request->ip()
+            );
+        }
+
+        if (! $usuario->activo) {
+            return response()->json(['ok' => false, 'mensaje' => 'Esta cuenta está desactivada.'], 403);
+        }
+
+        $token = $usuario->createToken('auth_token', ['*'], now()->addHours(8))->plainTextToken;
+
+        $datosUsuario = [
+            'id_usuario' => $usuario->id_usuario,
+            'correo'     => $usuario->correo,
+            'nombre'     => $usuario->nombre_completo,
+            'rol'        => $usuario->rol,
+        ];
+
+        HistorialActividad::registrar(
+            $usuario->id_usuario, null, 'login',
+            "Usuario {$datosUsuario['nombre']} inició sesión con Google", $request->ip()
         );
 
         return response()->json([
