@@ -82,7 +82,7 @@ class AuthController extends Controller
         $payload = $resp->json();
 
         // El token debe haber sido emitido para TU aplicación (Client ID).
-        if (($payload['aud'] ?? null) !== env('GOOGLE_CLIENT_ID')) {
+        if (($payload['aud'] ?? null) !== config('services.google.client_id')) {
             return response()->json(['ok' => false, 'mensaje' => 'Token de Google no corresponde a esta aplicación.'], 401);
         }
 
@@ -300,6 +300,84 @@ class AuthController extends Controller
             'mensaje' => 'Foto actualizada correctamente.',
             'foto_url' => Storage::url($ruta),
         ]);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  PUT /api/auth/desactivar
+    //  El propio usuario desactiva su cuenta (borrado lógico).
+    //  Conserva sus datos, pero ya no puede iniciar sesión y se
+    //  cierran todas sus sesiones activas.
+    // ──────────────────────────────────────────────────────────────
+    public function desactivarCuenta(Request $request)
+    {
+        $usuario = $request->user();
+
+        if ($usuario->rol === 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'El superadmin no puede desactivar su propia cuenta.'], 403);
+        }
+
+        $nombre = $usuario->nombre_completo;
+        $correo = $usuario->correo;
+
+        $usuario->activo = false;
+        $usuario->save();
+        $usuario->tokens()->delete(); // cierra todas sus sesiones activas
+
+        HistorialActividad::registrar(
+            null, null, 'usuario_desactivo_su_cuenta',
+            "El usuario {$nombre} ({$correo}) desactivó su propia cuenta.", $request->ip()
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => 'Tu cuenta ha sido desactivada.']);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  DELETE /api/auth/eliminar   { confirmar_correo }
+    //  El propio usuario elimina su cuenta de forma permanente.
+    //  Requiere reescribir su correo como confirmación (evita clics
+    //  accidentales, y funciona también para cuentas creadas por
+    //  Google, que no tienen una contraseña que el usuario conozca).
+    // ──────────────────────────────────────────────────────────────
+    public function eliminarCuenta(Request $request)
+    {
+        $usuario = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'confirmar_correo' => 'required|email',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => 'Debes confirmar tu correo para eliminar la cuenta.'], 400);
+        }
+
+        if (strtolower(trim($request->confirmar_correo)) !== strtolower($usuario->correo)) {
+            return response()->json(['ok' => false, 'mensaje' => 'El correo no coincide con tu cuenta.'], 422);
+        }
+
+        if ($usuario->rol === 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'El superadmin no puede eliminar su propia cuenta.'], 403);
+        }
+
+        $nombre = $usuario->nombre_completo;
+        $correo = $usuario->correo;
+
+        try {
+            $usuario->tokens()->delete();
+            $usuario->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tiene incidencias, apoyos u otra actividad asociada que
+            // impide el borrado físico por las llaves foráneas.
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'No podemos eliminar tu cuenta de forma permanente porque tiene incidencias o actividad registrada. Puedes desactivarla en su lugar.',
+            ], 409);
+        }
+
+        HistorialActividad::registrar(
+            null, null, 'usuario_elimino_su_cuenta',
+            "El usuario {$nombre} ({$correo}) eliminó su propia cuenta de forma permanente.", $request->ip()
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => 'Tu cuenta ha sido eliminada permanentemente.']);
     }
 
     // ──────────────────────────────────────────────────────────────

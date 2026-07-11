@@ -35,6 +35,8 @@ Route::prefix('auth')->group(function () {
         Route::put('/cambiar-password', [AuthController::class, 'cambiarPassword']);
         Route::post('/foto',            [AuthController::class, 'subirFoto']);
         Route::post('/logout',          [AuthController::class, 'logout']);
+        Route::put('/desactivar',       [AuthController::class, 'desactivarCuenta']);
+        Route::delete('/eliminar',      [AuthController::class, 'eliminarCuenta']);
     });
 });
 

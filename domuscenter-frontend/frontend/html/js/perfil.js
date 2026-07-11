@@ -288,3 +288,79 @@ function mostrarAlerta(msg, tipo = 'success') {
 // ── Init ────────────────────────────────────────────────────────────────────
 if (typeof inicializarBarraUsuario === 'function') inicializarBarraUsuario();
 cargarPerfil();
+
+// ── Zona de peligro: desactivar / eliminar cuenta ────────────────────────────
+
+function confirmarDesactivarCuenta() {
+  if (!confirm('¿Seguro que quieres desactivar tu cuenta? No podrás iniciar sesión hasta que un administrador la reactive.')) {
+    return;
+  }
+  desactivarCuenta();
+}
+
+async function desactivarCuenta() {
+  try {
+    const res  = await fetch(`${API}/auth/desactivar`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+      }
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Tu cuenta ha sido desactivada.', 'success');
+      setTimeout(cerrarSesion, 1500);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo desactivar la cuenta.', 'danger');
+    }
+  } catch (e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  }
+}
+
+// Muestra el correo del usuario en el modal cuando se abre
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('modalEliminarCuenta');
+  if (!modal) return;
+  modal.addEventListener('show.bs.modal', () => {
+    document.getElementById('correoConfirmarEliminar').textContent = usuarioActual?.correo || '';
+    document.getElementById('inputConfirmarCorreo').value = '';
+  });
+});
+
+async function eliminarCuenta() {
+  const correoEscrito = document.getElementById('inputConfirmarCorreo').value.trim();
+
+  if (!usuarioActual || correoEscrito.toLowerCase() !== (usuarioActual.correo || '').toLowerCase()) {
+    mostrarAlerta('El correo escrito no coincide con tu cuenta.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmarEliminarCuenta');
+  btn.disabled = true;
+  btn.innerHTML = 'Eliminando…';
+
+  try {
+    const res  = await fetch(`${API}/auth/eliminar`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ confirmar_correo: correoEscrito })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Tu cuenta ha sido eliminada.', 'success');
+      setTimeout(cerrarSesion, 1500);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo eliminar la cuenta.', 'danger');
+    }
+  } catch (e) {
+    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Sí, eliminar mi cuenta';
+  }
+}

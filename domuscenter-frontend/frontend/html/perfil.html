@@ -172,6 +172,67 @@
           </button>
         </div>
       </div>
+
+      <!-- Zona de peligro: desactivar o eliminar cuenta -->
+      <div class="card mt-4 border-danger">
+        <div class="card-header bg-danger text-white">
+          <i class="bi bi-exclamation-triangle me-2"></i>Zona de peligro
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+              <p class="fw-semibold mb-1">Desactivar mi cuenta</p>
+              <p class="text-secondary small mb-0">
+                Ya no podrás iniciar sesión, pero tus datos e incidencias se conservan.
+                Un administrador puede reactivarla más adelante.
+              </p>
+            </div>
+            <button class="btn btn-outline-danger" onclick="confirmarDesactivarCuenta()">
+              Desactivar cuenta
+            </button>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <p class="fw-semibold mb-1">Eliminar mi cuenta permanentemente</p>
+              <p class="text-secondary small mb-0">
+                Esta acción no se puede deshacer. Si tienes incidencias o actividad
+                registrada, es posible que debas desactivarla en su lugar.
+              </p>
+            </div>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarCuenta">
+              Eliminar cuenta
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmar eliminación permanente -->
+<div class="modal fade" id="modalEliminarCuenta" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header border-danger">
+        <h6 class="modal-title text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>Eliminar cuenta permanentemente
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary small">
+          Esta acción es irreversible. Para confirmar, escribe tu correo
+          <strong id="correoConfirmarEliminar"></strong> exactamente como aparece.
+        </p>
+        <input type="email" id="inputConfirmarCorreo" class="form-control" placeholder="tucorreo@empresa.com">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btnConfirmarEliminarCuenta" class="btn btn-danger" onclick="eliminarCuenta()">
+          Sí, eliminar mi cuenta
+        </button>
+      </div>
     </div>
   </div>
 </div>
