@@ -55,7 +55,7 @@ class SuperAdminController extends Controller
             'password' => 'required|string|min:8',
             'telefono' => 'nullable|string|max:20',
             'cedula'   => 'nullable|string|max:10',
-            'rol'      => 'required|in:superadmin,admin,usuario',
+            'rol'      => 'required|in:admin,usuario',
         ]);
 
         $usuario = Usuario::create([
@@ -158,8 +158,8 @@ class SuperAdminController extends Controller
     {
         $superadmin = $request->user();
 
-        if (! in_array($request->rol, ['superadmin', 'admin', 'usuario'])) {
-            return response()->json(['ok' => false, 'mensaje' => 'Rol inválido.'], 400);
+        if (! in_array($request->rol, ['admin', 'usuario'])) {
+            return response()->json(['ok' => false, 'mensaje' => 'Rol inválido. Solo puedes asignar admin o usuario.'], 400);
         }
 
         $usuario = Usuario::findOrFail($id);

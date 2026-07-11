@@ -24,6 +24,9 @@ function _celdaPermiso(modulo, accion, claseCheckbox, checked = false) {
 }
 
 let modalRevisar;
+let modalDetalle;
+let modalEliminar;
+let usuarioAEliminar = null;
 let usuarioAsignarActual = null;
 
 /* ══════════════════════════════════════════════════════════
@@ -51,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('crearRol').value = 'usuario';
     document.getElementById('msgCrearUsuario').style.display = 'none';
   });
+
+  modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminarUsuario'));
+  document.getElementById('btnConfirmarEliminarUsuario').addEventListener('click', confirmarEliminarUsuario);
 
   document.getElementById('selectUsuarioAsignar').addEventListener('change', onCambiarUsuarioAsignar);
   document.getElementById('btnGuardarAsignacion').addEventListener('click', guardarAsignacion);
@@ -354,7 +360,6 @@ function mostrarToast(mensaje, tipo = 'success') {
 ══════════════════════════════════════════════════════════ */
 let _detalleUsuariosCargados = false;
 let _todosLosUsuariosDetalle = [];
-let modalDetalle;
 
 async function cargarDetalleUsuarios() {
   const tbody = document.getElementById('tbodyDetalleUsuarios');
@@ -561,21 +566,40 @@ async function crearUsuario() {
 /* ══════════════════════════════════════════════════════════
    ELIMINAR USUARIO — solo SuperAdmin
 ══════════════════════════════════════════════════════════ */
-async function eliminarUsuarioDetalle(id, nombre) {
-  if (!confirm(`¿Eliminar a ${nombre} de forma permanente? Esta acción no se puede deshacer.`)) return;
+function eliminarUsuarioDetalle(id, nombre) {
+  usuarioAEliminar = { id, nombre };
+  document.getElementById('eliminarUsuarioNombre').textContent = nombre;
+  document.getElementById('msgEliminarUsuario').style.display = 'none';
+  document.getElementById('btnConfirmarEliminarUsuario').disabled = false;
+  modalEliminar.show();
+}
+
+async function confirmarEliminarUsuario() {
+  if (!usuarioAEliminar) return;
+  const msgEl = document.getElementById('msgEliminarUsuario');
+  const btn   = document.getElementById('btnConfirmarEliminarUsuario');
+  btn.disabled = true;
 
   try {
-    const r = await fetch(`${API}/superadmin/usuarios/${id}`, {
+    const r = await fetch(`${API}/superadmin/usuarios/${usuarioAEliminar.id}`, {
       method: 'DELETE', headers: headers(),
     });
     const data = await r.json();
+
     if (data.ok) {
       _detalleUsuariosCargados = false;
       cargarDetalleUsuarios();
+      modalEliminar.hide();
     } else {
-      alert(data.mensaje || 'No se pudo eliminar el usuario.');
+      msgEl.className = 'alert alert-danger py-2 small mt-3';
+      msgEl.textContent = data.mensaje || 'No se pudo eliminar el usuario.';
+      msgEl.style.display = 'block';
+      btn.disabled = false;
     }
   } catch (e) {
-    alert('Error de conexión al eliminar el usuario.');
+    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.textContent = 'Error de conexión al eliminar el usuario.';
+    msgEl.style.display = 'block';
+    btn.disabled = false;
   }
 }
