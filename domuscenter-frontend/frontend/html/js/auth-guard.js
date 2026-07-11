@@ -152,7 +152,7 @@ function inicializarBarraUsuario() {
   if (rolEl) rolEl.textContent = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
 
   if (u.rol !== 'admin' && u.rol !== 'superadmin') {
-    document.querySelectorAll('.solo-admin').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.solo-admin').forEach(el => el.classList.add('d-none'));
   }
 
   const btnLogout = document.getElementById('btnCerrarSesion');

@@ -19,6 +19,7 @@ class DashboardController extends Controller
             ->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN e.nombre='Pendiente' THEN 1 ELSE 0 END) as pendientes,
+                SUM(CASE WHEN e.nombre='Pendiente' THEN 1 ELSE 0 END) as abiertas,
                 SUM(CASE WHEN e.nombre='En proceso' THEN 1 ELSE 0 END) as en_proceso,
                 SUM(CASE WHEN e.nombre='Resuelto' THEN 1 ELSE 0 END) as resueltas,
                 SUM(CASE WHEN e.nombre='Cerrado' THEN 1 ELSE 0 END) as cerradas,

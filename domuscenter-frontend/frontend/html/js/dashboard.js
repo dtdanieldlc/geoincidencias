@@ -98,9 +98,11 @@ async function cargarResumen() {
 
     const vencidas = d.vencidas || 0;
     const banner = document.getElementById('alertaVencidas');
+    const rolActual = getUsuario()?.rol;
+    const esAdminOSuperadmin = rolActual === 'admin' || rolActual === 'superadmin';
     if (banner) {
       document.getElementById('cntVencidas').textContent = vencidas;
-      banner.classList.toggle('d-none', vencidas === 0);
+      banner.classList.toggle('d-none', vencidas === 0 || !esAdminOSuperadmin);
     }
   } catch(e) { console.error('Error resumen:', e); }
 }
