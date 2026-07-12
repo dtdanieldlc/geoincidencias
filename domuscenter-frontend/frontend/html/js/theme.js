@@ -20,14 +20,14 @@
   style.id = 'theme-styles';
   style.textContent = `
     html.dark-mode #main {
-      filter: invert(1) hue-rotate(180deg);
+      filter: invert(90%) hue-rotate(180deg) contrast(90%);
       background: #f4f7fb;
     }
     html.dark-mode #main img,
     html.dark-mode #main .leaflet-container,
     html.dark-mode #main video,
     html.dark-mode #main iframe {
-      filter: invert(1) hue-rotate(180deg);
+      filter: invert(90%) hue-rotate(180deg) contrast(90%);
     }
     .gi-theme-btn {
       background: none; border: none; color: inherit;
