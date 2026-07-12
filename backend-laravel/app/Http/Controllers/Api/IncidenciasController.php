@@ -148,11 +148,11 @@ public function index(Request $request)
         };
 
         return response()->json([
-            'tipos'       => $construir(['tipo'])->distinct()->pluck('incidencias.id_tipo'),
-            'estados'     => $construir(['estado'])->distinct()->pluck('incidencias.id_estado_actual'),
-            'prioridades' => $construir(['prioridad'])->distinct()->pluck('incidencias.prioridad'),
-            'zonas'       => $construir(['zona'])->distinct()->pluck('incidencias.id_zona'),
-            'sucursales'  => $construir(['sucursal'])->distinct()->pluck('c.id_ciudad'),
+            'tipos'       => $construir(['tipo'])->get(['incidencias.id_tipo'])->pluck('id_tipo')->unique()->values(),
+            'estados'     => $construir(['estado'])->get(['incidencias.id_estado_actual'])->pluck('id_estado_actual')->unique()->values(),
+            'prioridades' => $construir(['prioridad'])->get(['incidencias.prioridad'])->pluck('prioridad')->unique()->values(),
+            'zonas'       => $construir(['zona'])->get(['incidencias.id_zona'])->pluck('id_zona')->unique()->values(),
+            'sucursales'  => $construir(['sucursal'])->get(['c.id_ciudad'])->pluck('id_ciudad')->unique()->values(),
         ]);
     }
 
