@@ -335,6 +335,8 @@ public function index(Request $request)
             ->orderByDesc('incidencias.fecha_registro')
             ->get();
         return response()->json(['datos' => $datos, 'total' => $datos->count()]);
+    }
+
     // ──────────────────────────────────────────────────────────────
     //  GET /api/incidencias/mis-reportes/pdf
     //  Cualquier usuario puede exportar SU PROPIO historial de
