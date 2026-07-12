@@ -29,6 +29,7 @@ function exigirSuperAdmin() {
 async function fetchAPI(url, opciones = {}) {
   const headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'Authorization': `Bearer ${getToken()}`,
     ...(opciones.headers || {}),
   };
