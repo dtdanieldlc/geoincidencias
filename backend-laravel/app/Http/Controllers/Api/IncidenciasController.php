@@ -335,6 +335,27 @@ public function index(Request $request)
             ->orderByDesc('incidencias.fecha_registro')
             ->get();
         return response()->json(['datos' => $datos, 'total' => $datos->count()]);
+    // ──────────────────────────────────────────────────────────────
+    //  GET /api/incidencias/mis-reportes/pdf
+    //  Cualquier usuario puede exportar SU PROPIO historial de
+    //  incidencias reportadas, como PDF descargable.
+    // ──────────────────────────────────────────────────────────────
+    public function misReportesPdf(Request $request)
+    {
+        $usuario = $request->user();
+
+        $incidencias = $this->baseQuery()
+            ->where('incidencias.id_usuario_creador', $usuario->id_usuario)
+            ->orderByDesc('incidencias.fecha_registro')
+            ->get();
+
+        $pdf = Pdf::loadView('reportes.pdf-mis-reportes', [
+            'incidencias' => $incidencias,
+            'usuario'     => trim($usuario->nombre . ' ' . ($usuario->apellido ?? '')),
+            'generadoEn'  => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('mis-reportes-' . now()->format('Y-m-d') . '.pdf');
     }   
 
     // PUT /api/incidencias/{id}

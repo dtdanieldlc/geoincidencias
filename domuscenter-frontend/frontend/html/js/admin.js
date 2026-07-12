@@ -853,6 +853,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   exigirAdmin();
   initUsuarioActual();
   startHeartbeat();
+  if (typeof initThemeToggle === 'function') initThemeToggle();
   await cargarMisPermisosAdmin();
   aplicarVisibilidadPorPermisos();
   cargarIncidenciasPendientes();

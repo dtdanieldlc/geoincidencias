@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('incidencias/aprobar-lote',            [IncidenciasController::class, 'aprobarLote'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::put('incidencias/rechazar-lote',           [IncidenciasController::class, 'rechazarLote'])->middleware(['solo.admin', 'permiso:incidencias,editar']);
     Route::get('incidencias/mis-reportes',            [IncidenciasController::class, 'misReportes']);
+    Route::get('incidencias/mis-reportes/pdf',        [IncidenciasController::class, 'misReportesPdf']);
     Route::get('incidencias/{id}/comentarios',        [IncidenciasController::class, 'comentarios']);
     Route::post('incidencias/{id}/comentarios',       [IncidenciasController::class, 'agregarComentario']);
     Route::get('incidencias/{id}/fotos',              [IncidenciasController::class, 'fotos']);

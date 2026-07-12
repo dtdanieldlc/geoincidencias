@@ -5,6 +5,13 @@
 //  Llamar initSidebar('nombre-pagina-activa') en DOMContentLoaded
 // ════════════════════════════════════════════════════════
 
+// Aplicar el tema guardado ANTES de pintar la página (evita parpadeo)
+(function aplicarTemaGuardado() {
+  if (localStorage.getItem('gi_theme') === 'dark') {
+    document.documentElement.classList.add('dark-mode');
+  }
+})();
+
 // CSS del sidebar inyectado una sola vez
 (function inyectarEstilosSidebar() {
   if (document.getElementById('sidebar-styles')) return;
@@ -25,6 +32,28 @@
       --accent:     #dc2626;
       --sidebar-w:  220px;
     }
+
+    /* ── Modo oscuro: invierte colores del contenido, sin tocar el sidebar
+       (que ya es oscuro por diseño) ni imágenes/mapas (se re-invierten
+       para que se sigan viendo con sus colores reales). ── */
+    html.dark-mode #gi-main {
+      filter: invert(1) hue-rotate(180deg);
+      background: #f4f7fb;
+    }
+    html.dark-mode #gi-main img,
+    html.dark-mode #gi-main .leaflet-container,
+    html.dark-mode #gi-main video,
+    html.dark-mode #gi-main iframe {
+      filter: invert(1) hue-rotate(180deg);
+    }
+
+    .gi-theme-btn {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 1.1rem; cursor: pointer; padding: 6px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    .gi-theme-btn:hover { background: var(--bg-hover); color: var(--navy); }
 
     * { box-sizing: border-box; }
 
@@ -333,6 +362,13 @@ const _TITULOS = {
 // ════════════════════════════════════════════════════════
 //  INIT PRINCIPAL
 // ════════════════════════════════════════════════════════
+function _actualizarIconoTema() {
+  const icono = document.getElementById('iconoTema');
+  if (!icono) return;
+  const esOscuro = document.documentElement.classList.contains('dark-mode');
+  icono.className = esOscuro ? 'bi bi-sun' : 'bi bi-moon-stars';
+}
+
 function initSidebar(paginaActiva) {
   const u = getUsuario();
   if (!u) return;
@@ -369,6 +405,9 @@ function initSidebar(paginaActiva) {
       <span class="gi-page-title">${_TITULOS[paginaActiva] ?? 'DomusCenter'}</span>
     </div>
     <div class="gi-topbar-actions">
+      <button class="gi-theme-btn" id="btnTema" title="Cambiar tema">
+        <i class="bi bi-moon-stars" id="iconoTema"></i>
+      </button>
       <button class="gi-notif-btn" id="btnNotificaciones" title="Notificaciones">
         <i class="bi bi-bell"></i>
         <span class="notif-dot" id="notifDot"></span>
@@ -393,6 +432,14 @@ function initSidebar(paginaActiva) {
     const card = document.getElementById('sbUserCard');
     const drop = document.getElementById('sbDropdown');
     if (card && drop && !card.contains(e.target)) drop.classList.remove('open');
+  });
+
+  // 4b. Modo oscuro
+  _actualizarIconoTema();
+  document.getElementById('btnTema').addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark-mode');
+    localStorage.setItem('gi_theme', document.documentElement.classList.contains('dark-mode') ? 'dark' : 'light');
+    _actualizarIconoTema();
   });
 
   // 5. Notificaciones (reusar las de auth-guard si existen)

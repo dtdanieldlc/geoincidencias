@@ -35,6 +35,7 @@ let usuarioAsignarActual = null;
 document.addEventListener('DOMContentLoaded', () => {
   exigirSuperAdmin();
   initUsuarioActual();
+  if (typeof initThemeToggle === 'function') initThemeToggle();
 
   modalRevisar = new bootstrap.Modal(document.getElementById('modalRevisarSolicitud'));
 

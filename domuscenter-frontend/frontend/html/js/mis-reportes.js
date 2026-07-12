@@ -152,3 +152,16 @@ function timelineEstado(estadoActual) {
 // ── Init ──
 inicializarBarraUsuario();
 cargarMisReportes();
+
+async function exportarMisReportesPdf() {
+  try {
+    const r = await fetchAPI(`${API}/incidencias/mis-reportes/pdf`);
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `mis-reportes-${new Date().toISOString().slice(0,10)}.pdf`; a.click();
+  } catch (e) {
+    alert('No se pudo generar el PDF de tu historial.');
+  }
+}
