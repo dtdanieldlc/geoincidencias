@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
         ]);
 
+        // Esta es una API pura (sin rutas web/sesión), así que nunca debe
+        // intentar redirigir a una ruta "login" que no existe cuando la
+        // autenticación falla. En vez de eso, siempre debe responder 401 en JSON.
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->alias([
             'solo.admin'      => SoloAdmin::class,
             'solo.superadmin' => SoloSuperAdmin::class,
@@ -25,5 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Todo lo que empiece con /api siempre responde en JSON, sin importar
+        // qué "Accept" mande el cliente (navegador, Postman, curl, etc.).
+        $exceptions->shouldRenderJsonWhen(function ($request, \Throwable $e) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
     })->create();
