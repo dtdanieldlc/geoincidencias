@@ -62,7 +62,7 @@ class SuperAdminController extends Controller
             'nombre'            => $data['nombre'],
             'apellido'          => $data['apellido'] ?? null,
             'correo'            => $data['correo'],
-            'password'          => bcrypt($data['password']),
+            'password'          => $data['password'],
             'telefono'          => $data['telefono'] ?? null,
             'cedula'            => $data['cedula'] ?? null,
             'rol'               => $data['rol'],
@@ -186,8 +186,11 @@ class SuperAdminController extends Controller
     }
 
     /* ══════════════════════════════════════════════════════
-       DELETE /api/superadmin/usuarios/{id}
-       Eliminar cualquier usuario (excepto superadmin)
+       DELETE /api/superadmin/usuarios/{id}?forzar=1
+       Eliminar cualquier usuario (excepto superadmin).
+       Con ?forzar=1, el superadmin puede eliminar aunque tenga
+       incidencias/actividad asociada: se desvinculan sus registros
+       (se ponen en null donde es posible) antes de borrar la cuenta.
     ══════════════════════════════════════════════════════ */
     public function eliminar(Request $request, int $id)
     {
@@ -202,22 +205,46 @@ class SuperAdminController extends Controller
             return response()->json(['ok' => false, 'mensaje' => 'No puedes eliminarte a ti mismo.'], 400);
         }
 
-        $nombre = $usuario->nombre_completo;
-        $correo = $usuario->correo;
+        $nombre  = $usuario->nombre_completo;
+        $correo  = $usuario->correo;
+        $forzar  = $request->boolean('forzar');
 
         try {
-            $usuario->tokens()->delete();
-            $usuario->delete();
+            \DB::transaction(function () use ($usuario, $id, $forzar) {
+                if ($forzar) {
+                    // Se desvinculan (NO se borran) los registros donde el campo
+                    // admite null: se conserva el historial, solo se "anonimiza".
+                    \DB::table('incidencias')->where('id_usuario_creador', $id)->update(['id_usuario_creador' => null]);
+                    \DB::table('incidencias')->where('id_admin_revisor', $id)->update(['id_admin_revisor' => null]);
+                    \DB::table('incidencia_estados_historial')->where('id_usuario', $id)->update(['id_usuario' => null]);
+                    \DB::table('incidencia_comentarios')->where('id_usuario', $id)->update(['id_usuario' => null]);
+                    \DB::table('incidencia_apoyos')->where('id_admin_revisor', $id)->update(['id_admin_revisor' => null]);
+                    \DB::table('historial_actividad')->where('id_usuario', $id)->update(['id_usuario' => null]);
+
+                    // Estas columnas NO admiten null en la base de datos, así que
+                    // esos registros puntuales sí se eliminan (asignaciones, apoyos
+                    // económicos dados por este usuario, y sus notificaciones).
+                    \DB::table('incidencia_asignaciones')->where('id_usuario', $id)->delete();
+                    \DB::table('incidencia_apoyos')->where('id_usuario', $id)->delete();
+                    \DB::table('notificaciones')->where('id_usuario', $id)->delete();
+                    \DB::table('admin_permisos')->where('id_usuario', $id)->delete();
+                }
+
+                $usuario->tokens()->delete();
+                $usuario->delete();
+            });
         } catch (\Illuminate\Database\QueryException $e) {
             return response()->json([
                 'ok' => false,
-                'mensaje' => "No se puede eliminar a {$nombre} porque tiene incidencias o actividad asociada. Puedes desactivar su cuenta en su lugar.",
+                'mensaje' => $forzar
+                    ? "No se pudo eliminar a {$nombre} incluso forzando la eliminación. Contacta soporte técnico."
+                    : "No se puede eliminar a {$nombre} porque tiene incidencias o actividad asociada. Puedes desactivar su cuenta, o forzar la eliminación (se perderán algunos registros asociados).",
             ], 409);
         }
 
         HistorialActividad::registrar(
             $superadmin->id_usuario, null, 'superadmin_eliminar_usuario',
-            "SuperAdmin eliminó al usuario {$nombre} ({$correo})",
+            "SuperAdmin eliminó al usuario {$nombre} ({$correo})" . ($forzar ? ' [forzado]' : ''),
             $request->ip()
         );
 
@@ -285,7 +312,7 @@ class SuperAdminController extends Controller
         $request->validate(['password' => 'required|string|min:8']);
 
         $usuario           = Usuario::findOrFail($id);
-        $usuario->password = bcrypt($request->password);
+        $usuario->password = $request->password;
         $usuario->save();
 
         HistorialActividad::registrar(

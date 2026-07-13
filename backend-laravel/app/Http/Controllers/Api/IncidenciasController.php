@@ -72,6 +72,7 @@ public function index(Request $request)
     if ($prioridad = $request->query('prioridad'))$query->where('incidencias.prioridad', $prioridad);
     if ($zona = $request->query('zona'))          $query->where('incidencias.id_zona', $zona);
     if ($sucursal = $request->query('sucursal'))  $query->where('c.id_ciudad', $sucursal);
+    if ($usuario = $request->query('usuario'))    $query->where('incidencias.id_usuario_creador', $usuario);
 
     if ($desde = $request->query('desde'))        $query->whereDate('incidencias.fecha_ocurrencia', '>=', $desde);
     if ($hasta = $request->query('hasta'))        $query->whereDate('incidencias.fecha_ocurrencia', '<=', $hasta);
@@ -104,6 +105,24 @@ public function index(Request $request)
             ->get(['incidencias.id_incidencia', 'incidencias.titulo', 'ti.nombre as tipo', 'e.nombre as estado', 'e.color as color_estado', 'z.nombre as zona', 'incidencias.latitud', 'incidencias.longitud']);
 
         return response()->json($datos);
+    }
+
+    // GET /api/incidencias/reportantes
+    // Lista de usuarios que han reportado al menos una incidencia (para el filtro).
+    public function reportantes(Request $request)
+    {
+        $lista = $this->baseQuery()
+            ->whereNotNull('incidencias.id_usuario_creador')
+            ->get(['incidencias.id_usuario_creador', 'uc.nombre', 'uc.apellido'])
+            ->unique('id_usuario_creador')
+            ->map(fn ($i) => [
+                'id_usuario' => $i->id_usuario_creador,
+                'nombre'     => trim($i->nombre . ' ' . ($i->apellido ?? '')),
+            ])
+            ->sortBy('nombre')
+            ->values();
+
+        return response()->json($lista);
     }
 
     // GET /api/incidencias/facetas
@@ -335,6 +354,30 @@ public function index(Request $request)
             ->orderByDesc('incidencias.fecha_registro')
             ->get();
         return response()->json(['datos' => $datos, 'total' => $datos->count()]);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  GET /api/admin/usuarios/{id}/reporte-pdf
+    //  Un admin/superadmin descarga el historial de incidencias
+    //  de CUALQUIER usuario, en el mismo formato de "Mis Reportes".
+    // ──────────────────────────────────────────────────────────────
+    public function reportePdfUsuario(Request $request, $id)
+    {
+        $usuario = \App\Models\Usuario::findOrFail($id);
+
+        $incidencias = $this->baseQuery()
+            ->where('incidencias.id_usuario_creador', $usuario->id_usuario)
+            ->orderByDesc('incidencias.fecha_registro')
+            ->get();
+
+        $pdf = Pdf::loadView('reportes.pdf-mis-reportes', [
+            'incidencias' => $incidencias,
+            'usuario'     => trim($usuario->nombre . ' ' . ($usuario->apellido ?? '')),
+            'generadoEn'  => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        $nombreArchivo = \Illuminate\Support\Str::slug($usuario->nombre . '-' . $usuario->apellido);
+        return $pdf->download("reporte-{$nombreArchivo}-" . now()->format('Y-m-d') . '.pdf');
     }
 
     // ──────────────────────────────────────────────────────────────

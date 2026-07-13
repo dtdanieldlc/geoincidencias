@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
     Route::get('incidencias/facetas',                 [IncidenciasController::class, 'facetas']);
+    Route::get('incidencias/reportantes',              [IncidenciasController::class, 'reportantes']);
     Route::get('incidencias/posibles-duplicados',      [IncidenciasController::class, 'posiblesDuplicados']);
     Route::get('incidencias/pendientes-aprobacion',   [IncidenciasController::class, 'pendientesAprobacion'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
     Route::get('incidencias/exportar/csv',            [IncidenciasController::class, 'exportarCsv'])->middleware(['solo.admin', 'permiso:incidencias,ver']);
@@ -119,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('usuarios/estadisticas', [AdminUsuariosController::class, 'estadisticas'])->middleware('permiso:usuarios,ver');
         Route::get('usuarios/{id}',         [AdminUsuariosController::class, 'show'])->middleware('permiso:usuarios,ver');
         Route::put('usuarios/{id}/activo',  [AdminUsuariosController::class, 'toggleActivo'])->middleware('permiso:usuarios,editar');
+        Route::get('usuarios/{id}/reporte-pdf', [IncidenciasController::class, 'reportePdfUsuario'])->middleware('permiso:usuarios,ver');
         Route::put('usuarios/{id}/rol',     [AdminUsuariosController::class, 'cambiarRol']);
         Route::put('usuarios/{id}/presencia', [AdminUsuariosController::class, 'actualizarPresencia']);
 

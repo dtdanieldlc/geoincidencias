@@ -99,7 +99,7 @@ class AuthController extends Controller
                 'nombre'            => $payload['given_name'] ?? ($payload['name'] ?? 'Usuario'),
                 'apellido'          => $payload['family_name'] ?? null,
                 'correo'            => $correo,
-                'password'          => Hash::make(Str::random(32)), // no se usa, el login es solo por Google
+                'password'          => Str::random(32), // el modelo la hashea solo; no se usa, el login es solo por Google
                 'rol'               => 'usuario',
                 'activo'            => true,
                 'correo_verificado' => true,
@@ -157,7 +157,7 @@ class AuthController extends Controller
             'nombre'            => $request->nombre,
             'apellido'          => $request->apellido,
             'correo'            => $request->correo,
-            'password'          => Hash::make($request->password),
+            'password'          => $request->password,
             'rol'               => 'usuario',
             'telefono'          => $request->telefono,
             'activo'            => true,
@@ -261,7 +261,7 @@ class AuthController extends Controller
             return response()->json(['ok' => false, 'mensaje' => 'La contraseña actual es incorrecta.'], 400);
         }
 
-        $usuario->password = Hash::make($request->password_nuevo);
+        $usuario->password = $request->password_nuevo;
         $usuario->save();
 
         HistorialActividad::registrar(

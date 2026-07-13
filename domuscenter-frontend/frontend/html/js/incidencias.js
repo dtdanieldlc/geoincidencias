@@ -50,6 +50,7 @@ async function cargarIncidencias(pag = 1) {
   const prioridad  = document.getElementById('filtroPrioridad').value;
   const zona       = document.getElementById('filtroZona').value;
   const sucursal   = document.getElementById('filtroSucursal').value;
+  const usuario    = document.getElementById('filtroUsuario').value;
   const desde      = document.getElementById('filtroDesde').value;
   const hasta      = document.getElementById('filtroHasta').value;
 
@@ -60,6 +61,7 @@ async function cargarIncidencias(pag = 1) {
   if (prioridad) params.append('prioridad', prioridad);
   if (zona)      params.append('zona', zona);
   if (sucursal)  params.append('sucursal', sucursal);
+  if (usuario)   params.append('usuario', usuario);
   if (desde)     params.append('desde', desde);
   if (hasta)     params.append('hasta', hasta);
 
@@ -194,7 +196,7 @@ function renderPaginacion(total, pagina, por_pagina) {
 }
 
 function limpiarFiltros() {
-  ['buscar','filtroTipo','filtroEstado','filtroPrioridad','filtroZona','filtroSucursal','filtroDesde','filtroHasta']
+  ['buscar','filtroTipo','filtroEstado','filtroPrioridad','filtroZona','filtroSucursal','filtroUsuario','filtroDesde','filtroHasta']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.querySelectorAll('#filtroTipo option, #filtroEstado option, #filtroPrioridad option, #filtroZona option, #filtroSucursal option')
     .forEach(opt => { opt.disabled = false; opt.style.color = ''; });
@@ -222,7 +224,7 @@ async function poblarSelect(url, selectId) {
     if (!sel) return;
     datos.forEach(d => {
       const opt = document.createElement('option');
-      opt.value = d.id ?? d.id_tipo ?? d.id_subtipo ?? d.id_estado ?? d.id_zona ?? '';
+      opt.value = d.id ?? d.id_tipo ?? d.id_subtipo ?? d.id_estado ?? d.id_zona ?? d.id_usuario ?? '';
       opt.textContent = d.nombre;
       sel.appendChild(opt);
     });
@@ -347,6 +349,7 @@ async function init() {
   poblarSelect(`${API}/catalogos/estados`, 'filtroEstado');
   poblarSelect(`${API}/catalogos/zonas`,   'filtroZona');
   poblarSelect(`${API}/catalogos/sucursales`, 'filtroSucursal');
+  poblarSelect(`${API}/incidencias/reportantes`, 'filtroUsuario');
   poblarSelect(`${API}/catalogos/tipos`,   'edit_id_tipo');
   poblarSelect(`${API}/catalogos/estados`, 'edit_id_estado');
   poblarSelect(`${API}/catalogos/zonas`,   'edit_id_zona');

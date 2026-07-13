@@ -42,10 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tabSolicitudesBtn').addEventListener('click', () => cambiarTabSuperAdmin('solicitudes'));
   document.getElementById('tabAsignarBtn').addEventListener('click',     () => cambiarTabSuperAdmin('asignar'));
   document.getElementById('tabDetalleBtn').addEventListener('click',     () => cambiarTabSuperAdmin('detalle'));
+  document.getElementById('tabReportesUsuarioBtn').addEventListener('click', () => cambiarTabSuperAdmin('reportes-usuario'));
 
   document.getElementById('btnGuardarDetalleUsuario').addEventListener('click', guardarDetalle);
   document.getElementById('btnResetPasswordDetalle').addEventListener('click', resetPasswordDetalle);
   document.getElementById('buscarDetalleInput').addEventListener('input', filtrarDetalleUsuarios);
+  document.getElementById('buscarReporteUsuarioInput').addEventListener('input', filtrarReportesUsuario);
 
   document.getElementById('btnGuardarCrearUsuario').addEventListener('click', crearUsuario);
   document.getElementById('modalCrearUsuario').addEventListener('show.bs.modal', () => {
@@ -110,14 +112,22 @@ function cambiarTabSuperAdmin(tab) {
   document.getElementById('panelSolicitudes').style.display = tab === 'solicitudes' ? 'block' : 'none';
   document.getElementById('panelAsignar').style.display     = tab === 'asignar'     ? 'block' : 'none';
   document.getElementById('panelDetalle').style.display     = tab === 'detalle'     ? 'block' : 'none';
+  document.getElementById('panelReportesUsuario').style.display = tab === 'reportes-usuario' ? 'block' : 'none';
   document.getElementById('tabSolicitudesBtn').classList.toggle('active', tab === 'solicitudes');
   document.getElementById('tabAsignarBtn').classList.toggle('active', tab === 'asignar');
   document.getElementById('tabDetalleBtn').classList.toggle('active', tab === 'detalle');
+  document.getElementById('tabReportesUsuarioBtn').classList.toggle('active', tab === 'reportes-usuario');
 
-  const titulo = document.getElementById('topbarTitle');
-  titulo.textContent = tab === 'solicitudes' ? 'Solicitudes pendientes' : (tab === 'asignar' ? 'Asignar permisos directo' : 'Detalle de Usuarios');
+  const titulos = {
+    solicitudes: 'Solicitudes pendientes',
+    asignar: 'Asignar permisos directo',
+    detalle: 'Detalle de Usuarios',
+    'reportes-usuario': 'Reportes por Usuario',
+  };
+  document.getElementById('topbarTitle').textContent = titulos[tab] || '';
 
   if (tab === 'detalle' && !_detalleUsuariosCargados) cargarDetalleUsuarios();
+  if (tab === 'reportes-usuario' && !_reportesUsuarioCargados) cargarReportesUsuario();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -361,6 +371,8 @@ function mostrarToast(mensaje, tipo = 'success') {
 ══════════════════════════════════════════════════════════ */
 let _detalleUsuariosCargados = false;
 let _todosLosUsuariosDetalle = [];
+let _reportesUsuarioCargados = false;
+let _todosLosUsuariosReporte = [];
 
 async function cargarDetalleUsuarios() {
   const tbody = document.getElementById('tbodyDetalleUsuarios');
@@ -371,14 +383,14 @@ async function cargarDetalleUsuarios() {
     _detalleUsuariosCargados = true;
     _renderDetalleUsuarios(_todosLosUsuariosDetalle);
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Error al cargar usuarios.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Error al cargar usuarios.</td></tr>';
   }
 }
 
 function _renderDetalleUsuarios(lista) {
   const tbody = document.getElementById('tbodyDetalleUsuarios');
   if (lista.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)">Sin resultados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)">Sin resultados.</td></tr>';
     return;
   }
   const rolBadgeMap = {
@@ -393,10 +405,14 @@ function _renderDetalleUsuarios(lista) {
       <td class="small">${u.correo}</td>
       <td>${rolBadgeMap[u.rol] || u.rol}</td>
       <td class="small">${u.correo_verificado ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-secondary"></i>'}</td>
+      <td>${u.activo
+        ? '<span class="badge" style="background:#dcfce7;color:#16a34a;">Activo</span>'
+        : '<span class="badge" style="background:#fee2e2;color:#dc2626;">Desactivado</span>'}</td>
       <td>
         ${u.rol === 'superadmin'
           ? '<span class="small" style="color:var(--text-muted)">No editable</span>'
           : `<button class="btn-icon" title="Ver / editar todo" onclick="abrirModalDetalle(${u.id_usuario})"><i class="bi bi-eye"></i> Ver detalle</button>
+             <button class="btn-icon" title="${u.activo ? 'Desactivar' : 'Activar'} usuario" onclick="toggleActivoDetalle(${u.id_usuario}, ${u.activo})"><i class="bi bi-${u.activo ? 'person-dash' : 'person-check'}"></i></button>
              <button class="btn-icon text-danger" title="Eliminar usuario" onclick="eliminarUsuarioDetalle(${u.id_usuario}, '${(u.nombre + ' ' + (u.apellido || '')).replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>`}
       </td>
     </tr>
@@ -565,24 +581,108 @@ async function crearUsuario() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   ELIMINAR USUARIO — solo SuperAdmin
+   ACTIVAR / DESACTIVAR — solo SuperAdmin
 ══════════════════════════════════════════════════════════ */
+async function toggleActivoDetalle(id, activoActual) {
+  const accion = activoActual ? 'desactivar' : 'activar';
+  if (!confirm(`¿Seguro que quieres ${accion} esta cuenta?`)) return;
+
+  try {
+    const r = await fetch(`${API}/admin/usuarios/${id}/activo`, { method: 'PUT', headers: headers() });
+    const data = await r.json();
+    if (data.ok) {
+      _detalleUsuariosCargados = false;
+      cargarDetalleUsuarios();
+    } else {
+      alert(data.mensaje || `No se pudo ${accion} el usuario.`);
+    }
+  } catch (e) {
+    alert('Error de conexión.');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   REPORTES POR USUARIO — solo SuperAdmin
+══════════════════════════════════════════════════════════ */
+async function cargarReportesUsuario() {
+  const tbody = document.getElementById('tbodyReportesUsuario');
+  try {
+    const r = await fetch(`${API}/superadmin/usuarios?por_pagina=200`, { headers: headers() });
+    const data = await r.json();
+    _todosLosUsuariosReporte = data.data?.data ?? [];
+    _reportesUsuarioCargados = true;
+    _renderReportesUsuario(_todosLosUsuariosReporte);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-danger">Error al cargar usuarios.</td></tr>';
+  }
+}
+
+function _renderReportesUsuario(lista) {
+  const tbody = document.getElementById('tbodyReportesUsuario');
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted)">Sin resultados.</td></tr>';
+    return;
+  }
+  const rolBadgeMap = {
+    superadmin: '<span class="badge" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>',
+    admin:      '<span class="badge" style="background:#f3e8fd;color:#a78bfa;">Admin</span>',
+    usuario:    '<span class="badge" style="background:#eef4f8;color:#64748b;">Usuario</span>',
+  };
+  tbody.innerHTML = lista.map((u, idx) => `
+    <tr>
+      <td class="small text-secondary">#${idx + 1}</td>
+      <td>${u.nombre} ${u.apellido || ''}</td>
+      <td class="small">${u.correo}</td>
+      <td>${rolBadgeMap[u.rol] || u.rol}</td>
+      <td>
+        <button class="btn-icon" title="Descargar reporte PDF" onclick="descargarReporteUsuario(${u.id_usuario}, '${(u.nombre + ' ' + (u.apellido || '')).replace(/'/g, "\\'")}')">
+          <i class="bi bi-file-earmark-pdf"></i> Descargar reporte
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filtrarReportesUsuario() {
+  const q = document.getElementById('buscarReporteUsuarioInput').value.trim().toLowerCase();
+  if (!q) { _renderReportesUsuario(_todosLosUsuariosReporte); return; }
+  const filtrados = _todosLosUsuariosReporte.filter(u =>
+    `${u.nombre} ${u.apellido || ''}`.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q)
+  );
+  _renderReportesUsuario(filtrados);
+}
+
+async function descargarReporteUsuario(id, nombre) {
+  try {
+    const r = await fetch(`${API}/admin/usuarios/${id}/reporte-pdf`, { headers: headers() });
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `reporte-${nombre.trim().replace(/\s+/g, '-').toLowerCase()}.pdf`; a.click();
+  } catch (e) {
+    alert('No se pudo generar el reporte de este usuario.');
+  }
+}
 function eliminarUsuarioDetalle(id, nombre) {
   usuarioAEliminar = { id, nombre };
   document.getElementById('eliminarUsuarioNombre').textContent = nombre;
   document.getElementById('msgEliminarUsuario').style.display = 'none';
+  document.getElementById('opcionForzarEliminar').style.display = 'none';
+  document.getElementById('checkForzarEliminar').checked = false;
   document.getElementById('btnConfirmarEliminarUsuario').disabled = false;
   modalEliminar.show();
 }
 
 async function confirmarEliminarUsuario() {
   if (!usuarioAEliminar) return;
-  const msgEl = document.getElementById('msgEliminarUsuario');
-  const btn   = document.getElementById('btnConfirmarEliminarUsuario');
+  const msgEl    = document.getElementById('msgEliminarUsuario');
+  const btn      = document.getElementById('btnConfirmarEliminarUsuario');
+  const forzar   = document.getElementById('checkForzarEliminar').checked;
   btn.disabled = true;
 
   try {
-    const r = await fetch(`${API}/superadmin/usuarios/${usuarioAEliminar.id}`, {
+    const r = await fetch(`${API}/superadmin/usuarios/${usuarioAEliminar.id}${forzar ? '?forzar=1' : ''}`, {
       method: 'DELETE', headers: headers(),
     });
     const data = await r.json();
@@ -592,13 +692,17 @@ async function confirmarEliminarUsuario() {
       cargarDetalleUsuarios();
       modalEliminar.hide();
     } else {
-      msgEl.className = 'alert alert-danger py-2 small mt-3';
+      msgEl.className = 'alert alert-danger py-2 small mt-3 text-start';
       msgEl.textContent = data.mensaje || 'No se pudo eliminar el usuario.';
       msgEl.style.display = 'block';
+      // Si falló por datos asociados y todavía no se ofreció "forzar", mostrar la opción
+      if (r.status === 409 && !forzar) {
+        document.getElementById('opcionForzarEliminar').style.display = 'block';
+      }
       btn.disabled = false;
     }
   } catch (e) {
-    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.className = 'alert alert-danger py-2 small mt-3 text-start';
     msgEl.textContent = 'Error de conexión al eliminar el usuario.';
     msgEl.style.display = 'block';
     btn.disabled = false;

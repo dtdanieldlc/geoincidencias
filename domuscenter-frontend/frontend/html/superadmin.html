@@ -176,6 +176,7 @@
       <button class="tab-btn active" id="tabSolicitudesBtn"><i class="bi bi-inbox"></i>Solicitudes pendientes</button>
       <button class="tab-btn" id="tabAsignarBtn"><i class="bi bi-sliders"></i>Asignar permisos directo</button>
       <button class="tab-btn" id="tabDetalleBtn"><i class="bi bi-person-vcard"></i>Detalle de Usuarios</button>
+      <button class="tab-btn" id="tabReportesUsuarioBtn"><i class="bi bi-file-earmark-pdf"></i>Reportes por Usuario</button>
     </div>
 
     <!-- ── Panel: Solicitudes pendientes ── -->
@@ -257,10 +258,29 @@
         <div class="table-responsive">
         <table>
           <thead>
-            <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cédula verificada</th><th>Acciones</th></tr>
+            <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cédula verificada</th><th>Estado</th><th>Acciones</th></tr>
           </thead>
           <tbody id="tbodyDetalleUsuarios">
             <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reportes por Usuario -->
+    <div id="panelReportesUsuario" style="display:none">
+      <div class="mb-3">
+        <input type="text" id="buscarReporteUsuarioInput" class="form-control border-secondary" style="background:#f4f7fb; max-width:340px;" placeholder="Buscar por nombre o correo…">
+      </div>
+      <div class="data-table">
+        <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Reporte</th></tr>
+          </thead>
+          <tbody id="tbodyReportesUsuario">
+            <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
         </div>
@@ -418,6 +438,16 @@
           <span class="fw-semibold" id="eliminarUsuarioNombre" style="color:#0b2340;"></span>
         </div>
         <div id="msgEliminarUsuario" class="alert py-2 small mt-3 text-start" style="display:none;"></div>
+        <div id="opcionForzarEliminar" class="text-start mt-3" style="display:none;">
+          <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+            <input type="checkbox" id="checkForzarEliminar" class="form-check-input mt-1">
+            <span class="small text-secondary">
+              <strong class="text-danger">Forzar eliminación.</strong>
+              Se borrarán sus apoyos, asignaciones y notificaciones; sus incidencias
+              y su actividad en el historial se conservan, pero sin su nombre.
+            </span>
+          </label>
+        </div>
       </div>
       <div class="modal-footer border-0 justify-content-center gap-2" style="padding:0 28px 28px;">
         <button class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
