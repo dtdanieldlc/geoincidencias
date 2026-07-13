@@ -270,7 +270,7 @@ function actualizarBarraLoteInc() {
 async function aprobarLoteIncidencias() {
   const ids = Array.from(document.querySelectorAll('.chk-pend-inc:checked')).map(c => Number(c.value));
   if (!ids.length) return;
-  if (!confirm(`¿Aprobar ${ids.length} incidencia(s) seleccionada(s)?`)) return;
+  if (!(await confirmarAccion(`¿Aprobar ${ids.length} incidencia(s) seleccionada(s)?`, { titulo: 'Aprobar incidencias', textoBoton: 'Sí, aprobar', tipo: 'info' }))) return;
   try {
     await fetch(`${API}/incidencias/aprobar-lote`, {
       method: 'PUT', headers: { ...headers(), 'Content-Type': 'application/json' },
@@ -631,7 +631,11 @@ function limpiarFiltros() {
 
 async function toggleActivo(id, activo) {
   const accion = activo ? 'desactivar' : 'activar';
-  if (!confirm(`¿${capitalize(accion)} este usuario?`)) return;
+  if (!(await confirmarAccion(`¿${capitalize(accion)} este usuario?`, {
+    titulo: activo ? 'Desactivar usuario' : 'Activar usuario',
+    textoBoton: `Sí, ${accion}`,
+    tipo: activo ? 'warning' : 'info',
+  }))) return;
 
   const r = await fetch(`${API}/admin/usuarios/${id}/activo`, { method: 'PUT', headers: headers() });
   const d = await r.json();

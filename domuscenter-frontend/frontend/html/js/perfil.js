@@ -291,10 +291,12 @@ cargarPerfil();
 
 // ── Zona de peligro: desactivar / eliminar cuenta ────────────────────────────
 
-function confirmarDesactivarCuenta() {
-  if (!confirm('¿Seguro que quieres desactivar tu cuenta? No podrás iniciar sesión hasta que un administrador la reactive.')) {
-    return;
-  }
+async function confirmarDesactivarCuenta() {
+  const ok = await confirmarAccion(
+    'No podrás iniciar sesión hasta que un administrador la reactive.',
+    { titulo: '¿Desactivar tu cuenta?', textoBoton: 'Sí, desactivar', tipo: 'warning' }
+  );
+  if (!ok) return;
   desactivarCuenta();
 }
 

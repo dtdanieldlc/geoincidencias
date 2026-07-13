@@ -1,6 +1,18 @@
 // js/mis-reportes.js
 exigirSesion();
 
+function mostrarAlerta(msg, tipo = 'success') {
+  const el = document.getElementById('alerta');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+      ${msg}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`;
+  el.style.display = 'block';
+  setTimeout(() => { el.innerHTML = ''; el.style.display = 'none'; }, 4000);
+}
+
 let todosReportes = [];
 let filtroActivo  = '';
 
@@ -162,6 +174,6 @@ async function exportarMisReportesPdf() {
     const a    = document.createElement('a');
     a.href = url; a.download = `mis-reportes-${new Date().toISOString().slice(0,10)}.pdf`; a.click();
   } catch (e) {
-    alert('No se pudo generar el PDF de tu historial.');
+    mostrarAlerta('No se pudo generar el PDF de tu historial.', 'danger');
   }
 }

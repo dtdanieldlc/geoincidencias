@@ -134,7 +134,7 @@ async function descargarFichaPdf(id) {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = `ficha-incidencia-${id}.pdf`; a.click();
-  } catch (e) { alert('No se pudo descargar la ficha.'); }
+  } catch (e) { mostrarAlerta('No se pudo descargar la ficha.', 'danger'); }
 }
 
 function renderTabla({ datos, total, pagina, por_pagina }) {
@@ -428,7 +428,7 @@ async function subirFotoIncidencia(input, tipo) {
 }
 
 async function eliminarFotoIncidencia(idFoto) {
-  if (!confirm('¿Eliminar esta foto?')) return;
+  if (!(await confirmarAccion('¿Eliminar esta foto?', { titulo: 'Eliminar foto', textoBoton: 'Sí, eliminar' }))) return;
   try {
     const res = await fetchAPI(`${API}/incidencias/${idIncidenciaVer}/fotos/${idFoto}`, { method: 'DELETE' });
     const data = await res.json();

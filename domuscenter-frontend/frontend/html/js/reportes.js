@@ -1,6 +1,18 @@
 // frontend/js/reportes.js
 exigirSesion();
 
+function mostrarAlerta(msg, tipo = 'success') {
+  const el = document.getElementById('alerta');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+      ${msg}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`;
+  el.style.display = 'block';
+  setTimeout(() => { el.innerHTML = ''; el.style.display = 'none'; }, 4000);
+}
+
 let chartEstado, chartCategoria, chartPrioridad, chartTendencia, chartSucursal;
 
 // ── Período rápido ──
@@ -203,7 +215,7 @@ async function _descargarPdf(endpoint, nombreArchivo) {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = `${nombreArchivo}-${new Date().toISOString().split('T')[0]}.pdf`; a.click();
-  } catch(e) { alert('Error al exportar el reporte.'); }
+  } catch(e) { mostrarAlerta('Error al exportar el reporte.', 'danger'); }
 }
 
 function exportarResumenPDF()  { _descargarPdf('exportar-pdf-resumen', 'resumen-ejecutivo-geoincidencias'); }

@@ -180,3 +180,79 @@ function inicializarBarraUsuario() {
   // Actualizar contador cada 60 segundos
   setInterval(cargarContadorNotificaciones, 60000);
 }
+
+// ════════════════════════════════════════════════════════
+//  confirmarAccion(mensaje, opciones) — reemplaza confirm() nativo
+//  Uso: if (!(await confirmarAccion('¿Eliminar esto?'))) return;
+// ════════════════════════════════════════════════════════
+let _confirmModalEl, _confirmModalInstance;
+
+function _asegurarConfirmModal() {
+  if (_confirmModalEl) return;
+  _confirmModalEl = document.createElement('div');
+  _confirmModalEl.className = 'modal fade';
+  _confirmModalEl.tabIndex = -1;
+  _confirmModalEl.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0" style="border-radius:16px; overflow:hidden;">
+        <div class="modal-body text-center" style="padding:32px 28px 24px;">
+          <div id="confirmIconWrap" class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:50%;">
+            <i id="confirmIcon" class="bi" style="font-size:1.7rem;"></i>
+          </div>
+          <h6 id="confirmTitulo" class="fw-bold mb-2" style="color:#0b2340;"></h6>
+          <p id="confirmMensaje" class="text-secondary small mb-0"></p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center gap-2" style="padding:0 28px 28px;">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="confirmBtnCancelar">Cancelar</button>
+          <button type="button" class="btn btn-sm px-3" id="confirmBtnAceptar"></button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(_confirmModalEl);
+  _confirmModalInstance = new bootstrap.Modal(_confirmModalEl);
+}
+
+function confirmarAccion(mensaje, opciones = {}) {
+  _asegurarConfirmModal();
+  const {
+    titulo     = '¿Estás seguro?',
+    textoBoton = 'Sí, continuar',
+    tipo       = 'danger', // 'danger' | 'warning' | 'info'
+  } = opciones;
+
+  const estilos = {
+    danger:  { bg: '#fee2e2', color: '#dc2626', icon: 'bi-exclamation-triangle', btn: 'btn-danger' },
+    warning: { bg: '#fef3c7', color: '#d97706', icon: 'bi-exclamation-circle',   btn: 'btn-warning' },
+    info:    { bg: '#dbeafe', color: '#2563eb', icon: 'bi-question-circle',      btn: 'btn-primary' },
+  };
+  const e = estilos[tipo] || estilos.danger;
+
+  document.getElementById('confirmIconWrap').style.background = e.bg;
+  document.getElementById('confirmIcon').className = `bi ${e.icon}`;
+  document.getElementById('confirmIcon').style.color = e.color;
+  document.getElementById('confirmTitulo').textContent = titulo;
+  document.getElementById('confirmMensaje').textContent = mensaje;
+
+  const btnAceptar = document.getElementById('confirmBtnAceptar');
+  btnAceptar.textContent = textoBoton;
+  btnAceptar.className = `btn btn-sm px-3 ${e.btn}`;
+
+  return new Promise((resolve) => {
+    const btnCancelar = document.getElementById('confirmBtnCancelar');
+    let resuelto = false;
+
+    const limpiar = () => {
+      btnAceptar.removeEventListener('click', onAceptar);
+      btnCancelar.removeEventListener('click', onCancelar);
+      _confirmModalEl.removeEventListener('hidden.bs.modal', onHidden);
+    };
+    const onAceptar  = () => { resuelto = true; limpiar(); _confirmModalInstance.hide(); resolve(true); };
+    const onCancelar = () => { resuelto = true; limpiar(); resolve(false); };
+    const onHidden   = () => { if (!resuelto) { limpiar(); resolve(false); } };
+
+    btnAceptar.addEventListener('click', onAceptar);
+    btnCancelar.addEventListener('click', onCancelar);
+    _confirmModalEl.addEventListener('hidden.bs.modal', onHidden);
+    _confirmModalInstance.show();
+  });
+}

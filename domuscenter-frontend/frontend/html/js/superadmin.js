@@ -6,6 +6,30 @@
 const token   = () => localStorage.getItem('gi_token') ?? '';
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` });
 
+let _toastTimer;
+function showToast(msg, type = 'success') {
+  const colores = {
+    success: { bg: '#e6f8ee', color: '#16a34a', border: '#2ea04326' },
+    error:   { bg: '#fbe9e9', color: '#dc2626', border: '#dc262626' },
+    warning: { bg: '#fef3e0', color: '#d97706', border: '#d9770626' },
+  };
+  const c = colores[type] ?? colores.success;
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  Object.assign(t.style, {
+    display: 'block',
+    background: c.bg,
+    color: c.color,
+    border: `1px solid ${c.border}`,
+    top: '16px', right: '16px', position: 'fixed',
+    minWidth: '280px', padding: '12px 16px',
+    borderRadius: '8px', fontSize: '.85rem', zIndex: 9999,
+  });
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
 const MODULOS_DISPONIBLES = [
   { id: 'incidencias', label: 'Incidencias', acciones: ['ver', 'editar', 'eliminar'] },
   { id: 'usuarios',    label: 'Usuarios',    acciones: ['ver', 'editar'] },
@@ -585,7 +609,12 @@ async function crearUsuario() {
 ══════════════════════════════════════════════════════════ */
 async function toggleActivoDetalle(id, activoActual) {
   const accion = activoActual ? 'desactivar' : 'activar';
-  if (!confirm(`¿Seguro que quieres ${accion} esta cuenta?`)) return;
+  const ok = await confirmarAccion(`¿Seguro que quieres ${accion} esta cuenta?`, {
+    titulo: activoActual ? 'Desactivar usuario' : 'Activar usuario',
+    textoBoton: `Sí, ${accion}`,
+    tipo: activoActual ? 'warning' : 'info',
+  });
+  if (!ok) return;
 
   try {
     const r = await fetch(`${API}/admin/usuarios/${id}/activo`, { method: 'PUT', headers: headers() });
@@ -593,11 +622,12 @@ async function toggleActivoDetalle(id, activoActual) {
     if (data.ok) {
       _detalleUsuariosCargados = false;
       cargarDetalleUsuarios();
+      showToast(data.mensaje || `Usuario ${accion === 'desactivar' ? 'desactivado' : 'activado'}.`, 'success');
     } else {
-      alert(data.mensaje || `No se pudo ${accion} el usuario.`);
+      showToast(data.mensaje || `No se pudo ${accion} el usuario.`, 'error');
     }
   } catch (e) {
-    alert('Error de conexión.');
+    showToast('Error de conexión.', 'error');
   }
 }
 
@@ -661,7 +691,7 @@ async function descargarReporteUsuario(id, nombre) {
     const a    = document.createElement('a');
     a.href = url; a.download = `reporte-${nombre.trim().replace(/\s+/g, '-').toLowerCase()}.pdf`; a.click();
   } catch (e) {
-    alert('No se pudo generar el reporte de este usuario.');
+    showToast('No se pudo generar el reporte de este usuario.', 'error');
   }
 }
 function eliminarUsuarioDetalle(id, nombre) {
