@@ -1,6 +1,16 @@
 // frontend/js/mensajes.js
 exigirSesion();
 
+// Convierte una ruta relativa (/storage/...) que devuelve el backend en una
+// URL completa. Sin esto, el navegador intenta cargar la foto desde el
+// dominio del FRONTEND en vez del backend, y la imagen sale rota.
+function urlCompleta(ruta) {
+  if (!ruta) return null;
+  if (ruta.startsWith('http')) return ruta;
+  const base = (typeof API !== 'undefined' ? API : '').replace('/api', '');
+  return base + ruta;
+}
+
 // ────────────────────────────────────────────────────────────────
 //  Configuración de Pusher (mismo par de valores en las 2 puntas)
 // ────────────────────────────────────────────────────────────────
@@ -31,8 +41,9 @@ function iniciales(nombre) {
 // Devuelve el HTML interno del círculo de avatar: la foto de perfil si
 // existe, o las iniciales del nombre como respaldo.
 function avatarInner(nombre, fotoUrl) {
-  const contenido = fotoUrl
-    ? `<img src="${fotoUrl}" alt="${_escaparHtml(nombre || '')}" style="display:block;width:100%;height:100%;object-fit:cover;">`
+  const src = urlCompleta(fotoUrl);
+  const contenido = src
+    ? `<img src="${src}" alt="${_escaparHtml(nombre || '')}" style="display:block;width:100%;height:100%;object-fit:cover;">`
     : iniciales(nombre);
   return `<span class="avatar-media">${contenido}</span>`;
 }
@@ -201,6 +212,31 @@ async function enviarMensaje(e) {
   } catch (err) {
     mostrarAlerta('Error de conexión al enviar el mensaje.', 'danger');
   }
+}
+
+// ════════════════════════════════════════════════════════
+//  Info del contacto (estilo Messenger/WhatsApp)
+// ════════════════════════════════════════════════════════
+function verPerfilContacto() {
+  if (!conversacionActiva) return;
+  const otro = conversacionActiva.otro;
+  const rolLabel = { superadmin: 'Superadmin', admin: 'Admin', usuario: 'Usuario' };
+
+  document.getElementById('perfilContactoAvatar').innerHTML = avatarInner(otro.nombre, otro.foto_url);
+  document.getElementById('perfilContactoNombre').textContent = otro.nombre;
+  document.getElementById('perfilContactoRol').textContent = rolLabel[otro.rol] || otro.rol || '—';
+  document.getElementById('perfilContactoCorreo').textContent = otro.correo || '—';
+
+  const estadoEl = document.getElementById('perfilContactoEstado');
+  if (otro.en_linea) {
+    estadoEl.textContent = 'En línea';
+    estadoEl.style.background = '#22c55e';
+  } else {
+    estadoEl.textContent = 'Desconectado';
+    estadoEl.style.background = '#94a3b8';
+  }
+
+  new bootstrap.Modal(document.getElementById('modalPerfilContacto')).show();
 }
 
 // ════════════════════════════════════════════════════════
