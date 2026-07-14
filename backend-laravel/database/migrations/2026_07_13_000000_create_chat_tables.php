@@ -10,12 +10,16 @@ return new class extends Migration
     {
         Schema::create('conversaciones', function (Blueprint $table) {
             $table->id('id_conversacion');
-            $table->foreignId('id_usuario_uno')->constrained('usuarios', 'id_usuario');
-            $table->foreignId('id_usuario_dos')->constrained('usuarios', 'id_usuario');
+            $table->integer('id_usuario_uno');
+            $table->integer('id_usuario_dos');
             $table->text('ultimo_mensaje_texto')->nullable();
-            $table->foreignId('ultimo_mensaje_id_usuario')->nullable()->constrained('usuarios', 'id_usuario');
+            $table->integer('ultimo_mensaje_id_usuario')->nullable();
             $table->timestamp('ultimo_mensaje_at')->nullable();
             $table->timestamps();
+
+            $table->foreign('id_usuario_uno')->references('id_usuario')->on('usuarios');
+            $table->foreign('id_usuario_dos')->references('id_usuario')->on('usuarios');
+            $table->foreign('ultimo_mensaje_id_usuario')->references('id_usuario')->on('usuarios');
 
             $table->index(['id_usuario_uno', 'id_usuario_dos']);
         });
@@ -23,7 +27,8 @@ return new class extends Migration
         Schema::create('mensajes', function (Blueprint $table) {
             $table->id('id_mensaje');
             $table->foreignId('id_conversacion')->constrained('conversaciones', 'id_conversacion')->cascadeOnDelete();
-            $table->foreignId('id_usuario_emisor')->constrained('usuarios', 'id_usuario');
+            $table->integer('id_usuario_emisor');
+            $table->foreign('id_usuario_emisor')->references('id_usuario')->on('usuarios');
             $table->text('contenido');
             $table->timestamp('leido_at')->nullable();
             $table->timestamps();
