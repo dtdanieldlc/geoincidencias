@@ -271,6 +271,7 @@
 function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
   const links = [
     { id: 'index',       href: 'index.html',        icon: 'bi-speedometer2',      label: 'Dashboard'    },
+    { id: 'mensajes',    href: 'mensajes.html',     icon: 'bi-chat-dots',         label: 'Mensajes', badge: '<span class="sb-badge bg-danger text-white" id="sideMsgBadge" style="display:none">0</span>' },
     { id: 'incidencias', href: 'incidencias.html',   icon: 'bi-list-ul',           label: 'Incidencias'  },
     { id: 'registrar',   href: 'registrar.html',     icon: 'bi-plus-circle',       label: 'Registrar'    },
     { id: 'mis-reportes',href: 'mis-reportes.html',  icon: 'bi-file-earmark-text', label: 'Mis Reportes' },
@@ -348,6 +349,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 // ════════════════════════════════════════════════════════
 const _TITULOS = {
   'index':       'Dashboard',
+  'mensajes':    'Mensajes',
   'incidencias': 'Incidencias',
   'registrar':   'Registrar Incidencia',
   'mis-reportes':'Mis Reportes',
@@ -453,6 +455,22 @@ function initSidebar(paginaActiva) {
       togglePanelNotificaciones();
     });
   }
+
+  // 6. Badge de mensajes no leídos
+  _actualizarBadgeMensajes();
+  setInterval(_actualizarBadgeMensajes, 30000);
+}
+
+async function _actualizarBadgeMensajes() {
+  const badge = document.getElementById('sideMsgBadge');
+  if (!badge) return;
+  try {
+    const r = await fetchAPI(`${API}/chat/conversaciones`);
+    const conversaciones = await r.json();
+    const total = Array.isArray(conversaciones) ? conversaciones.reduce((s, c) => s + (c.no_leidos || 0), 0) : 0;
+    badge.textContent = total > 99 ? '99+' : total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+  } catch (e) { /* silencioso */ }
 }
 
 // ════════════════════════════════════════════════════════

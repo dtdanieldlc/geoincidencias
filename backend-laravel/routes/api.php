@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\IncidenciasController;
 use App\Http\Controllers\Api\ApoyosController;
 use App\Http\Controllers\Api\CatalogosController;
@@ -42,6 +43,13 @@ Route::prefix('auth')->group(function () {
 
 // ── Rutas autenticadas ───────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
+
+    // ── Chat / Mensajería ────────────────────────────────────────
+    Route::get('chat/usuarios',                       [ChatController::class, 'usuarios']);
+    Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
+    Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
+    Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
+    Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
 
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
