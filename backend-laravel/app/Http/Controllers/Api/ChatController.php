@@ -161,8 +161,11 @@ class ChatController extends Controller
             'created_at'       => $mensaje->created_at,
         ];
 
+        // Solo se transmite al destinatario: el emisor ya pinta su propio
+        // mensaje localmente al enviarlo, así que si también nos suscribiéramos
+        // a nuestro propio canal, terminaríamos mostrando el mensaje duplicado.
         (new PusherService())->trigger(
-            ["private-usuario.{$idDestino}", "private-usuario.{$yo->id_usuario}"],
+            ["private-usuario.{$idDestino}"],
             'nuevo-mensaje',
             $payload
         );

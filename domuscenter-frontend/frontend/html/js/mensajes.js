@@ -28,6 +28,15 @@ function iniciales(nombre) {
   return (nombre || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() ?? '').join('');
 }
 
+// Devuelve el HTML interno del círculo de avatar: la foto de perfil si
+// existe, o las iniciales del nombre como respaldo.
+function avatarInner(nombre, fotoUrl) {
+  if (fotoUrl) {
+    return `<img src="${fotoUrl}" alt="${_escaparHtml(nombre || '')}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  }
+  return iniciales(nombre);
+}
+
 function formatoHora(fecha) {
   const d = new Date(fecha);
   return d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
@@ -63,7 +72,7 @@ function _renderConversaciones(lista) {
   cont.innerHTML = lista.map(c => `
     <div class="conv-item ${conversacionActiva?.id_conversacion === c.id_conversacion ? 'active' : ''}" onclick="abrirConversacion(${c.id_conversacion})">
       <div class="conv-avatar">
-        ${iniciales(c.otro.nombre)}
+        ${avatarInner(c.otro.nombre, c.otro.foto_url)}
         ${c.otro.en_linea ? '<span class="dot-online"></span>' : ''}
       </div>
       <div class="flex-grow-1" style="min-width:0;">
@@ -97,7 +106,7 @@ async function abrirConversacion(idConversacion) {
   const chatActivo = document.getElementById('chatActivo');
   chatActivo.style.display = 'flex';
 
-  document.getElementById('chatAvatarOtro').textContent = iniciales(conversacionActiva.otro.nombre);
+  document.getElementById('chatAvatarOtro').innerHTML = avatarInner(conversacionActiva.otro.nombre, conversacionActiva.otro.foto_url);
   document.getElementById('chatNombreOtro').textContent = conversacionActiva.otro.nombre;
   document.getElementById('chatEstadoOtro').textContent = conversacionActiva.otro.en_linea ? 'En línea' : '';
 
@@ -146,10 +155,14 @@ function _escaparHtml(texto) {
 
 function _agregarMensajeAlChat(m) {
   const scroll = document.getElementById('mensajesScroll');
+  // Evita pintar el mismo mensaje dos veces (p. ej. si Pusher lo reenvía
+  // tras una reconexión).
+  if (m.id_mensaje && scroll.querySelector(`[data-id-mensaje="${m.id_mensaje}"]`)) return;
   const vacio = scroll.querySelector('.text-secondary');
   if (vacio && scroll.children.length === 1) scroll.innerHTML = '';
   const div = document.createElement('div');
   div.className = `msg-burbuja ${m.id_usuario_emisor === usuarioYo.id_usuario ? 'msg-mio' : 'msg-otro'}`;
+  if (m.id_mensaje) div.dataset.idMensaje = m.id_mensaje;
   div.innerHTML = `${_escaparHtml(m.contenido)}<span class="msg-hora">${formatoHora(m.created_at)}</span>`;
   scroll.appendChild(div);
   scroll.scrollTop = scroll.scrollHeight;
@@ -217,8 +230,8 @@ function _renderDirectorio(usuarios) {
   }
   const rolLabel = { superadmin: 'Superadmin', admin: 'Admin', usuario: 'Usuario' };
   cont.innerHTML = usuarios.map(u => `
-    <div class="dir-item" onclick="iniciarConversacionCon(${u.id_usuario}, '${u.nombre.replace(/'/g, "\\'")}')">
-      <div class="conv-avatar" style="width:38px;height:38px;font-size:.78rem;">${iniciales(u.nombre)}</div>
+    <div class="dir-item" onclick="iniciarConversacionCon(${u.id_usuario}, '${u.nombre.replace(/'/g, "\\'")}', '${(u.foto_url || '').replace(/'/g, "\\'")}')">
+      <div class="conv-avatar" style="width:38px;height:38px;font-size:.78rem;">${avatarInner(u.nombre, u.foto_url)}</div>
       <div>
         <div class="fw-semibold small" style="color:#0b2340;">${u.nombre}</div>
         <div class="small text-secondary">${rolLabel[u.rol] || u.rol} · ${u.correo}</div>
@@ -227,7 +240,7 @@ function _renderDirectorio(usuarios) {
   `).join('');
 }
 
-async function iniciarConversacionCon(idUsuario, nombre) {
+async function iniciarConversacionCon(idUsuario, nombre, fotoUrl = '') {
   bootstrap.Modal.getInstance(document.getElementById('modalNuevoChat'))?.hide();
 
   // Si ya existe una conversación con esta persona, solo la abrimos
@@ -238,12 +251,12 @@ async function iniciarConversacionCon(idUsuario, nombre) {
   // Mientras tanto, mostramos un chat "vacío" listo para escribir.
   conversacionActiva = {
     id_conversacion: null,
-    otro: { id_usuario: idUsuario, nombre, en_linea: false },
+    otro: { id_usuario: idUsuario, nombre, foto_url: fotoUrl, en_linea: false },
     no_leidos: 0,
   };
   document.getElementById('chatVacio').style.display = 'none';
   document.getElementById('chatActivo').style.display = 'flex';
-  document.getElementById('chatAvatarOtro').textContent = iniciales(nombre);
+  document.getElementById('chatAvatarOtro').innerHTML = avatarInner(nombre, fotoUrl);
   document.getElementById('chatNombreOtro').textContent = nombre;
   document.getElementById('chatEstadoOtro').textContent = '';
   document.getElementById('mensajesScroll').innerHTML = '<div class="text-center text-secondary py-4 small">Aún no hay mensajes. ¡Saluda! 👋</div>';
