@@ -31,10 +31,10 @@ function iniciales(nombre) {
 // Devuelve el HTML interno del círculo de avatar: la foto de perfil si
 // existe, o las iniciales del nombre como respaldo.
 function avatarInner(nombre, fotoUrl) {
-  if (fotoUrl) {
-    return `<img src="${fotoUrl}" alt="${_escaparHtml(nombre || '')}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-  }
-  return iniciales(nombre);
+  const contenido = fotoUrl
+    ? `<img src="${fotoUrl}" alt="${_escaparHtml(nombre || '')}" style="display:block;width:100%;height:100%;object-fit:cover;">`
+    : iniciales(nombre);
+  return `<span class="avatar-media">${contenido}</span>`;
 }
 
 function formatoHora(fecha) {
