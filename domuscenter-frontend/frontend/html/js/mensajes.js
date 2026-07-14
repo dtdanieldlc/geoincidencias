@@ -42,8 +42,9 @@ function iniciales(nombre) {
 // existe, o las iniciales del nombre como respaldo.
 function avatarInner(nombre, fotoUrl) {
   const src = urlCompleta(fotoUrl);
+  const ini = _escaparHtml(iniciales(nombre));
   const contenido = src
-    ? `<img src="${src}" alt="${_escaparHtml(nombre || '')}" style="display:block;width:100%;height:100%;object-fit:cover;">`
+    ? `<img src="${src}" alt="${_escaparHtml(nombre || '')}" style="display:block;width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${ini}';">`
     : iniciales(nombre);
   return `<span class="avatar-media">${contenido}</span>`;
 }
