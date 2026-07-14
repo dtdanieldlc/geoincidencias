@@ -8,6 +8,7 @@ use App\Models\Mensaje;
 use App\Models\Usuario;
 use App\Services\PusherService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
@@ -39,7 +40,7 @@ class ChatController extends Controller
             'nombre'     => trim($u->nombre . ' ' . ($u->apellido ?? '')),
             'correo'     => $u->correo,
             'rol'        => $u->rol,
-            'foto_url'   => $u->foto_url,
+            'foto_url'   => $u->foto_url ? Storage::url($u->foto_url) : null,
         ]);
 
         return response()->json($lista);
@@ -77,7 +78,7 @@ class ChatController extends Controller
                     'nombre'     => trim($otro->nombre . ' ' . ($otro->apellido ?? '')),
                     'correo'     => $otro->correo,
                     'rol'        => $otro->rol,
-                    'foto_url'   => $otro->foto_url,
+                    'foto_url'   => $otro->foto_url ? Storage::url($otro->foto_url) : null,
                     'en_linea'   => $otro->ultima_presencia_at && $otro->ultima_presencia_at->gt(now()->subMinutes(3)),
                 ] : null,
                 'ultimo_mensaje'     => $c->ultimo_mensaje_texto,
