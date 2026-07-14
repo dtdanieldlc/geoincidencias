@@ -278,6 +278,7 @@ function _renderDirectorio(usuarios) {
 }
 
 async function iniciarConversacionCon(idUsuario, nombre, fotoUrl = '') {
+  document.activeElement?.blur();
   bootstrap.Modal.getInstance(document.getElementById('modalNuevoChat'))?.hide();
 
   // Si ya existe una conversación con esta persona, solo la abrimos
