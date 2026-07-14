@@ -394,7 +394,11 @@ function initSidebar(paginaActiva) {
   document.body.prepend(backdrop);
 
   // 2. Envolver contenido existente en #gi-main + topbar
-  const contenidoExistente = Array.from(document.body.children).filter(el => el.id !== 'gi-sidebar');
+  // Los modales de Bootstrap (position:fixed) NO se mueven a #gi-main:
+  // si quedan dentro de un contenedor con filter (el modo oscuro usa
+  // filter:invert), el navegador rompe su position:fixed y quedan mal
+  // ubicados / con el backdrop bloqueando los clics.
+  const contenidoExistente = Array.from(document.body.children).filter(el => el.id !== 'gi-sidebar' && !el.classList.contains('modal'));
   const main = document.createElement('div');
   main.id = 'gi-main';
 
