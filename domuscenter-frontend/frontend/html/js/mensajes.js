@@ -110,6 +110,12 @@ function filtrarConversaciones() {
 // ════════════════════════════════════════════════════════
 //  Abrir una conversación y cargar sus mensajes
 // ════════════════════════════════════════════════════════
+// En celular: oculta el chat y vuelve a mostrar la lista de conversaciones
+function volverAListaMovil(e) {
+  e?.stopPropagation();
+  document.getElementById('chatWrap').classList.remove('chat-abierto-movil');
+}
+
 async function abrirConversacion(idConversacion) {
   conversacionActiva = conversaciones.find(c => c.id_conversacion === idConversacion);
   if (!conversacionActiva) return;
@@ -117,6 +123,7 @@ async function abrirConversacion(idConversacion) {
   document.getElementById('chatVacio').style.display = 'none';
   const chatActivo = document.getElementById('chatActivo');
   chatActivo.style.display = 'flex';
+  document.getElementById('chatWrap').classList.add('chat-abierto-movil');
 
   document.getElementById('chatAvatarOtro').innerHTML = avatarInner(conversacionActiva.otro.nombre, conversacionActiva.otro.foto_url);
   document.getElementById('chatNombreOtro').textContent = conversacionActiva.otro.nombre;
@@ -294,6 +301,7 @@ async function iniciarConversacionCon(idUsuario, nombre, fotoUrl = '') {
   };
   document.getElementById('chatVacio').style.display = 'none';
   document.getElementById('chatActivo').style.display = 'flex';
+  document.getElementById('chatWrap').classList.add('chat-abierto-movil');
   document.getElementById('chatAvatarOtro').innerHTML = avatarInner(nombre, fotoUrl);
   document.getElementById('chatNombreOtro').textContent = nombre;
   document.getElementById('chatEstadoOtro').textContent = '';
