@@ -10,7 +10,7 @@ class Mensaje extends Model
     protected $primaryKey = 'id_mensaje';
 
     protected $fillable = [
-        'id_conversacion', 'id_usuario_emisor', 'contenido', 'leido_at',
+        'id_conversacion', 'id_usuario_emisor', 'contenido', 'tipo', 'imagen_url', 'leido_at',
     ];
 
     protected $casts = [

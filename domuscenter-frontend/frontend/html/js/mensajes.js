@@ -119,6 +119,7 @@ function volverAListaMovil(e) {
 async function abrirConversacion(idConversacion) {
   conversacionActiva = conversaciones.find(c => c.id_conversacion === idConversacion);
   if (!conversacionActiva) return;
+  cerrarBusquedaMensajes();
 
   document.getElementById('chatVacio').style.display = 'none';
   const chatActivo = document.getElementById('chatActivo');
@@ -151,6 +152,20 @@ async function abrirConversacion(idConversacion) {
   document.getElementById('inputMensaje').focus();
 }
 
+function _checkIcon(m) {
+  if (m.id_usuario_emisor !== usuarioYo.id_usuario) return '';
+  const leido = !!m.leido_at;
+  return `<i class="bi ${leido ? 'bi-check2-all' : 'bi-check2'} msg-check ${leido ? 'leido' : ''}"></i>`;
+}
+
+function _contenidoBurbuja(m) {
+  if (m.tipo === 'imagen' && m.imagen_url) {
+    const src = urlCompleta(m.imagen_url);
+    return `<img src="${src}" class="msg-imagen" onclick="window.open('${src}','_blank')" alt="Imagen enviada">`;
+  }
+  return _escaparHtml(m.contenido);
+}
+
 function _renderMensajes(mensajes) {
   const scroll = document.getElementById('mensajesScroll');
   if (!mensajes.length) {
@@ -158,9 +173,9 @@ function _renderMensajes(mensajes) {
     return;
   }
   scroll.innerHTML = mensajes.map(m => `
-    <div class="msg-burbuja ${m.id_usuario_emisor === usuarioYo.id_usuario ? 'msg-mio' : 'msg-otro'}">
-      ${_escaparHtml(m.contenido)}
-      <span class="msg-hora">${formatoHora(m.created_at)}</span>
+    <div class="msg-burbuja ${m.id_usuario_emisor === usuarioYo.id_usuario ? 'msg-mio' : 'msg-otro'}" data-id-mensaje="${m.id_mensaje}">
+      ${_contenidoBurbuja(m)}
+      <span class="msg-hora">${formatoHora(m.created_at)} ${_checkIcon(m)}</span>
     </div>
   `).join('');
   scroll.scrollTop = scroll.scrollHeight;
@@ -182,9 +197,18 @@ function _agregarMensajeAlChat(m) {
   const div = document.createElement('div');
   div.className = `msg-burbuja ${m.id_usuario_emisor === usuarioYo.id_usuario ? 'msg-mio' : 'msg-otro'}`;
   if (m.id_mensaje) div.dataset.idMensaje = m.id_mensaje;
-  div.innerHTML = `${_escaparHtml(m.contenido)}<span class="msg-hora">${formatoHora(m.created_at)}</span>`;
+  div.innerHTML = `${_contenidoBurbuja(m)}<span class="msg-hora">${formatoHora(m.created_at)} ${_checkIcon(m)}</span>`;
   scroll.appendChild(div);
   scroll.scrollTop = scroll.scrollHeight;
+}
+
+// Cuando el otro abre la conversación y lee mis mensajes, Pusher nos avisa
+// y acá pintamos el doble check azul en todos los que ya envié.
+function _marcarMisMensajesComoLeidos() {
+  document.querySelectorAll('#mensajesScroll .msg-mio .msg-check').forEach(el => {
+    el.classList.remove('bi-check2');
+    el.classList.add('bi-check2-all', 'leido');
+  });
 }
 
 // ════════════════════════════════════════════════════════
@@ -223,8 +247,157 @@ async function enviarMensaje(e) {
 }
 
 // ════════════════════════════════════════════════════════
-//  Info del contacto (estilo Messenger/WhatsApp)
+//  Enviar una imagen
 // ════════════════════════════════════════════════════════
+async function enviarImagenChat(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !conversacionActiva) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    mostrarAlerta('La imagen no puede pesar más de 5MB.', 'danger');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('imagen', file);
+  formData.append('id_usuario_destino', conversacionActiva.otro.id_usuario);
+
+  try {
+    const res = await fetch(`${API}/chat/mensajes/imagen`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Accept': 'application/json',
+        // NO Content-Type: el navegador pone el boundary correcto solo
+      },
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.ok) {
+      _agregarMensajeAlChat(data.mensaje);
+      if (!conversacionActiva.id_conversacion) conversacionActiva.id_conversacion = data.mensaje.id_conversacion;
+      await cargarConversaciones();
+      const actualizada = conversaciones.find(c => c.id_conversacion === conversacionActiva.id_conversacion);
+      if (actualizada) conversacionActiva = actualizada;
+      _renderConversaciones(conversaciones);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo enviar la imagen.', 'danger');
+    }
+  } catch (err) {
+    mostrarAlerta('Error de conexión al enviar la imagen.', 'danger');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  Indicador "escribiendo…"
+// ════════════════════════════════════════════════════════
+let _ultimoAvisoEscribiendo = 0;
+let _timeoutOcultarEscribiendo = null;
+
+function notificarEscribiendo() {
+  if (!conversacionActiva || !conversacionActiva.otro?.id_usuario) return;
+  const ahora = Date.now();
+  if (ahora - _ultimoAvisoEscribiendo < 2500) return; // throttle: cada 2.5s máximo
+  _ultimoAvisoEscribiendo = ahora;
+
+  fetchAPI(`${API}/chat/escribiendo`, {
+    method: 'POST',
+    body: JSON.stringify({ id_usuario_destino: conversacionActiva.otro.id_usuario }),
+  }).catch(() => {});
+}
+
+function _mostrarIndicadorEscribiendo(nombreEmisor) {
+  const el = document.getElementById('indicadorEscribiendo');
+  el.innerHTML = `<i class="bi bi-three-dots"></i> ${_escaparHtml(nombreEmisor)} está escribiendo…`;
+  el.style.display = 'block';
+  clearTimeout(_timeoutOcultarEscribiendo);
+  _timeoutOcultarEscribiendo = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// ════════════════════════════════════════════════════════
+//  Buscar dentro de la conversación abierta
+// ════════════════════════════════════════════════════════
+let _resultadosBusqueda = [];
+let _indiceBusquedaActual = -1;
+
+function toggleBusquedaMensajes(e) {
+  e?.stopPropagation();
+  const barra = document.getElementById('barraBusquedaMensajes');
+  const abierta = barra.style.display === 'flex';
+  if (abierta) { cerrarBusquedaMensajes(); return; }
+  barra.style.display = 'flex';
+  document.getElementById('inputBuscarMensajes').value = '';
+  document.getElementById('inputBuscarMensajes').focus();
+}
+
+function cerrarBusquedaMensajes() {
+  document.getElementById('barraBusquedaMensajes').style.display = 'none';
+  document.getElementById('contadorBusqueda').textContent = '';
+  _resultadosBusqueda = [];
+  _indiceBusquedaActual = -1;
+  document.querySelectorAll('#mensajesScroll .msg-burbuja').forEach(b => {
+    b.classList.remove('msg-atenuado', 'msg-resaltado-actual');
+    const marks = b.querySelectorAll('mark');
+    marks.forEach(m => { m.replaceWith(document.createTextNode(m.textContent)); });
+  });
+}
+
+function _ejecutarBusquedaMensajes() {
+  const q = document.getElementById('inputBuscarMensajes').value.trim().toLowerCase();
+  const burbujas = Array.from(document.querySelectorAll('#mensajesScroll .msg-burbuja'));
+  const contador = document.getElementById('contadorBusqueda');
+
+  // Reset visual
+  burbujas.forEach(b => {
+    b.classList.remove('msg-atenuado', 'msg-resaltado-actual');
+    b.querySelectorAll('mark').forEach(m => m.replaceWith(document.createTextNode(m.textContent)));
+    b.normalize?.();
+  });
+
+  if (!q) { contador.textContent = ''; _resultadosBusqueda = []; return; }
+
+  _resultadosBusqueda = [];
+  burbujas.forEach(b => {
+    const idx = b.textContent.toLowerCase().indexOf(q);
+    if (idx === -1) { b.classList.add('msg-atenuado'); return; }
+    _resultadosBusqueda.push(b);
+    // Resaltar coincidencias solo en nodos de texto (no toca el <img> ni los íconos)
+    b.childNodes.forEach(nodo => {
+      if (nodo.nodeType !== Node.TEXT_NODE) return;
+      const texto = nodo.textContent;
+      const pos = texto.toLowerCase().indexOf(q);
+      if (pos === -1) return;
+      const span = document.createElement('span');
+      span.innerHTML = _escaparHtml(texto.slice(0, pos)) + '<mark>' + _escaparHtml(texto.slice(pos, pos + q.length)) + '</mark>' + _escaparHtml(texto.slice(pos + q.length));
+      nodo.replaceWith(span);
+    });
+  });
+
+  _indiceBusquedaActual = _resultadosBusqueda.length ? 0 : -1;
+  _actualizarContadorYFoco(q);
+}
+
+function _actualizarContadorYFoco() {
+  const contador = document.getElementById('contadorBusqueda');
+  if (!_resultadosBusqueda.length) {
+    contador.textContent = 'Sin resultados';
+    return;
+  }
+  contador.textContent = `${_indiceBusquedaActual + 1} / ${_resultadosBusqueda.length}`;
+  document.querySelectorAll('.msg-resaltado-actual').forEach(b => b.classList.remove('msg-resaltado-actual'));
+  const actual = _resultadosBusqueda[_indiceBusquedaActual];
+  if (actual) {
+    actual.classList.add('msg-resaltado-actual');
+    actual.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+function irResultadoBusqueda(direccion) {
+  if (!_resultadosBusqueda.length) return;
+  _indiceBusquedaActual = (_indiceBusquedaActual + direccion + _resultadosBusqueda.length) % _resultadosBusqueda.length;
+  _actualizarContadorYFoco();
+}
 function verPerfilContacto() {
   if (!conversacionActiva) return;
   const otro = conversacionActiva.otro;
@@ -287,6 +460,7 @@ function _renderDirectorio(usuarios) {
 async function iniciarConversacionCon(idUsuario, nombre, fotoUrl = '') {
   document.activeElement?.blur();
   bootstrap.Modal.getInstance(document.getElementById('modalNuevoChat'))?.hide();
+  cerrarBusquedaMensajes();
 
   // Si ya existe una conversación con esta persona, solo la abrimos
   const existente = conversaciones.find(c => c.otro.id_usuario === idUsuario);
@@ -334,6 +508,7 @@ function iniciarPusher() {
   });
 
   canalPrivado = pusher.subscribe(`private-usuario.${usuarioYo.id_usuario}`);
+
   canalPrivado.bind('nuevo-mensaje', (m) => {
     // Si es la conversación abierta ahora mismo, lo pintamos directo
     if (conversacionActiva && conversacionActiva.id_conversacion === m.id_conversacion) {
@@ -341,6 +516,18 @@ function iniciarPusher() {
     }
     cargarConversaciones();
     if (typeof _actualizarBadgeMensajes === 'function') _actualizarBadgeMensajes();
+  });
+
+  canalPrivado.bind('mensajes-leidos', (data) => {
+    if (conversacionActiva && conversacionActiva.id_conversacion === data.id_conversacion) {
+      _marcarMisMensajesComoLeidos();
+    }
+  });
+
+  canalPrivado.bind('escribiendo', (data) => {
+    if (conversacionActiva && conversacionActiva.otro?.id_usuario === data.id_usuario_emisor) {
+      _mostrarIndicadorEscribiendo(data.nombre_emisor);
+    }
   });
 }
 
@@ -350,6 +537,14 @@ function iniciarPusher() {
 document.addEventListener('DOMContentLoaded', async () => {
   usuarioYo = getUsuario();
   document.getElementById('buscarConversacionInput').addEventListener('input', filtrarConversaciones);
+
+  const inputBusqueda = document.getElementById('inputBuscarMensajes');
+  inputBusqueda.addEventListener('input', _ejecutarBusquedaMensajes);
+  inputBusqueda.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); irResultadoBusqueda(e.shiftKey ? -1 : 1); }
+    if (e.key === 'Escape') cerrarBusquedaMensajes();
+  });
+
   await cargarConversaciones();
   iniciarPusher();
 });

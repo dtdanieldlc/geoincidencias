@@ -106,13 +106,38 @@ class ChatController extends Controller
         $mensajes = Mensaje::where('id_conversacion', $id)
             ->orderBy('created_at')
             ->limit(300)
-            ->get(['id_mensaje', 'id_usuario_emisor', 'contenido', 'leido_at', 'created_at']);
+            ->get(['id_mensaje', 'id_usuario_emisor', 'contenido', 'tipo', 'imagen_url', 'leido_at', 'created_at'])
+            ->map(fn ($m) => [
+                'id_mensaje'        => $m->id_mensaje,
+                'id_usuario_emisor' => $m->id_usuario_emisor,
+                'contenido'         => $m->contenido,
+                'tipo'              => $m->tipo,
+                'imagen_url'        => $m->imagen_url ? Storage::url($m->imagen_url) : null,
+                'leido_at'          => $m->leido_at,
+                'created_at'        => $m->created_at,
+            ]);
 
         // Marcar como leídos los mensajes que me mandó el otro
-        Mensaje::where('id_conversacion', $id)
+        $idOtro = $conversacion->otroParticipante($yo->id_usuario);
+        $huboNuevosLeidos = Mensaje::where('id_conversacion', $id)
             ->where('id_usuario_emisor', '!=', $yo->id_usuario)
             ->whereNull('leido_at')
-            ->update(['leido_at' => now()]);
+            ->exists();
+
+        if ($huboNuevosLeidos) {
+            Mensaje::where('id_conversacion', $id)
+                ->where('id_usuario_emisor', '!=', $yo->id_usuario)
+                ->whereNull('leido_at')
+                ->update(['leido_at' => now()]);
+
+            // Avisar al OTRO (quien mandó esos mensajes) que ya se los leyeron,
+            // para que le aparezca el doble check azul en tiempo real.
+            (new PusherService())->trigger(
+                ["private-usuario.{$idOtro}"],
+                'mensajes-leidos',
+                ['id_conversacion' => (int) $id, 'leido_por' => $yo->id_usuario]
+            );
+        }
 
         return response()->json($mensajes);
     }
@@ -145,6 +170,7 @@ class ChatController extends Controller
             'id_conversacion'   => $conversacion->id_conversacion,
             'id_usuario_emisor' => $yo->id_usuario,
             'contenido'         => trim($request->contenido),
+            'tipo'              => 'texto',
         ]);
 
         $conversacion->update([
@@ -154,12 +180,14 @@ class ChatController extends Controller
         ]);
 
         $payload = [
-            'id_mensaje'       => $mensaje->id_mensaje,
-            'id_conversacion'  => $conversacion->id_conversacion,
-            'id_usuario_emisor'=> $yo->id_usuario,
-            'nombre_emisor'    => trim($yo->nombre . ' ' . ($yo->apellido ?? '')),
-            'contenido'        => $mensaje->contenido,
-            'created_at'       => $mensaje->created_at,
+            'id_mensaje'        => $mensaje->id_mensaje,
+            'id_conversacion'   => $conversacion->id_conversacion,
+            'id_usuario_emisor' => $yo->id_usuario,
+            'nombre_emisor'     => trim($yo->nombre . ' ' . ($yo->apellido ?? '')),
+            'contenido'         => $mensaje->contenido,
+            'tipo'              => 'texto',
+            'imagen_url'        => null,
+            'created_at'        => $mensaje->created_at,
         ];
 
         // Solo se transmite al destinatario: el emisor ya pinta su propio
@@ -172,6 +200,84 @@ class ChatController extends Controller
         );
 
         return response()->json(['ok' => true, 'mensaje' => $payload]);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       POST /api/chat/mensajes/imagen  (multipart/form-data)
+       { id_usuario_destino, imagen }
+    ══════════════════════════════════════════════════════ */
+    public function enviarImagen(Request $request)
+    {
+        $yo = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'id_usuario_destino' => 'required|integer|exists:usuarios,id_usuario',
+            'imagen'             => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'mensaje' => $validator->errors()->first()], 400);
+        }
+
+        $idDestino = (int) $request->id_usuario_destino;
+        if ($idDestino === $yo->id_usuario) {
+            return response()->json(['ok' => false, 'mensaje' => 'No puedes enviarte un mensaje a ti mismo.'], 400);
+        }
+
+        $conversacion = Conversacion::entre($yo->id_usuario, $idDestino);
+        $ruta = $request->file('imagen')->store('chat_imagenes', 'public');
+
+        $mensaje = Mensaje::create([
+            'id_conversacion'   => $conversacion->id_conversacion,
+            'id_usuario_emisor' => $yo->id_usuario,
+            'contenido'         => '📷 Imagen',
+            'tipo'              => 'imagen',
+            'imagen_url'        => $ruta,
+        ]);
+
+        $conversacion->update([
+            'ultimo_mensaje_texto'      => '📷 Imagen',
+            'ultimo_mensaje_id_usuario' => $yo->id_usuario,
+            'ultimo_mensaje_at'         => $mensaje->created_at,
+        ]);
+
+        $payload = [
+            'id_mensaje'        => $mensaje->id_mensaje,
+            'id_conversacion'   => $conversacion->id_conversacion,
+            'id_usuario_emisor' => $yo->id_usuario,
+            'nombre_emisor'     => trim($yo->nombre . ' ' . ($yo->apellido ?? '')),
+            'contenido'         => $mensaje->contenido,
+            'tipo'              => 'imagen',
+            'imagen_url'        => Storage::url($ruta),
+            'created_at'        => $mensaje->created_at,
+        ];
+
+        (new PusherService())->trigger(
+            ["private-usuario.{$idDestino}"],
+            'nuevo-mensaje',
+            $payload
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => $payload]);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       POST /api/chat/escribiendo   { id_usuario_destino }
+       Avisa al destinatario, en tiempo real, que le estoy
+       escribiendo (se dispara con debounce desde el frontend).
+    ══════════════════════════════════════════════════════ */
+    public function escribiendo(Request $request)
+    {
+        $yo = $request->user();
+        $idDestino = (int) $request->input('id_usuario_destino');
+        if (! $idDestino) return response()->json(['ok' => false], 400);
+
+        (new PusherService())->trigger(
+            ["private-usuario.{$idDestino}"],
+            'escribiendo',
+            ['id_usuario_emisor' => $yo->id_usuario, 'nombre_emisor' => trim($yo->nombre . ' ' . ($yo->apellido ?? ''))]
+        );
+
+        return response()->json(['ok' => true]);
     }
 
     /* ══════════════════════════════════════════════════════

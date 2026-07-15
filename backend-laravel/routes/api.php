@@ -49,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
     Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
     Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
+    Route::post('chat/mensajes/imagen',               [ChatController::class, 'enviarImagen']);
+    Route::post('chat/escribiendo',                    [ChatController::class, 'escribiendo']);
     Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
 
     // ── Incidencias ──────────────────────────────────────────────
