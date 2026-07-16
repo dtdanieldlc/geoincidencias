@@ -124,8 +124,21 @@ function cambiarTab(tab) {
   const titulo = document.querySelector('.gi-page-title');
   if (titulo) titulo.textContent = TAB_TITLES[tab] ?? 'Administración';
 
+  _resaltarSidebarSegunTab(tab);
+
   if (tab === 'usuarios') cargarUsuarios();
   if (tab === 'permisos' && typeof initPanelPermisos === 'function') initPanelPermisos();
+}
+
+// El sidebar es compartido (sidebar.js) y solo sabe resaltar según la
+// PÁGINA en la que estás, pero admin.html tiene 4 "páginas" en una sola
+// (pestañas). Acá se corrige a mano cuál link debe verse activo según
+// la pestaña realmente abierta.
+const TAB_A_LINK_ID = { incidencias: 'linkAdmin', apoyos: 'linkApoyos', usuarios: 'linkUsuarios', permisos: 'linkPermisos' };
+function _resaltarSidebarSegunTab(tab) {
+  document.querySelectorAll('#gi-sidebar .sb-link').forEach(a => a.classList.remove('active'));
+  const el = document.getElementById(TAB_A_LINK_ID[tab]);
+  if (el) el.classList.add('active');
 }
 
 function capitalize(s) {
