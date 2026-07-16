@@ -228,6 +228,14 @@ class SuperAdminController extends Controller
                     \DB::table('incidencia_apoyos')->where('id_usuario', $id)->delete();
                     \DB::table('notificaciones')->where('id_usuario', $id)->delete();
                     \DB::table('admin_permisos')->where('id_usuario', $id)->delete();
+
+                    // Chat: se borran sus conversaciones completas (y con ellas,
+                    // en cascada, todos sus mensajes — ninguna de las 2 columnas
+                    // admite null, así que no se pueden "anonimizar").
+                    \DB::table('conversaciones')
+                        ->where('id_usuario_uno', $id)
+                        ->orWhere('id_usuario_dos', $id)
+                        ->delete();
                 }
 
                 $usuario->tokens()->delete();
