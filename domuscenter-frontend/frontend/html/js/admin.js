@@ -121,19 +121,7 @@ function cambiarTab(tab) {
     if (btn)   btn.classList.toggle('active', t === tab);
   });
 
-  // Mantener el link del sidebar sincronizado con la pestaña activa
-  const LINK_POR_TAB = {
-    incidencias: 'linkAdmin',
-    apoyos:      'linkApoyos',
-    usuarios:    'linkUsuarios',
-    permisos:    'linkPermisos',
-  };
-  Object.values(LINK_POR_TAB).forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
-  document.getElementById(LINK_POR_TAB[tab])?.classList.add('active');
-
-  const titulo = document.getElementById('topbarTitle');
+  const titulo = document.querySelector('.gi-page-title');
   if (titulo) titulo.textContent = TAB_TITLES[tab] ?? 'Administración';
 
   if (tab === 'usuarios') cargarUsuarios();
@@ -145,59 +133,14 @@ function capitalize(s) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════════════════════ */
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarBackdrop')?.classList.toggle('open');
-}
-
-document.getElementById('sidebarBackdrop')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarBackdrop').classList.remove('open');
-});
-
-/* ══════════════════════════════════════════════════════════
-   USUARIO ACTUAL (sidebar inferior)
+   PESTAÑA "Solicitar Permisos" — solo visible para admin
+   (el sidebar compartido, la navegación y el usuario logueado
+   ya los maneja sidebar.js/auth-guard.js en todas las páginas)
 ══════════════════════════════════════════════════════════ */
 function initUsuarioActual() {
   const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
-  if (u.nombre) {
-    document.getElementById('sideNombre').textContent = u.nombre;
-    document.getElementById('sideRol').textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
-    document.getElementById('sideAvatar').textContent = u.nombre.charAt(0).toUpperCase();
-    const badgeEl = document.getElementById('brandBadge');
-    if (badgeEl) badgeEl.textContent = u.rol === 'superadmin' ? 'SUPERADMIN' : 'ADMIN';
-    const tabPermisosBtn = document.getElementById('tabPermisosBtn');
-    if (tabPermisosBtn) tabPermisosBtn.style.display = u.rol === 'admin' ? 'inline-flex' : 'none';
-
-    const linkPermisos = document.getElementById('linkPermisos');
-    if (linkPermisos) linkPermisos.style.display = u.rol === 'admin' ? 'flex' : 'none';
-
-    const esSuperAdmin = u.rol === 'superadmin';
-    const linkSuperAdmin = document.getElementById('linkSuperAdmin');
-    const navSectionSuperAdmin = document.getElementById('navSectionSuperAdmin');
-    if (linkSuperAdmin) linkSuperAdmin.style.display = esSuperAdmin ? 'flex' : 'none';
-    if (navSectionSuperAdmin) navSectionSuperAdmin.style.display = esSuperAdmin ? 'block' : 'none';
-  }
-
-  document.getElementById('btnCerrarSesion').addEventListener('click', async () => {
-    await fetch(`${API}/auth/logout`, { method: 'POST', headers: headers() });
-    localStorage.clear();
-    location.href = 'login.html';
-  });
-}
-
-/* ══════════════════════════════════════════════════════════
-   NOTIFICACIONES (punto rojo)
-══════════════════════════════════════════════════════════ */
-async function cargarNotificaciones() {
-  try {
-    const r = await fetch(`${API}/notificaciones/no-leidas`, { headers: headers() });
-    const d = await r.json();
-    const cnt = Array.isArray(d) ? d.length : (d.data?.length ?? 0);
-    if (cnt > 0) document.getElementById('notifDot').style.display = 'block';
-  } catch { /* silencioso */ }
+  const tabPermisosBtn = document.getElementById('tabPermisosBtn');
+  if (tabPermisosBtn) tabPermisosBtn.style.display = u.rol === 'admin' ? 'inline-flex' : 'none';
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -855,29 +798,20 @@ function verifBadge(v) {
 ══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
   exigirAdmin();
+  initSidebar('admin');
   initUsuarioActual();
   startHeartbeat();
-  if (typeof initThemeToggle === 'function') initThemeToggle();
   await cargarMisPermisosAdmin();
   aplicarVisibilidadPorPermisos();
   cargarIncidenciasPendientes();
   cargarTodasIncidencias();
   cargarApoyosPendientes();
-  cargarNotificaciones();
 
   document.getElementById('tabIncidenciasBtn').addEventListener('click', () => cambiarTab('incidencias'));
   document.getElementById('tabApoyosBtn').addEventListener('click',      () => cambiarTab('apoyos'));
   document.getElementById('tabUsuariosBtn').addEventListener('click',    () => cambiarTab('usuarios'));
   const tabPermisosBtnEl = document.getElementById('tabPermisosBtn');
   if (tabPermisosBtnEl) tabPermisosBtnEl.addEventListener('click', () => cambiarTab('permisos'));
-
-  document.getElementById('linkAdmin').addEventListener('click',    (e) => { e.preventDefault(); cambiarTab('incidencias'); });
-  document.getElementById('linkApoyos').addEventListener('click',   (e) => { e.preventDefault(); cambiarTab('apoyos'); });
-  document.getElementById('linkUsuarios').addEventListener('click', (e) => { e.preventDefault(); cambiarTab('usuarios'); });
-  const linkPermisosEl = document.getElementById('linkPermisos');
-  if (linkPermisosEl) linkPermisosEl.addEventListener('click', (e) => { e.preventDefault(); cambiarTab('permisos'); });
-
-  document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
 
   document.getElementById('filtBuscar').addEventListener('input',    aplicarFiltros);
   document.getElementById('filtActivo').addEventListener('change',   aplicarFiltros);

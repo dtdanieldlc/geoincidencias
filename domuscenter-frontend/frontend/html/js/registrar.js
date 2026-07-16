@@ -6,6 +6,10 @@ let _sucursalesCache = [];
 
 // ── Mapa de solo lectura: se centra y marca según la sucursal elegida ──
 function iniciarMapa() {
+  if (mapaReg) return; // ya inicializado, no crear dos veces
+  document.getElementById('mapaPlaceholder').style.display = 'none';
+  document.getElementById('mapaRegistrar').style.display = 'block';
+
   mapaReg = L.map('mapaRegistrar', { zoomControl: true, dragging: true, scrollWheelZoom: false })
     .setView([-2.2200, -80.9100], 11); // vista general de la península de Santa Elena
 
@@ -16,6 +20,10 @@ function iniciarMapa() {
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     attribution: '', maxZoom: 19
   }).addTo(mapaReg);
+
+  // El contenedor estaba oculto (display:none) al crear el mapa, así que
+  // Leaflet no pudo calcular bien su tamaño. Hay que decírselo ahora que sí se ve.
+  setTimeout(() => mapaReg.invalidateSize(), 50);
 }
 
 function ubicarSucursalEnMapa(lat, lng, nombre) {
@@ -81,8 +89,12 @@ async function onCambiarSucursal() {
     document.getElementById('latitud').value = '';
     document.getElementById('longitud').value = '';
     if (marcador) { mapaReg.removeLayer(marcador); marcador = null; }
+    document.getElementById('mapaPlaceholder').style.display = 'flex';
+    document.getElementById('mapaRegistrar').style.display = 'none';
     return;
   }
+
+  iniciarMapa(); // recién ahora se crea/muestra el mapa, no antes
 
   const sucursal = _sucursalesCache.find(s => String(s.id) === String(idSucursal));
   if (sucursal) ubicarSucursalEnMapa(sucursal.latitud, sucursal.longitud, sucursal.nombre);
@@ -217,7 +229,6 @@ async function guardarIncidencia() {
 
 // ── Init ──
 inicializarBarraUsuario();
-iniciarMapa();
 poblarSelect(`${API}/catalogos/tipos`, 'id_tipo');
 cargarSucursales();
 document.getElementById('id_sucursal').addEventListener('change', onCambiarSucursal);

@@ -281,11 +281,11 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
   ];
 
   const adminLinks = [
-    { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
-    { id: 'apoyos',   href: 'admin.html?tab=apoyos',    icon: 'bi-cash-coin',    label: 'Incentivos',   badge: '<span class="sb-badge" style="background:rgba(217,119,6,.18);color:#fbbf24;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html?tab=apoyos';" },
-    { id: 'usuarios', href: 'admin.html?tab=usuarios',    icon: 'bi-people',       label: 'Usuarios',     onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html?tab=usuarios';" },
+    { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  linkId: 'linkAdmin',    badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
+    { id: 'apoyos',   href: 'admin.html?tab=apoyos',    icon: 'bi-cash-coin',    label: 'Incentivos',   linkId: 'linkApoyos',   badge: '<span class="sb-badge" style="background:rgba(217,119,6,.18);color:#fbbf24;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html?tab=apoyos';" },
+    { id: 'usuarios', href: 'admin.html?tab=usuarios',    icon: 'bi-people',       label: 'Usuarios',     linkId: 'linkUsuarios', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html?tab=usuarios';" },
     { id: 'permisos', href: 'admin.html?tab=permisos',    icon: 'bi-key',          label: 'Solicitar Permisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html?tab=permisos';" },
-    { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial'     },
+    { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial',    linkId: 'linkHistorial' },
   ];
 
   const superAdminLinks = [
@@ -295,7 +295,8 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
   const renderLink = (l) => {
     const active = l.id === paginaActiva ? 'active' : '';
     const onclick = l.onclick ? `onclick="${l.onclick}"` : '';
-    return `<a class="sb-link ${active}" href="${l.href}" ${onclick}>
+    const idAttr = l.linkId ? `id="${l.linkId}"` : '';
+    return `<a class="sb-link ${active}" ${idAttr} href="${l.href}" ${onclick}>
       <i class="bi ${l.icon}"></i>${l.label}${l.badge ?? ''}
     </a>`;
   };

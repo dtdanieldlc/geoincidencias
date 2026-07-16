@@ -58,8 +58,7 @@ let usuarioAsignarActual = null;
 ══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   exigirSuperAdmin();
-  initUsuarioActual();
-  if (typeof initThemeToggle === 'function') initThemeToggle();
+  initSidebar('superadmin');
 
   modalRevisar = new bootstrap.Modal(document.getElementById('modalRevisarSolicitud'));
 
@@ -91,33 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnAprobarSolicitud').addEventListener('click',  () => resolverSolicitud('aprobado'));
   document.getElementById('btnRechazarSolicitud').addEventListener('click', () => resolverSolicitud('rechazado'));
 
-  document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebarBackdrop')?.classList.toggle('open');
-  });
-  document.getElementById('sidebarBackdrop')?.addEventListener('click', () => {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarBackdrop').classList.remove('open');
-  });
-
   cargarStats();
   cargarSolicitudesPendientes();
   cargarUsuariosAsignar();
   construirFilasModulos('tbodyModulosAsignar');
 });
-
-function initUsuarioActual() {
-  const u = JSON.parse(localStorage.getItem('gi_usuario') ?? '{}');
-  if (u.nombre) {
-    document.getElementById('sideNombre').textContent = u.nombre;
-    document.getElementById('sideRol').textContent    = 'Superadmin';
-    document.getElementById('sideAvatar').textContent = u.nombre.charAt(0).toUpperCase();
-  }
-  document.getElementById('btnCerrarSesion').addEventListener('click', async () => {
-    await fetch(`${API}/auth/logout`, { method: 'POST', headers: headers() });
-    cerrarSesion();
-  });
-}
 
 function construirFilasModulos(tbodyId) {
   const tbody = document.getElementById(tbodyId);
@@ -148,7 +125,8 @@ function cambiarTabSuperAdmin(tab) {
     detalle: 'Detalle de Usuarios',
     'reportes-usuario': 'Reportes por Usuario',
   };
-  document.getElementById('topbarTitle').textContent = titulos[tab] || '';
+  const tituloEl = document.querySelector('.gi-page-title');
+  if (tituloEl) tituloEl.textContent = titulos[tab] || '';
 
   if (tab === 'detalle' && !_detalleUsuariosCargados) cargarDetalleUsuarios();
   if (tab === 'reportes-usuario' && !_reportesUsuarioCargados) cargarReportesUsuario();
