@@ -261,6 +261,7 @@ public function index(Request $request)
             'id_zona' => 'required|integer|exists:zonas,id_zona',
             'fecha_ocurrencia' => 'required|date',
             'prioridad' => 'required|in:Baja,Media,Alta',
+            'id_usuario_reportante' => 'required|integer|exists:usuarios,id_usuario',
         ]);
 
         if ($validator->fails()) {
@@ -286,6 +287,7 @@ public function index(Request $request)
             'hora_ocurrencia' => $request->hora_ocurrencia,
             'reportante_nombre' => $request->reportante_nombre,
             'reportante_contacto' => $request->reportante_contacto,
+            'id_usuario_reportante' => $request->id_usuario_reportante,
             'id_usuario_creador' => $usuario->id_usuario,
         ]);
 

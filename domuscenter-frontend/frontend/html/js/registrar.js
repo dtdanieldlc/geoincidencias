@@ -166,6 +166,7 @@ async function guardarIncidencia() {
   const zona       = document.getElementById('id_zona').value;
   const lat        = document.getElementById('latitud').value;
   const lng        = document.getElementById('longitud').value;
+  const idReportante = document.getElementById('reportante_id_usuario').value;
 
   if (!titulo)      { marcarError('titulo');      mostrarAlerta('El <strong>título</strong> es obligatorio.', 'warning'); ok=false; }
   if (!id_tipo)     { marcarError('id_tipo');     if(ok) mostrarAlerta('Selecciona el <strong>tipo</strong>.', 'warning'); ok=false; }
@@ -173,6 +174,7 @@ async function guardarIncidencia() {
   if (!fecha)       { marcarError('fecha_ocurrencia'); if(ok) mostrarAlerta('La <strong>fecha de ocurrencia</strong> es obligatoria.', 'warning'); ok=false; }
   if (!id_sucursal) { marcarError('id_sucursal'); if(ok) mostrarAlerta('Selecciona la <strong>sucursal</strong>.', 'warning'); ok=false; }
   if (!zona)        { marcarError('id_zona');     if(ok) mostrarAlerta('Selecciona la <strong>zona</strong>.', 'warning'); ok=false; }
+  if (!idReportante){ marcarError('reportante_id_usuario'); if(ok) mostrarAlerta('Selecciona quién <strong>reporta</strong> la incidencia.', 'warning'); ok=false; }
 
   if (!ok) {
     const primer = document.querySelector('.is-invalid');
@@ -196,7 +198,8 @@ async function guardarIncidencia() {
     hora_ocurrencia:     document.getElementById('hora_ocurrencia').value || null,
     latitud:             parseFloat(lat),
     longitud:            parseFloat(lng),
-    reportante_nombre:   document.getElementById('reportante_nombre').value.trim(),
+    id_usuario_reportante: parseInt(document.getElementById('reportante_id_usuario').value),
+    reportante_nombre:   document.getElementById('reportante_id_usuario').selectedOptions[0]?.text ?? '',
     reportante_contacto: document.getElementById('reportante_contacto').value.trim(),
   };
 
@@ -222,12 +225,42 @@ inicializarBarraUsuario();
 iniciarMapa();
 poblarSelect(`${API}/catalogos/tipos`, 'id_tipo');
 cargarSucursales();
+cargarEmpleadosReportante();
 document.getElementById('id_sucursal').addEventListener('change', onCambiarSucursal);
+document.getElementById('reportante_id_usuario').addEventListener('change', onCambiarReportante);
 document.getElementById('fecha_ocurrencia').value = new Date().toISOString().split('T')[0];
 
-// Prellenar datos del reportante con el usuario logueado
-const uActual = getUsuario();
-if (uActual) {
-  const elNombre = document.getElementById('reportante_nombre');
-  if (elNombre) elNombre.value = uActual.nombre;
+// Cargar el desplegable de empleados para "Reportado por"
+async function cargarEmpleadosReportante() {
+  const sel = document.getElementById('reportante_id_usuario');
+  const uActual = getUsuario();
+
+  try {
+    const r = await fetchAPI(`${API}/chat/usuarios`);
+    const empleados = await r.json();
+
+    // El endpoint no incluye al propio usuario logueado (se armó para el
+    // chat, donde uno no puede escribirse a sí mismo), así que se agrega
+    // aparte y va primero, ya seleccionado por defecto.
+    const lista = uActual
+      ? [{ id_usuario: uActual.id_usuario, nombre: `${uActual.nombre} (tú)`, correo: uActual.correo }, ...empleados]
+      : empleados;
+
+    sel.innerHTML = lista.map(e =>
+      `<option value="${e.id_usuario}" data-correo="${e.correo ?? ''}">${e.nombre}</option>`
+    ).join('');
+
+    if (uActual) sel.value = uActual.id_usuario;
+    onCambiarReportante();
+  } catch (e) {
+    sel.innerHTML = '<option value="">No se pudo cargar la lista de empleados</option>';
+  }
+}
+
+// Al elegir otro empleado, sugiere su correo como contacto (editable)
+function onCambiarReportante() {
+  const sel = document.getElementById('reportante_id_usuario');
+  const correo = sel.selectedOptions[0]?.dataset.correo;
+  const inputContacto = document.getElementById('reportante_contacto');
+  if (correo && !inputContacto.value) inputContacto.value = correo;
 }
