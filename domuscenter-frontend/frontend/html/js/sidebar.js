@@ -69,7 +69,8 @@
     /* ── Sidebar ── */
     #gi-sidebar {
       width: var(--sidebar-w);
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh; /* más confiable en celulares */
       background: linear-gradient(170deg, var(--navy) 0%, var(--navy-2) 60%, #0c4f47 150%);
       border-right: 1px solid rgba(255,255,255,.06);
       display: flex;
@@ -78,7 +79,13 @@
       top: 0; left: 0;
       z-index: 1200;
       transition: transform .25s ease;
+      overflow-y: auto; /* si el menú no cabe, hace scroll adentro, no se corta */
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.25) transparent;
     }
+    #gi-sidebar::-webkit-scrollbar { width: 5px; }
+    #gi-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 10px; }
     #gi-sidebar .sb-brand {
       padding: 18px 16px 14px;
       border-bottom: 1px solid rgba(255,255,255,.1);
@@ -129,6 +136,7 @@
     /* ── Bottom user card ── */
     #gi-sidebar-bottom {
       margin-top: auto;
+      flex-shrink: 0;
       border-top: 1px solid rgba(255,255,255,.1);
       padding: 10px 8px;
     }

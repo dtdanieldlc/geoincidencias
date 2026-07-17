@@ -404,17 +404,6 @@ public function index(Request $request)
     }   
 
     // PUT /api/incidencias/{id}
-    // Flujo de estados permitido (orden fijo del ciclo de atención).
-    // Solo se permite avanzar al siguiente estado o reabrir un caso Resuelto
-    // devolviéndolo a "En proceso". No se permite saltar estados ni retroceder
-    // desde "Cerrado", que es un estado final.
-    private const TRANSICIONES_VALIDAS = [
-        1 => [2],       // Pendiente        -> En proceso
-        2 => [1, 3],    // En proceso       -> Pendiente | Resuelto
-        3 => [2, 4],    // Resuelto         -> En proceso (reabrir) | Cerrado
-        4 => [],        // Cerrado (estado final, no editable)
-    ];
-
     public function update(Request $request, $id)
     {
         $incidencia = Incidencia::find($id);
@@ -422,67 +411,16 @@ public function index(Request $request)
             return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
         }
 
-        $usuario = $request->user();
-        $estadoAnteriorId = $incidencia->id_estado_actual;
-        $nuevoEstadoId    = $request->input('id_estado_actual');
-        $cambiaEstado     = $request->has('id_estado_actual') && (int) $nuevoEstadoId !== (int) $estadoAnteriorId;
-
-        // ── Regla de negocio: no se puede editar una incidencia Cerrada ──
-        if ($estadoAnteriorId == 4) {
-            return response()->json([
-                'ok' => false,
-                'mensaje' => 'La incidencia está Cerrada y no admite más cambios.',
-            ], 422);
-        }
-
-        // ── Regla de negocio: el cambio de estado debe seguir el flujo definido ──
-        if ($cambiaEstado) {
-            $permitidos = self::TRANSICIONES_VALIDAS[$estadoAnteriorId] ?? [];
-            if (! in_array((int) $nuevoEstadoId, $permitidos, true)) {
-                return response()->json([
-                    'ok' => false,
-                    'mensaje' => 'Transición de estado no permitida según el flujo definido.',
-                ], 422);
-            }
-        }
-
-        $datos = $request->only([
+        $incidencia->update($request->only([
             'titulo', 'descripcion', 'prioridad', 'id_tipo', 'id_subtipo',
             'id_estado_actual', 'id_zona', 'latitud', 'longitud', 'fecha_ocurrencia',
-        ]);
+        ]));
 
-        // Al llegar a "Resuelto" se sella fecha y tiempo total de resolución.
-        if ($cambiaEstado && (int) $nuevoEstadoId === 3) {
-            $datos['fecha_resolucion'] = now();
-            $datos['tiempo_resolucion_horas'] = round(
-                now()->diffInMinutes($incidencia->fecha_registro) / 60, 2
-            );
-        }
-
-        $incidencia->update($datos);
-
-        // ── Trazabilidad: cada cambio de estado queda en el historial ──
-        if ($cambiaEstado) {
-            DB::table('incidencia_estados_historial')->insert([
-                'id_incidencia'      => $incidencia->id_incidencia,
-                'id_estado_anterior' => $estadoAnteriorId,
-                'id_estado_nuevo'    => $nuevoEstadoId,
-                'id_usuario'         => $usuario->id_usuario,
-                'comentario'         => $request->input('comentario_estado', 'Cambio de estado'),
-                'fecha_cambio'       => now(),
-            ]);
-
-            HistorialActividad::registrar(
-                $usuario->id_usuario, $id, 'cambio_estado_incidencia',
-                "{$usuario->nombre_completo} cambió el estado de la incidencia #{$id}",
-                $request->ip()
-            );
-        } else {
-            HistorialActividad::registrar(
-                $usuario->id_usuario, $id, 'edito_incidencia',
-                "{$usuario->nombre_completo} editó la incidencia #{$id}", $request->ip()
-            );
-        }
+        $usuario = $request->user();
+        HistorialActividad::registrar(
+            $usuario->id_usuario, $id, 'edito_incidencia',
+            "{$usuario->nombre_completo} editó la incidencia #{$id}", $request->ip()
+        );
 
         return response()->json(['ok' => true, 'mensaje' => 'Incidencia actualizada.']);
     }

@@ -264,6 +264,16 @@ document.getElementById('fotoInput').addEventListener('change', async function (
       mostrarAlerta('Foto actualizada correctamente', 'success');
       // Actualizar src con la URL definitiva del servidor
       document.getElementById('avatarImg').src = urlCompleta(data.foto_url);
+
+      // El sidebar (y cualquier otra página) lee la foto desde localStorage,
+      // no desde el servidor cada vez — sin esto, la foto nueva solo se
+      // vería después de cerrar sesión y volver a entrar.
+      const usuarioGuardado = getUsuario();
+      if (usuarioGuardado) {
+        usuarioGuardado.foto_url = data.foto_url;
+        localStorage.setItem('gi_usuario', JSON.stringify(usuarioGuardado));
+      }
+      if (usuarioGuardado && typeof _cargarDatosUsuario === 'function') _cargarDatosUsuario(usuarioGuardado);
     } else {
       mostrarAlerta(data.mensaje || 'Error al subir la foto', 'danger');
     }

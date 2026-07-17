@@ -66,6 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tabAsignarBtn').addEventListener('click',     () => cambiarTabSuperAdmin('asignar'));
   document.getElementById('tabDetalleBtn').addEventListener('click',     () => cambiarTabSuperAdmin('detalle'));
   document.getElementById('tabReportesUsuarioBtn').addEventListener('click', () => cambiarTabSuperAdmin('reportes-usuario'));
+  document.getElementById('tabDenunciasBtn').addEventListener('click', () => cambiarTabSuperAdmin('denuncias'));
+
+  document.querySelectorAll('.filtro-estado-denuncia').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filtro-estado-denuncia').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cargarDenuncias(btn.dataset.estado);
+    });
+  });
+  document.getElementById('buscarDenunciaInput').addEventListener('input', filtrarDenuncias);
+  _actualizarBadgeDenunciasPendientes();
 
   document.getElementById('btnGuardarDetalleUsuario').addEventListener('click', guardarDetalle);
   document.getElementById('btnResetPasswordDetalle').addEventListener('click', resetPasswordDetalle);
@@ -114,22 +125,26 @@ function cambiarTabSuperAdmin(tab) {
   document.getElementById('panelAsignar').style.display     = tab === 'asignar'     ? 'block' : 'none';
   document.getElementById('panelDetalle').style.display     = tab === 'detalle'     ? 'block' : 'none';
   document.getElementById('panelReportesUsuario').style.display = tab === 'reportes-usuario' ? 'block' : 'none';
+  document.getElementById('panelDenuncias').style.display   = tab === 'denuncias'   ? 'block' : 'none';
   document.getElementById('tabSolicitudesBtn').classList.toggle('active', tab === 'solicitudes');
   document.getElementById('tabAsignarBtn').classList.toggle('active', tab === 'asignar');
   document.getElementById('tabDetalleBtn').classList.toggle('active', tab === 'detalle');
   document.getElementById('tabReportesUsuarioBtn').classList.toggle('active', tab === 'reportes-usuario');
+  document.getElementById('tabDenunciasBtn').classList.toggle('active', tab === 'denuncias');
 
   const titulos = {
     solicitudes: 'Solicitudes pendientes',
     asignar: 'Asignar permisos directo',
     detalle: 'Detalle de Usuarios',
     'reportes-usuario': 'Reportes por Usuario',
+    denuncias: 'Denuncias de Usuarios',
   };
   const tituloEl = document.querySelector('.gi-page-title');
   if (tituloEl) tituloEl.textContent = titulos[tab] || '';
 
   if (tab === 'detalle' && !_detalleUsuariosCargados) cargarDetalleUsuarios();
   if (tab === 'reportes-usuario' && !_reportesUsuarioCargados) cargarReportesUsuario();
+  if (tab === 'denuncias') cargarDenuncias();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -714,5 +729,146 @@ async function confirmarEliminarUsuario() {
     msgEl.textContent = 'Error de conexión al eliminar el usuario.';
     msgEl.style.display = 'block';
     btn.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   DENUNCIAS DE USUARIOS — solo SuperAdmin
+══════════════════════════════════════════════════════════ */
+let _denunciasCargadas = [];
+let _usuarioDenunciaActual = null;
+
+const MOTIVO_DENUNCIA_LABEL = {
+  acoso: 'Acoso u hostigamiento',
+  spam: 'Spam o publicidad no deseada',
+  contenido_inapropiado: 'Contenido inapropiado',
+  comportamiento_sospechoso: 'Comportamiento sospechoso',
+  otro: 'Otro motivo',
+};
+
+async function cargarDenuncias(estado = 'pendiente') {
+  const tbody = document.getElementById('tbodyDenuncias');
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
+  try {
+    const r = await fetch(`${API}/superadmin/reportes-usuario?estado=${estado}`, { headers: headers() });
+    _denunciasCargadas = await r.json();
+    _renderDenuncias(_denunciasCargadas);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Error al cargar denuncias.</td></tr>';
+  }
+}
+
+function _renderDenuncias(lista) {
+  const tbody = document.getElementById('tbodyDenuncias');
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)">No hay denuncias en esta categoría. 🎉</td></tr>';
+    return;
+  }
+  const rolLabel = { superadmin: 'Superadmin', admin: 'Admin', usuario: 'Usuario' };
+  tbody.innerHTML = lista.map(d => `
+    <tr>
+      <td class="fw-semibold">${d.nombre}</td>
+      <td class="small">${d.correo}</td>
+      <td>${rolLabel[d.rol] || d.rol}</td>
+      <td>${d.activo
+        ? '<span class="badge" style="background:#dcfce7;color:#16a34a;">Activo</span>'
+        : '<span class="badge" style="background:#fee2e2;color:#dc2626;">Desactivado</span>'}</td>
+      <td><span class="badge bg-danger">${d.total_reportes}</span></td>
+      <td class="small text-secondary">${d.ultimo_reporte_at ? new Date(d.ultimo_reporte_at).toLocaleDateString('es-EC') : '—'}</td>
+      <td>
+        <button class="btn-icon" onclick="verDetalleDenuncias(${d.id_usuario}, '${d.nombre.replace(/'/g, "\\'")}')">
+          <i class="bi bi-eye"></i> Ver denuncias
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filtrarDenuncias() {
+  const q = document.getElementById('buscarDenunciaInput').value.trim().toLowerCase();
+  if (!q) { _renderDenuncias(_denunciasCargadas); return; }
+  _renderDenuncias(_denunciasCargadas.filter(d => d.nombre.toLowerCase().includes(q) || d.correo.toLowerCase().includes(q)));
+}
+
+async function _actualizarBadgeDenunciasPendientes() {
+  const badge = document.getElementById('badgeDenunciasPendientes');
+  try {
+    const r = await fetch(`${API}/superadmin/reportes-usuario?estado=pendiente`, { headers: headers() });
+    const datos = await r.json();
+    const total = datos.reduce((s, d) => s + d.total_reportes, 0);
+    badge.textContent = total > 99 ? '99+' : total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+  } catch (e) { /* silencioso */ }
+}
+
+async function verDetalleDenuncias(idUsuario, nombre) {
+  _usuarioDenunciaActual = { id: idUsuario, nombre };
+  document.getElementById('denunciaUsuarioNombre').textContent = nombre;
+  const cont = document.getElementById('listaDenunciasDetalle');
+  cont.innerHTML = '<div class="text-center text-secondary py-4"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</div>';
+
+  const modal = new bootstrap.Modal(document.getElementById('modalDetalleDenuncias'));
+  modal.show();
+
+  try {
+    const r = await fetch(`${API}/superadmin/reportes-usuario/usuario/${idUsuario}`, { headers: headers() });
+    const denuncias = await r.json();
+    _renderDetalleDenuncias(denuncias);
+  } catch (e) {
+    cont.innerHTML = '<div class="text-center text-danger py-4">Error al cargar las denuncias.</div>';
+  }
+
+  document.getElementById('btnDesactivarDesdeDenuncia').onclick = () => {
+    bootstrap.Modal.getInstance(document.getElementById('modalDetalleDenuncias'))?.hide();
+    toggleActivoDetalle(idUsuario, true);
+  };
+  document.getElementById('btnEliminarDesdeDenuncia').onclick = () => {
+    bootstrap.Modal.getInstance(document.getElementById('modalDetalleDenuncias'))?.hide();
+    eliminarUsuarioDetalle(idUsuario, nombre);
+  };
+}
+
+function _renderDetalleDenuncias(denuncias) {
+  const cont = document.getElementById('listaDenunciasDetalle');
+  const estadoBadge = {
+    pendiente: '<span class="badge" style="background:#fef3c7;color:#d97706;">Pendiente</span>',
+    revisado: '<span class="badge" style="background:#dcfce7;color:#16a34a;">Revisado</span>',
+    descartado: '<span class="badge" style="background:#eef4f8;color:#64748b;">Descartado</span>',
+  };
+  cont.innerHTML = denuncias.map(d => `
+    <div class="rounded-3 border p-3 mb-2" style="border-color:rgba(139,148,158,.25) !important;">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+        <span class="fw-semibold" style="color:#0b2340;">${MOTIVO_DENUNCIA_LABEL[d.motivo] || d.motivo}</span>
+        ${estadoBadge[d.estado] || ''}
+      </div>
+      ${d.descripcion ? `<p class="small text-secondary mb-2">${d.descripcion.replace(/</g, '&lt;')}</p>` : ''}
+      <div class="small text-secondary d-flex justify-content-between flex-wrap gap-2">
+        <span>Denunciado por <strong>${d.reportante}</strong> (${d.reportante_correo || '—'})</span>
+        <span>${new Date(d.created_at).toLocaleString('es-EC')}</span>
+      </div>
+      ${d.estado === 'pendiente' ? `
+        <div class="mt-2 d-flex gap-2">
+          <button class="btn btn-sm btn-outline-success" onclick="cambiarEstadoDenuncia(${d.id_reporte}, 'revisado')">Marcar revisado</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="cambiarEstadoDenuncia(${d.id_reporte}, 'descartado')">Descartar</button>
+        </div>` : ''}
+    </div>
+  `).join('') || '<div class="text-center text-secondary py-4">Sin denuncias registradas.</div>';
+}
+
+async function cambiarEstadoDenuncia(idReporte, estado) {
+  try {
+    const r = await fetch(`${API}/superadmin/reportes-usuario/${idReporte}/estado`, {
+      method: 'PUT', headers: headers(), body: JSON.stringify({ estado }),
+    });
+    const data = await r.json();
+    if (data.ok && _usuarioDenunciaActual) {
+      showToast('Denuncia actualizada.', 'success');
+      verDetalleDenuncias(_usuarioDenunciaActual.id, _usuarioDenunciaActual.nombre);
+      _actualizarBadgeDenunciasPendientes();
+    } else {
+      showToast(data.mensaje || 'No se pudo actualizar.', 'error');
+    }
+  } catch (e) {
+    showToast('Error de conexión.', 'error');
   }
 }

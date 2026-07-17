@@ -252,6 +252,43 @@
           </div>
         </div>
       </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(11,35,64,.08);">
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-dismiss="modal" onclick="abrirModalReportar()">
+          <i class="bi bi-flag me-2"></i>Reportar usuario
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: reportar/denunciar usuario -->
+<div class="modal fade" id="modalReportarUsuario" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0" style="border-radius:16px;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(11,35,64,.08);">
+        <h6 class="modal-title fw-bold text-danger"><i class="bi bi-flag me-2"></i>Reportar a <span id="reportarNombreUsuario"></span></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-secondary">Cuéntanos qué pasó. El equipo de administración va a revisar tu reporte.</p>
+        <label class="form-label text-secondary small text-uppercase">Motivo *</label>
+        <select id="reportarMotivo" class="form-select border-secondary mb-3" style="background:#f4f7fb;">
+          <option value="acoso">Acoso u hostigamiento</option>
+          <option value="spam">Spam o publicidad no deseada</option>
+          <option value="contenido_inapropiado">Contenido inapropiado</option>
+          <option value="comportamiento_sospechoso">Comportamiento sospechoso</option>
+          <option value="otro">Otro motivo</option>
+        </select>
+        <label class="form-label text-secondary small text-uppercase">Detalles (opcional)</label>
+        <textarea id="reportarDescripcion" class="form-control border-secondary" style="background:#f4f7fb;" rows="3" maxlength="1000" placeholder="Explica brevemente qué pasó…"></textarea>
+        <div id="msgReportarUsuario" class="alert py-2 small mt-3" style="display:none;"></div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(11,35,64,.08);">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger btn-sm" id="btnConfirmarReportar" onclick="confirmarReportarUsuario()">
+          <i class="bi bi-send me-2"></i>Enviar reporte
+        </button>
+      </div>
     </div>
   </div>
 </div>

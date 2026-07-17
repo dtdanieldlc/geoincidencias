@@ -421,6 +421,50 @@ function verPerfilContacto() {
 }
 
 // ════════════════════════════════════════════════════════
+//  Reportar / denunciar usuario
+// ════════════════════════════════════════════════════════
+function abrirModalReportar() {
+  if (!conversacionActiva) return;
+  document.getElementById('reportarNombreUsuario').textContent = conversacionActiva.otro.nombre;
+  document.getElementById('reportarMotivo').value = 'acoso';
+  document.getElementById('reportarDescripcion').value = '';
+  document.getElementById('msgReportarUsuario').style.display = 'none';
+  setTimeout(() => new bootstrap.Modal(document.getElementById('modalReportarUsuario')).show(), 200);
+}
+
+async function confirmarReportarUsuario() {
+  if (!conversacionActiva) return;
+  const btn = document.getElementById('btnConfirmarReportar');
+  const msgEl = document.getElementById('msgReportarUsuario');
+  btn.disabled = true;
+
+  try {
+    const r = await fetchAPI(`${API}/usuarios/${conversacionActiva.otro.id_usuario}/reportar`, {
+      method: 'POST',
+      body: JSON.stringify({
+        motivo: document.getElementById('reportarMotivo').value,
+        descripcion: document.getElementById('reportarDescripcion').value.trim(),
+      }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('modalReportarUsuario'))?.hide();
+      mostrarAlerta('Reporte enviado. Gracias por avisarnos.', 'success');
+    } else {
+      msgEl.className = 'alert alert-danger py-2 small mt-3';
+      msgEl.textContent = data.mensaje || 'No se pudo enviar el reporte.';
+      msgEl.style.display = 'block';
+    }
+  } catch (e) {
+    msgEl.className = 'alert alert-danger py-2 small mt-3';
+    msgEl.textContent = 'Error de conexión.';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════
 //  Directorio: iniciar una conversación nueva
 // ════════════════════════════════════════════════════════
 async function abrirDirectorio() {

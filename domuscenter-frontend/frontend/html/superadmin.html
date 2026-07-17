@@ -119,6 +119,7 @@
       <button class="tab-btn" id="tabAsignarBtn"><i class="bi bi-sliders"></i>Asignar permisos directo</button>
       <button class="tab-btn" id="tabDetalleBtn"><i class="bi bi-person-vcard"></i>Detalle de Usuarios</button>
       <button class="tab-btn" id="tabReportesUsuarioBtn"><i class="bi bi-file-earmark-pdf"></i>Reportes por Usuario</button>
+      <button class="tab-btn" id="tabDenunciasBtn"><i class="bi bi-flag"></i>Denuncias<span id="badgeDenunciasPendientes" class="badge bg-danger ms-1" style="display:none;">0</span></button>
     </div>
 
     <!-- ── Panel: Solicitudes pendientes ── -->
@@ -223,6 +224,31 @@
           </thead>
           <tbody id="tbodyReportesUsuario">
             <tr><td colspan="5" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Denuncias -->
+    <div id="panelDenuncias" style="display:none">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <input type="text" id="buscarDenunciaInput" class="form-control border-secondary" style="background:#f4f7fb; max-width:340px;" placeholder="Buscar por nombre o correo…">
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary filtro-estado-denuncia active" data-estado="pendiente">Pendientes</button>
+          <button type="button" class="btn btn-outline-secondary filtro-estado-denuncia" data-estado="revisado">Revisados</button>
+          <button type="button" class="btn btn-outline-secondary filtro-estado-denuncia" data-estado="descartado">Descartados</button>
+          <button type="button" class="btn btn-outline-secondary filtro-estado-denuncia" data-estado="todos">Todos</button>
+        </div>
+      </div>
+      <div class="data-table">
+        <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>Usuario denunciado</th><th>Correo</th><th>Rol</th><th>Estado cuenta</th><th># Denuncias</th><th>Última denuncia</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="tbodyDenuncias">
+            <tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>
           </tbody>
         </table>
         </div>
@@ -394,6 +420,30 @@
         <button class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
         <button class="btn btn-danger btn-sm px-3" id="btnConfirmarEliminarUsuario">
           <i class="bi bi-trash3 me-1"></i>Sí, eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalle de denuncias de un usuario -->
+<div class="modal fade" id="modalDetalleDenuncias" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0" style="background:#ffffff; border-radius:16px; overflow:hidden;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(139,148,158,.25);">
+        <h6 class="modal-title mb-0"><i class="bi bi-flag me-2 text-danger"></i>Denuncias contra <span id="denunciaUsuarioNombre" style="color:#0b2340;font-weight:700;"></span></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="max-height:65vh; overflow-y:auto;">
+        <div id="listaDenunciasDetalle"></div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(139,148,158,.25);">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-outline-warning btn-sm" id="btnDesactivarDesdeDenuncia">
+          <i class="bi bi-person-dash me-1"></i>Desactivar cuenta
+        </button>
+        <button class="btn btn-danger btn-sm" id="btnEliminarDesdeDenuncia">
+          <i class="bi bi-trash3 me-1"></i>Eliminar cuenta
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\ReporteUsuarioController;
 use App\Http\Controllers\Api\IncidenciasController;
 use App\Http\Controllers\Api\ApoyosController;
 use App\Http\Controllers\Api\CatalogosController;
@@ -52,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('chat/mensajes/imagen',               [ChatController::class, 'enviarImagen']);
     Route::post('chat/escribiendo',                    [ChatController::class, 'escribiendo']);
     Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
+
+    // ── Reportar / denunciar usuarios (cualquier rol) ───────────────
+    Route::post('usuarios/{id}/reportar', [ReporteUsuarioController::class, 'reportar']);
 
     // ── Incidencias ──────────────────────────────────────────────
     Route::get('incidencias/mapa',                    [IncidenciasController::class, 'mapa']);
@@ -151,6 +155,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('solo.superadmin')->prefix('superadmin')->group(function () {
         Route::get('usuarios',                      [SuperAdminController::class, 'usuarios']);
         Route::post('usuarios',                     [SuperAdminController::class, 'crear']);
+        Route::get('reportes-usuario',                    [ReporteUsuarioController::class, 'panelReportes']);
+        Route::get('reportes-usuario/usuario/{id}',       [ReporteUsuarioController::class, 'detalleUsuario']);
+        Route::put('reportes-usuario/{id}/estado',        [ReporteUsuarioController::class, 'cambiarEstado']);
         Route::get('usuarios/{id}/credenciales',    [SuperAdminController::class, 'credenciales']);
         Route::put('usuarios/{id}/datos-completos', [SuperAdminController::class, 'actualizarDatosCompletos']);
         Route::put('usuarios/{id}/rol',             [SuperAdminController::class, 'cambiarRol']);
