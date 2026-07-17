@@ -10,14 +10,22 @@ return new class extends Migration
     {
         Schema::create('reportes_usuario', function (Blueprint $table) {
             $table->id('id_reporte');
-            $table->foreignId('id_usuario_reportado')->constrained('usuarios', 'id_usuario');
-            $table->foreignId('id_usuario_reportante')->constrained('usuarios', 'id_usuario');
+
+            // OJO: usuarios.id_usuario es un INT normal (no BIGINT), así que
+            // no se puede usar foreignId() acá — crea BIGINT y MySQL rechaza
+            // la llave foránea por incompatibilidad de tipos (error 3780).
+            $table->integer('id_usuario_reportado');
+            $table->integer('id_usuario_reportante');
             $table->string('motivo', 40); // acoso | spam | contenido_inapropiado | comportamiento_sospechoso | otro
             $table->text('descripcion')->nullable();
             $table->string('estado', 20)->default('pendiente'); // pendiente | revisado | descartado
             $table->timestamp('revisado_at')->nullable();
-            $table->foreignId('id_admin_revisor')->nullable()->constrained('usuarios', 'id_usuario');
+            $table->integer('id_admin_revisor')->nullable();
             $table->timestamps();
+
+            $table->foreign('id_usuario_reportado')->references('id_usuario')->on('usuarios');
+            $table->foreign('id_usuario_reportante')->references('id_usuario')->on('usuarios');
+            $table->foreign('id_admin_revisor')->references('id_usuario')->on('usuarios');
 
             $table->index('id_usuario_reportado');
         });
