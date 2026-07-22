@@ -408,9 +408,20 @@ public function index(Request $request)
     // PUT /api/incidencias/{id}
     public function update(Request $request, $id)
     {
-        $incidencia = Incidencia::find($id);
+        $incidencia = Incidencia::with('estado')->find($id);
         if (! $incidencia) {
             return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $usuario = $request->user();
+
+        // Una incidencia "Cerrada" queda protegida: solo el superadmin puede
+        // reabrirla o tocarla. Un admin normal ya no puede modificarla.
+        if ($incidencia->estado?->nombre === 'Cerrado' && $usuario->rol !== 'superadmin') {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Esta incidencia ya está cerrada y no puede ser modificada. Solo el superadmin puede reabrirla.',
+            ], 403);
         }
 
         $incidencia->update($request->only([
@@ -418,7 +429,6 @@ public function index(Request $request)
             'id_estado_actual', 'id_zona', 'latitud', 'longitud', 'fecha_ocurrencia',
         ]));
 
-        $usuario = $request->user();
         HistorialActividad::registrar(
             $usuario->id_usuario, $id, 'edito_incidencia',
             "{$usuario->nombre_completo} editó la incidencia #{$id}", $request->ip()

@@ -292,11 +292,16 @@ async function cargarTodasIncidencias(pag = 1) {
         <td>${badgeEstadoAdmin(i.estado)}</td>
         <td style="color:var(--text-muted);font-size:.78rem;">${fmtDate(i.fecha_ocurrencia)}</td>
         <td>
-          ${tienePermiso('incidencias', 'editar') ? `
-          <select class="form-select form-select-sm border-secondary" style="background:#f4f7fb;width:auto;display:inline-block;"
-                  onchange="cambiarEstadoIncidencia(${i.id_incidencia}, this.value)">
-            ${ESTADOS_INCIDENCIA.map(e => `<option value="${e.id}" ${e.nombre === i.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}
-          </select>` : badgeEstadoAdmin(i.estado)}
+          ${tienePermiso('incidencias', 'editar')
+            ? (i.estado === 'Cerrado' && !esSuperAdminActual()
+                ? `<span class="small" style="color:var(--text-muted)" title="Solo el superadmin puede reabrir una incidencia cerrada">
+                     <i class="bi bi-lock-fill me-1"></i>Cerrada
+                   </span>`
+                : `<select class="form-select form-select-sm border-secondary" style="background:#f4f7fb;width:auto;display:inline-block;"
+                          onchange="cambiarEstadoIncidencia(${i.id_incidencia}, this.value)">
+                     ${ESTADOS_INCIDENCIA.map(e => `<option value="${e.id}" ${e.nombre === i.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}
+                   </select>`)
+            : badgeEstadoAdmin(i.estado)}
         </td>
       </tr>
     `).join('');

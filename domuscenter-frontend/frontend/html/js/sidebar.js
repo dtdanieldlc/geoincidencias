@@ -37,14 +37,14 @@
        (que ya es oscuro por diseño) ni imágenes/mapas (se re-invierten
        para que se sigan viendo con sus colores reales). ── */
     html.dark-mode #gi-main {
-      filter: invert(90%) hue-rotate(180deg) contrast(90%);
+      filter: invert(93%) hue-rotate(180deg) contrast(115%);
       background: #f4f7fb;
     }
     html.dark-mode #gi-main img,
     html.dark-mode #gi-main .leaflet-container,
     html.dark-mode #gi-main video,
     html.dark-mode #gi-main iframe {
-      filter: invert(90%) hue-rotate(180deg) contrast(90%);
+      filter: invert(93%) hue-rotate(180deg) contrast(115%);
     }
 
     .gi-theme-btn {
