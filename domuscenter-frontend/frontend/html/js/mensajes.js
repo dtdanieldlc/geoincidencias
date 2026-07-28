@@ -1,5 +1,5 @@
 // frontend/js/mensajes.js
-exigirSesion();
+exigirAdmin(); // Mensajes exclusivo de Admin/Superadmin (HU-02)
 
 // Convierte una ruta relativa (/storage/...) que devuelve el backend en una
 // URL completa. Sin esto, el navegador intenta cargar la foto desde el

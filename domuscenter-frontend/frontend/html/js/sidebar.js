@@ -278,21 +278,21 @@
 // ════════════════════════════════════════════════════════
 function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
   const links = [
-    { id: 'index',       href: 'index.html',        icon: 'bi-speedometer2',      label: 'Dashboard'    },
-    { id: 'mensajes',    href: 'mensajes.html',     icon: 'bi-chat-dots',         label: 'Mensajes', badge: '<span class="sb-badge bg-danger text-white" id="sideMsgBadge" style="display:none">0</span>' },
+    { id: 'index',       href: 'index.html',        icon: 'bi-speedometer2',      label: 'Dashboard', soloAdmin: true },
+    { id: 'mensajes',    href: 'mensajes.html',     icon: 'bi-chat-dots',         label: 'Mensajes', soloAdmin: true, badge: '<span class="sb-badge bg-danger text-white" id="sideMsgBadge" style="display:none">0</span>' },
     { id: 'incidencias', href: 'incidencias.html',   icon: 'bi-list-ul',           label: 'Incidencias'  },
     { id: 'registrar',   href: 'registrar.html',     icon: 'bi-plus-circle',       label: 'Registrar'    },
     { id: 'mis-reportes',href: 'mis-reportes.html',  icon: 'bi-file-earmark-text', label: 'Mis Reportes' },
-    { id: 'mis-apoyos',  href: 'mis-apoyos.html',    icon: 'bi-hand-thumbs-up',    label: 'Mis Apoyos'   },
-    { id: 'reportes',    href: 'reportes.html',       icon: 'bi-bar-chart',         label: 'Reportes'     },
+    { id: 'reportes',    href: 'reportes.html',       icon: 'bi-bar-chart',         label: 'Reportes', soloAdmin: true },
     { id: 'perfil',      href: 'perfil.html',         icon: 'bi-person',            label: 'Mi Perfil'    },
   ];
 
   const adminLinks = [
     { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  linkId: 'linkAdmin',    badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
-    { id: 'apoyos',   href: 'admin.html?tab=apoyos',    icon: 'bi-cash-coin',    label: 'Incentivos',   linkId: 'linkApoyos',   badge: '<span class="sb-badge" style="background:rgba(217,119,6,.18);color:#fbbf24;" id="sideApoBadge" style="display:none">0</span>', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('apoyos');else location.href='admin.html?tab=apoyos';" },
     { id: 'usuarios', href: 'admin.html?tab=usuarios',    icon: 'bi-people',       label: 'Usuarios',     linkId: 'linkUsuarios', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html?tab=usuarios';" },
     { id: 'permisos', href: 'admin.html?tab=permisos',    icon: 'bi-key',          label: 'Solicitar Permisos', linkId: 'linkPermisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html?tab=permisos';" },
+    { id: 'departamentos', href: 'admin.html?tab=departamentos', icon: 'bi-diagram-3', label: 'Departamentos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('departamentos');else location.href='admin.html?tab=departamentos';" },
+    { id: 'sucursales', href: 'admin.html?tab=sucursales', icon: 'bi-building', label: 'Sucursales', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('sucursales');else location.href='admin.html?tab=sucursales';" },
     { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial',    linkId: 'linkHistorial' },
   ];
 
@@ -330,7 +330,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 
     <div style="overflow-y:auto; flex:1; padding-bottom:8px;">
       <div class="sb-section">General</div>
-      ${links.map(renderLink).join('')}
+      ${links.filter(l => !l.soloAdmin || esAdmin).map(renderLink).join('')}
       ${adminSection}
       ${superAdminSection}
     </div>

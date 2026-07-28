@@ -1,5 +1,5 @@
 // public/js/dashboard.js
-exigirSesion();
+exigirAdmin(); // Dashboard exclusivo de Admin/Superadmin (HU-01)
 // API ya está definida globalmente en auth-guard.js
 
 const COLOR_ESTADO = {

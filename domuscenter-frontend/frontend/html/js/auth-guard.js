@@ -17,13 +17,13 @@ function exigirSesion() {
 function exigirAdmin() {
   exigirSesion();
   const u = getUsuario();
-  if (!u || (u.rol !== 'admin' && u.rol !== 'superadmin')) window.location.href = 'index.html';
+  if (!u || (u.rol !== 'admin' && u.rol !== 'superadmin')) window.location.href = 'incidencias.html';
 }
 
 function exigirSuperAdmin() {
   exigirSesion();
   const u = getUsuario();
-  if (!u || u.rol !== 'superadmin') window.location.href = 'index.html';
+  if (!u || u.rol !== 'superadmin') window.location.href = 'incidencias.html';
 }
 
 async function fetchAPI(url, opciones = {}) {

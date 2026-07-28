@@ -33,8 +33,9 @@ function aplicarVisibilidadPorPermisos() {
 
   const mapaTabs = [
     { tabId: 'tabIncidenciasBtn', linkId: 'linkAdmin',    modulo: 'incidencias', tab: 'incidencias' },
-    { tabId: 'tabApoyosBtn',      linkId: 'linkApoyos',   modulo: 'incentivos',  tab: 'apoyos'       },
     { tabId: 'tabUsuariosBtn',    linkId: 'linkUsuarios', modulo: 'usuarios',    tab: 'usuarios'     },
+    { tabId: 'tabDepartamentosBtn', linkId: null, modulo: 'incidencias', tab: 'departamentos' },
+    { tabId: 'tabSucursalesBtn',    linkId: null, modulo: 'incidencias', tab: 'sucursales' },
   ];
 
   let primerTabVisible = null;
@@ -108,13 +109,14 @@ function showToast(msg, type = 'success') {
 ══════════════════════════════════════════════════════════ */
 const TAB_TITLES = {
   incidencias: 'Incidencias por revisar',
-  apoyos:      'Incentivos por aprobar',
   usuarios:    'Gestión de Usuarios',
   permisos:    'Solicitar Permisos',
+  departamentos: 'Gestión de Departamentos',
+  sucursales:  'Administración por Sucursales',
 };
 
 function cambiarTab(tab) {
-  ['incidencias', 'apoyos', 'usuarios', 'permisos'].forEach(t => {
+  ['incidencias', 'usuarios', 'permisos', 'departamentos', 'sucursales'].forEach(t => {
     const panel = document.getElementById(`panel${capitalize(t)}`);
     const btn   = document.getElementById(`tab${capitalize(t)}Btn`);
     if (panel) panel.style.display = t === tab ? 'block' : 'none';
@@ -128,13 +130,15 @@ function cambiarTab(tab) {
 
   if (tab === 'usuarios') cargarUsuarios();
   if (tab === 'permisos' && typeof initPanelPermisos === 'function') initPanelPermisos();
+  if (tab === 'departamentos' && typeof cargarDepartamentos === 'function') cargarDepartamentos();
+  if (tab === 'sucursales' && typeof cargarSucursalesAdmin === 'function') cargarSucursalesAdmin();
 }
 
 // El sidebar es compartido (sidebar.js) y solo sabe resaltar según la
 // PÁGINA en la que estás, pero admin.html tiene 4 "páginas" en una sola
 // (pestañas). Acá se corrige a mano cuál link debe verse activo según
 // la pestaña realmente abierta.
-const TAB_A_LINK_ID = { incidencias: 'linkAdmin', apoyos: 'linkApoyos', usuarios: 'linkUsuarios', permisos: 'linkPermisos' };
+const TAB_A_LINK_ID = { incidencias: 'linkAdmin', usuarios: 'linkUsuarios', permisos: 'linkPermisos' };
 function _resaltarSidebarSegunTab(tab) {
   document.querySelectorAll('#gi-sidebar .sb-link').forEach(a => a.classList.remove('active'));
   const el = document.getElementById(TAB_A_LINK_ID[tab]);
@@ -823,13 +827,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   aplicarVisibilidadPorPermisos();
   cargarIncidenciasPendientes();
   cargarTodasIncidencias();
-  cargarApoyosPendientes();
 
   document.getElementById('tabIncidenciasBtn').addEventListener('click', () => cambiarTab('incidencias'));
-  document.getElementById('tabApoyosBtn').addEventListener('click',      () => cambiarTab('apoyos'));
   document.getElementById('tabUsuariosBtn').addEventListener('click',    () => cambiarTab('usuarios'));
   const tabPermisosBtnEl = document.getElementById('tabPermisosBtn');
   if (tabPermisosBtnEl) tabPermisosBtnEl.addEventListener('click', () => cambiarTab('permisos'));
+  const tabDepartamentosBtnEl = document.getElementById('tabDepartamentosBtn');
+  if (tabDepartamentosBtnEl) tabDepartamentosBtnEl.addEventListener('click', () => cambiarTab('departamentos'));
+  const tabSucursalesBtnEl = document.getElementById('tabSucursalesBtn');
+  if (tabSucursalesBtnEl) tabSucursalesBtnEl.addEventListener('click', () => cambiarTab('sucursales'));
 
   document.getElementById('filtBuscar').addEventListener('input',    aplicarFiltros);
   document.getElementById('filtActivo').addEventListener('change',   aplicarFiltros);

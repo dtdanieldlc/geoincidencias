@@ -1,5 +1,5 @@
 // frontend/js/reportes.js
-exigirSesion();
+exigirAdmin(); // Reportes exclusivo de Admin/Superadmin (HU-07)
 
 function mostrarAlerta(msg, tipo = 'success') {
   const el = document.getElementById('alerta');

@@ -1,5 +1,9 @@
 // frontend/js/mis-apoyos.js
+// MÓDULO ELIMINADO (HU-06): la empresa ya cuenta con personal designado
+// por tipo de incidencia, así que un sistema de apoyo entre compañeros
+// no tiene un caso de uso real en este contexto. Se redirige a Incidencias.
 exigirSesion();
+window.location.href = 'incidencias.html';
 
 let incentivosPorPrioridad = {};
 let apoyosYaMarcados = new Set();

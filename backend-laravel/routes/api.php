@@ -46,13 +46,16 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     // ── Chat / Mensajería ────────────────────────────────────────
-    Route::get('chat/usuarios',                       [ChatController::class, 'usuarios']);
-    Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
-    Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
-    Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
-    Route::post('chat/mensajes/imagen',               [ChatController::class, 'enviarImagen']);
-    Route::post('chat/escribiendo',                    [ChatController::class, 'escribiendo']);
-    Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
+    // ── Chat / Mensajería — exclusivo Admin/Superadmin (HU-02) ──────
+    Route::middleware('solo.admin')->group(function () {
+        Route::get('chat/usuarios',                       [ChatController::class, 'usuarios']);
+        Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
+        Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
+        Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
+        Route::post('chat/mensajes/imagen',               [ChatController::class, 'enviarImagen']);
+        Route::post('chat/escribiendo',                    [ChatController::class, 'escribiendo']);
+        Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
+    });
 
     // ── Reportar / denunciar usuarios (cualquier rol) ───────────────
     Route::post('usuarios/{id}/reportar', [ReporteUsuarioController::class, 'reportar']);
@@ -80,14 +83,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::match(['put', 'patch'], 'incidencias/{id}', [IncidenciasController::class, 'update'])
         ->middleware(['solo.admin', 'permiso:incidencias,editar']);
 
-    // ── Apoyos ───────────────────────────────────────────────────
-    Route::post('apoyos',              [ApoyosController::class, 'store']);
-    Route::get('apoyos/mis-apoyos',   [ApoyosController::class, 'misApoyos']);
-    Route::get('apoyos/mi-saldo',     [ApoyosController::class, 'miSaldo']);
-    Route::get('apoyos/pendientes',   [ApoyosController::class, 'pendientes'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
-    Route::get('apoyos',              [ApoyosController::class, 'index'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
-    Route::put('apoyos/{id}/aprobar', [ApoyosController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
-    Route::put('apoyos/{id}/rechazar',[ApoyosController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
+    // ── Apoyos — MÓDULO ELIMINADO (HU-06): la empresa ya cuenta con
+    // personal designado por tipo de incidencia; se conservan los
+    // datos históricos en la base de datos, pero el acceso se desactiva.
+    // Route::post('apoyos',              [ApoyosController::class, 'store']);
+    // Route::get('apoyos/mis-apoyos',   [ApoyosController::class, 'misApoyos']);
+    // Route::get('apoyos/mi-saldo',     [ApoyosController::class, 'miSaldo']);
+    // Route::get('apoyos/pendientes',   [ApoyosController::class, 'pendientes'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
+    // Route::get('apoyos',              [ApoyosController::class, 'index'])->middleware(['solo.admin', 'permiso:incentivos,ver']);
+    // Route::put('apoyos/{id}/aprobar', [ApoyosController::class, 'aprobar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
+    // Route::put('apoyos/{id}/rechazar',[ApoyosController::class, 'rechazar'])->middleware(['solo.admin', 'permiso:incentivos,editar']);
 
     // ── Catálogos ────────────────────────────────────────────────
     Route::get('catalogos/tipos',             [CatalogosController::class, 'tipos']);
@@ -99,7 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('catalogos/incentivos',        [CatalogosController::class, 'incentivos']);
 
     // ── Dashboard ────────────────────────────────────────────────
-    Route::get('dashboard/resumen',    [DashboardController::class, 'resumen']);
+    Route::get('dashboard/resumen',    [DashboardController::class, 'resumen'])->middleware('solo.admin');
     Route::get('dashboard/por-tipo',   [DashboardController::class, 'porTipo']);
     Route::get('dashboard/por-estado', [DashboardController::class, 'porEstado']);
     Route::get('dashboard/por-zona',   [DashboardController::class, 'porZona']);
@@ -116,14 +121,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('notificaciones/marcar-todas', [NotificacionesController::class, 'marcarTodasLeidas']);
 
     // ── Reportes ─────────────────────────────────────────────────
-    Route::get('reportes/resumen',         [ReportesController::class, 'resumen']);
-    Route::get('reportes/por-categoria',   [ReportesController::class, 'porCategoria']);
-    Route::get('reportes/por-estado',      [ReportesController::class, 'porEstado']);
-    Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
-    Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
-    Route::get('reportes/por-sucursal',    [ReportesController::class, 'porSucursal']);
-    Route::get('reportes/exportar-pdf-resumen', [ReportesController::class, 'exportarPdfResumen']);
-    Route::get('reportes/exportar-pdf-detalle', [ReportesController::class, 'exportarPdfDetalle']);
+    // ── Reportes — exclusivo Admin/Superadmin (HU-07) ───────────────
+    Route::middleware('solo.admin')->group(function () {
+        Route::get('reportes/resumen',         [ReportesController::class, 'resumen']);
+        Route::get('reportes/por-categoria',   [ReportesController::class, 'porCategoria']);
+        Route::get('reportes/por-estado',      [ReportesController::class, 'porEstado']);
+        Route::get('reportes/tendencia',       [ReportesController::class, 'tendencia']);
+        Route::get('reportes/por-responsable', [ReportesController::class, 'porResponsable']);
+        Route::get('reportes/por-sucursal',    [ReportesController::class, 'porSucursal']);
+        Route::get('reportes/exportar-pdf-resumen', [ReportesController::class, 'exportarPdfResumen']);
+        Route::get('reportes/exportar-pdf-detalle', [ReportesController::class, 'exportarPdfDetalle']);
+    });
 
     // ── Mis permisos (cualquier usuario autenticado) ──────────────
     Route::get('mis-permisos', [PermisosController::class, 'misPermisos']);
@@ -139,10 +147,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('usuarios/{id}/presencia', [AdminUsuariosController::class, 'actualizarPresencia']);
 
         Route::delete('incidencias/{id}',  [IncidenciasController::class, 'destroy'])->middleware('permiso:incidencias,eliminar');
-        Route::get('apoyos',               [ApoyosController::class, 'index'])->middleware('permiso:incentivos,ver');
-        Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes'])->middleware('permiso:incentivos,ver');
-        Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar'])->middleware('permiso:incentivos,editar');
-        Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar'])->middleware('permiso:incentivos,editar');
+        // Apoyos — MÓDULO ELIMINADO (HU-06), ver nota arriba.
+        // Route::get('apoyos',               [ApoyosController::class, 'index'])->middleware('permiso:incentivos,ver');
+        // Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes'])->middleware('permiso:incentivos,ver');
+        // Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar'])->middleware('permiso:incentivos,editar');
+        // Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar'])->middleware('permiso:incentivos,editar');
         Route::get('historial',            [HistorialController::class, 'index'])->middleware('permiso:historial,ver');
         Route::get('historial/acciones',   [HistorialController::class, 'acciones'])->middleware('permiso:historial,ver');
 
