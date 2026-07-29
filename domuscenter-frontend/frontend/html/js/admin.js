@@ -52,6 +52,15 @@ function aplicarVisibilidadPorPermisos() {
   const linkHistorial = document.getElementById('linkHistorial');
   if (linkHistorial) linkHistorial.style.display = tienePermiso('historial', 'ver') ? '' : 'none';
 
+  // Sucursales: exclusivo Superadmin (admins no gestionan encargados)
+  const tabSuc = document.getElementById('tabSucursalesBtn');
+  if (tabSuc) tabSuc.style.display = esSuperAdminActual() ? '' : 'none';
+  const panelSuc = document.getElementById('panelSucursales');
+  if (panelSuc && !esSuperAdminActual()) panelSuc.style.display = 'none';
+
+  // Departamentos: admin puede VER el catálogo; solo superadmin crea/edita
+  // (botones se ocultan en cargarDepartamentos)
+
   // Si la pestaña activa por defecto (incidencias) no tiene permiso de ver, cambia a la primera disponible
   if (!tienePermiso('incidencias', 'ver')) {
     cambiarTab(primerTabVisible || 'incidencias');
@@ -116,6 +125,11 @@ const TAB_TITLES = {
 };
 
 function cambiarTab(tab) {
+  // Solo superadmin puede entrar a Sucursales
+  if (tab === 'sucursales' && typeof esSuperAdminActual === 'function' && !esSuperAdminActual()) {
+    tab = 'incidencias';
+  }
+
   ['incidencias', 'usuarios', 'permisos', 'departamentos', 'sucursales'].forEach(t => {
     const panel = document.getElementById(`panel${capitalize(t)}`);
     const btn   = document.getElementById(`tab${capitalize(t)}Btn`);
@@ -1162,6 +1176,10 @@ function _initModalDepartamento() {
 }
 
 async function cargarDepartamentos() {
+  // Botón "Nuevo departamento" solo para superadmin
+  const btnNuevo = document.querySelector('#panelDepartamentos button.btn-danger, #panelDepartamentos [onclick*="abrirModalDepartamento"]');
+  if (btnNuevo) btnNuevo.style.display = (typeof esSuperAdminActual === 'function' && esSuperAdminActual()) ? '' : 'none';
+
   const tbody = document.getElementById('tbodyDepartamentos');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
@@ -1179,8 +1197,10 @@ async function cargarDepartamentos() {
         <td style="padding:10px 16px;color:#64748b;font-size:.85rem;">${esc(d.descripcion || '—')}</td>
         <td style="padding:10px 16px;">${activo}</td>
         <td style="padding:10px 16px;">
+          ${typeof esSuperAdminActual === 'function' && esSuperAdminActual() ? `
           <button class="btn-icon" title="Editar" onclick="abrirModalDepartamento(${d.id_departamento}, '${esc(d.nombre).replace(/'/g,"\\'")}', '${esc(d.descripcion||'').replace(/'/g,"\\'")}')"><i class="bi bi-pencil"></i></button>
           <button class="btn-icon" title="${d.activo ? 'Desactivar' : 'Activar'}" onclick="toggleDepartamentoActivo(${d.id_departamento})"><i class="bi bi-${d.activo ? 'toggle-on text-success' : 'toggle-off'}"></i></button>
+        ` : '<span class="text-secondary small">Solo lectura</span>'}
         </td>
       </tr>`;
     }).join('');
@@ -1217,7 +1237,7 @@ async function guardarDepartamento() {
 
   btn.disabled = true;
   try {
-    const url = id ? `${API}/admin/departamentos/${id}` : `${API}/admin/departamentos`;
+    const url = id ? `${API}/superadmin/departamentos/${id}` : `${API}/superadmin/departamentos`;
     const method = id ? 'PUT' : 'POST';
     const r = await fetchAPI(url, { method, body: JSON.stringify({ nombre, descripcion }) });
     const data = await r.json();
@@ -1242,7 +1262,7 @@ async function guardarDepartamento() {
 
 async function toggleDepartamentoActivo(id) {
   try {
-    const r = await fetchAPI(`${API}/admin/departamentos/${id}/activo`, { method: 'PUT' });
+    const r = await fetchAPI(`${API}/superadmin/departamentos/${id}/activo`, { method: 'PUT' });
     const data = await r.json();
     if (r.ok && data.ok) {
       showToast(data.mensaje || 'Estado actualizado.');

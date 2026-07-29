@@ -175,11 +175,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('solicitudes-permisos',  [PermisosController::class, 'misSolicitudes']);
         Route::post('solicitudes-permisos', [PermisosController::class, 'solicitarPermisos']);
 
-        // Departamentos (HU-09)
+        // Departamentos — lectura para admin; escritura solo superadmin
         Route::get('departamentos',              [DepartamentoController::class, 'index']);
-        Route::post('departamentos',             [DepartamentoController::class, 'store'])->middleware('permiso:incidencias,editar');
-        Route::put('departamentos/{id}',         [DepartamentoController::class, 'update'])->middleware('permiso:incidencias,editar');
-        Route::put('departamentos/{id}/activo',  [DepartamentoController::class, 'toggleActivo'])->middleware('permiso:incidencias,editar');
 
         // Responsables por sucursal — solo lectura para admin (asignar es superadmin)
         Route::get('sucursales-responsables',              [SucursalResponsableController::class, 'index']);
@@ -214,5 +211,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Asignar/quitar encargados de sucursal — exclusivo Superadmin
         Route::post('sucursales-responsables',             [SucursalResponsableController::class, 'asignar']);
         Route::delete('sucursales-responsables/{id}',      [SucursalResponsableController::class, 'quitar']);
+
+        // Departamentos — crear/editar/activar: exclusivo Superadmin
+        Route::post('departamentos',             [DepartamentoController::class, 'store']);
+        Route::put('departamentos/{id}',         [DepartamentoController::class, 'update']);
+        Route::put('departamentos/{id}/activo',  [DepartamentoController::class, 'toggleActivo']);
     });
 });

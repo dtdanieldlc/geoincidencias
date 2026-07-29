@@ -311,7 +311,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
 
   const adminSection = esAdmin ? `
     <div class="sb-section" style="margin-top:8px;">Administración</div>
-    ${adminLinks.filter(l => !(esSuperAdmin && l.id === 'permisos')).map(renderLink).join('')}
+    ${adminLinks.filter(l => !(esSuperAdmin && l.id === 'permisos') && !(l.soloSuperAdmin && !esSuperAdmin)).map(renderLink).join('')}
   ` : '';
 
   const superAdminSection = esSuperAdmin ? `
