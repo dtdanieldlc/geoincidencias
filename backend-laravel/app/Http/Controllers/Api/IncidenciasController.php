@@ -57,6 +57,13 @@ public function index(Request $request)
         $query->where('incidencias.estado_aprobacion', 'aprobada');
     }
 
+    // HU-03: un usuario con rol "usuario" solo debe ver sus propias
+    // incidencias (las que él creó), sin importar el filtro ?usuario= que
+    // reciba la petición.
+    if ($usuario->rol === 'usuario') {
+        $query->where('incidencias.id_usuario_creador', $usuario->id_usuario);
+    }
+
     if ($buscar = $request->query('buscar')) {
         $query->where(function ($q) use ($buscar) {
             $q->where('incidencias.titulo', 'like', "%$buscar%")
@@ -209,7 +216,7 @@ public function index(Request $request)
     }
 
             // GET /api/incidencias/{id}
-        public function show(int $id)
+        public function show(Request $request, int $id)
         {
             $inc = $this->baseQuery()
                 ->where('incidencias.id_incidencia', $id)
@@ -220,6 +227,16 @@ public function index(Request $request)
                     'ok' => false, 
                     'mensaje' => 'Incidencia no encontrada'
                 ], 404);
+            }
+
+            // HU-03: un usuario con rol "usuario" solo puede ver el detalle
+            // de sus propias incidencias.
+            $usuario = $request->user();
+            if ($usuario->rol === 'usuario' && (int) $inc->id_usuario_creador !== (int) $usuario->id_usuario) {
+                return response()->json([
+                    'ok' => false,
+                    'mensaje' => 'No tienes permiso para ver esta incidencia',
+                ], 403);
             }
 
             return response()->json($inc);

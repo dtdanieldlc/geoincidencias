@@ -46,9 +46,13 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     // ── Chat / Mensajería ────────────────────────────────────────
+    // chat/usuarios se usa también en registrar.js (selector "Reportado
+    // por"), fuera del chat en sí, así que queda accesible a cualquier
+    // usuario autenticado y no entra en el grupo exclusivo de abajo.
+    Route::get('chat/usuarios', [ChatController::class, 'usuarios']);
+
     // ── Chat / Mensajería — exclusivo Admin/Superadmin (HU-02) ──────
     Route::middleware('solo.admin')->group(function () {
-        Route::get('chat/usuarios',                       [ChatController::class, 'usuarios']);
         Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
         Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
         Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
