@@ -14,9 +14,6 @@
 </head>
 <body>
 
-<!-- NAVBAR -->
-
-
 <div id="alerta" class="position-fixed top-0 end-0 p-3" style="z-index:9999;display:none;"></div>
 
 <div class="container-fluid px-4 py-4" style="background:#f4f7fb;min-height:100vh;">
@@ -27,8 +24,9 @@
 
   <div class="row g-4">
 
-    <!-- COLUMNA IZQUIERDA - Sucursal + Zona -->
+    <!-- COLUMNA IZQUIERDA: Sucursal + Zona + Reportante -->
     <div class="col-lg-7">
+
       <!-- Sucursal -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
         <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
@@ -43,7 +41,7 @@
         </div>
       </div>
 
-      <!-- Ubicación Interna (antes del mapa — HU-04) -->
+      <!-- Ubicación interna -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
         <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
           <i class="bi bi-geo-alt text-danger"></i>
@@ -57,64 +55,11 @@
         </div>
       </div>
 
-      <!-- Coordenadas ocultas: se rellenan al elegir sucursal (sin mapa) -->
+      <!-- Coordenadas ocultas -->
       <input type="hidden" id="latitud"/>
       <input type="hidden" id="longitud"/>
-    </div>
 
-    <!-- COLUMNA DERECHA - Formulario + Reportante -->
-    <div class="col-lg-5">
-
-      <!-- Información de la incidencia -->
-      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
-        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
-          <i class="bi bi-info-circle text-danger"></i>
-          <span class="small text-danger text-uppercase fw-semibold">Información de la incidencia</span>
-        </div>
-        <div class="p-4">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label text-secondary small text-uppercase">Título <span class="text-danger">*</span></label>
-              <input type="text" id="titulo" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Describe brevemente la incidencia…"/>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label text-secondary small text-uppercase">Tipo <span class="text-danger">*</span></label>
-              <select id="id_tipo" class="form-select border-secondary" style="background:#f4f7fb;" onchange="cargarSubtipos()">
-                <option value="">Seleccionar tipo…</option>
-              </select>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label text-secondary small text-uppercase">Subtipo</label>
-              <select id="id_subtipo" class="form-select border-secondary" style="background:#f4f7fb;">
-                <option value="">Selecciona primero un tipo…</option>
-              </select>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label text-secondary small text-uppercase">Prioridad <span class="text-danger">*</span></label>
-              <select id="prioridad" class="form-select border-secondary" style="background:#f4f7fb;">
-                <option value="">Seleccionar prioridad…</option>
-                <option value="Baja">🟢 Baja</option>
-                <option value="Media">🟡 Media</option>
-                <option value="Alta">🔴 Alta</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label text-secondary small text-uppercase">Descripción detallada</label>
-              <textarea id="descripcion" class="form-control border-secondary" style="background:#f4f7fb;" rows="4" placeholder="Detalla la situación..."></textarea>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label text-secondary small text-uppercase">Fecha de ocurrencia <span class="text-danger">*</span></label>
-              <input type="date" id="fecha_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
-            </div>
-            <div class="col-12 col-sm-6">
-              <label class="form-label text-secondary small text-uppercase">Hora</label>
-              <input type="time" id="hora_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Datos del reportante -->
+      <!-- Datos del reportante (debajo de ubicación interna) -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
         <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
           <i class="bi bi-megaphone text-danger"></i>
@@ -134,7 +79,65 @@
         </div>
       </div>
 
-      <!-- Aviso de posibles duplicados -->
+    </div>
+
+    <!-- COLUMNA DERECHA: Formulario de la incidencia -->
+    <div class="col-lg-5">
+
+      <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Información de la incidencia</span>
+        </div>
+        <div class="p-4">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label text-secondary small text-uppercase">Título <span class="text-danger">*</span></label>
+              <input type="text" id="titulo" class="form-control border-secondary" style="background:#f4f7fb;" placeholder="Describe brevemente la incidencia…"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Tipo <span class="text-danger">*</span></label>
+              <select id="id_tipo" class="form-select border-secondary" style="background:#f4f7fb;" onchange="cargarSubtipos()">
+                <option value="">Seleccionar tipo…</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Subtipo</label>
+              <select id="id_subtipo" class="form-select border-secondary" style="background:#f4f7fb;" disabled>
+                <option value="">Selecciona primero un tipo…</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Prioridad <span class="text-danger">*</span></label>
+              <select id="prioridad" class="form-select border-secondary" style="background:#f4f7fb;">
+                <option value="">Seleccionar prioridad…</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Departamento</label>
+              <select id="id_departamento" class="form-select border-secondary" style="background:#f4f7fb;">
+                <option value="">Opcional…</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label text-secondary small text-uppercase">Descripción detallada</label>
+              <textarea id="descripcion" class="form-control border-secondary" style="background:#f4f7fb;" rows="3" placeholder="Detalla la situación…"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Fecha de ocurrencia <span class="text-danger">*</span></label>
+              <input type="date" id="fecha_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-secondary small text-uppercase">Hora</label>
+              <input type="time" id="hora_ocurrencia" class="form-control border-secondary" style="background:#f4f7fb;"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="avisoDuplicados" class="d-none rounded-3 p-3 mb-3" style="background:#fffbeb; border:1px solid #fde68a;">
         <div class="d-flex align-items-start gap-2">
           <i class="bi bi-exclamation-triangle-fill" style="color:#d97706;"></i>
@@ -146,7 +149,6 @@
         </div>
       </div>
 
-      <!-- Botones -->
       <div class="d-grid gap-2">
         <button id="btnGuardar" class="btn btn-danger btn-lg" onclick="guardarIncidencia()">
           <i class="bi bi-floppy2 me-2"></i>Registrar incidencia
@@ -156,6 +158,7 @@
         </a>
       </div>
     </div>
+
   </div>
 </div>
 

@@ -182,6 +182,7 @@ async function guardarIncidencia() {
     id_usuario_reportante: parseInt(document.getElementById('reportante_id_usuario').value),
     reportante_nombre:   document.getElementById('reportante_id_usuario').selectedOptions[0]?.text ?? '',
     reportante_contacto: document.getElementById('reportante_contacto').value.trim(),
+    id_departamento:     document.getElementById('id_departamento')?.value ? parseInt(document.getElementById('id_departamento').value) : null,
   };
 
   try {
@@ -204,6 +205,7 @@ async function guardarIncidencia() {
 // ── Init ──
 inicializarBarraUsuario();
 poblarSelect(`${API}/catalogos/tipos`, 'id_tipo');
+poblarSelect(`${API}/catalogos/departamentos`, 'id_departamento');
 cargarSucursales();
 cargarEmpleadosReportante();
 document.getElementById('id_sucursal').addEventListener('change', onCambiarSucursal);
