@@ -192,19 +192,53 @@ class AuthController extends Controller
     {
         $usuario = $request->user();
 
-        $usuario->load('ciudad:id_ciudad,nombre');
-
+        $idCiudad = null;
+        $sucursal = null;
         $sucursalesEncargadas = [];
-        if (in_array($usuario->rol, ['admin', 'superadmin'], true)) {
-            $sucursalesEncargadas = \App\Models\SucursalResponsable::with('ciudad:id_ciudad,nombre')
-                ->where('id_usuario', $usuario->id_usuario)
-                ->get()
-                ->map(fn ($a) => [
+
+        try {
+            // Solo si la columna existe (migración aplicada)
+            if (\Illuminate\Support\Facades\Schema::hasColumn('usuarios', 'id_ciudad')) {
+                $idCiudad = $usuario->id_ciudad;
+                if ($idCiudad) {
+                    $ciudad = \App\Models\Ciudad::query()
+                        ->where('id_ciudad', $idCiudad)
+                        ->first(['id_ciudad', 'nombre']);
+                    if ($ciudad) {
+                        $sucursal = ['id' => $ciudad->id_ciudad, 'nombre' => $ciudad->nombre];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
+            if (
+                in_array($usuario->rol, ['admin', 'superadmin'], true)
+                && \Illuminate\Support\Facades\Schema::hasTable('sucursal_responsables')
+            ) {
+                $rows = \Illuminate\Support\Facades\DB::table('sucursal_responsables as sr')
+                    ->leftJoin('ciudades as c', 'c.id_ciudad', '=', 'sr.id_ciudad')
+                    ->where('sr.id_usuario', $usuario->id_usuario)
+                    ->get(['sr.id_ciudad', 'c.nombre']);
+
+                $sucursalesEncargadas = $rows->map(fn ($a) => [
                     'id_ciudad' => $a->id_ciudad,
-                    'nombre'    => $a->ciudad->nombre ?? ('#' . $a->id_ciudad),
-                ])
-                ->values()
-                ->all();
+                    'nombre'    => $a->nombre ?? ('#' . $a->id_ciudad),
+                ])->values()->all();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        $fotoUrl = null;
+        try {
+            if (! empty($usuario->foto_url)) {
+                $fotoUrl = Storage::url($usuario->foto_url);
+            }
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return response()->json([
@@ -214,15 +248,15 @@ class AuthController extends Controller
             'correo'                 => $usuario->correo,
             'rol'                    => $usuario->rol,
             'telefono'               => $usuario->telefono,
-            'cedula'                 => $usuario->cedula,
-            'id_ciudad'              => $usuario->id_ciudad,
-            'sucursal'               => $usuario->ciudad ? ['id' => $usuario->ciudad->id_ciudad, 'nombre' => $usuario->ciudad->nombre] : null,
+            'cedula'                 => $usuario->cedula ?? null,
+            'id_ciudad'              => $idCiudad,
+            'sucursal'               => $sucursal,
             'sucursales_encargadas'  => $sucursalesEncargadas,
-            'saldo_incentivos'       => $usuario->saldo_incentivos,
+            'saldo_incentivos'       => $usuario->saldo_incentivos ?? 0,
             'created_at'             => $usuario->created_at,
-            'correo_verificado'      => $usuario->correo_verificado,
-            'foto_url'               => $usuario->foto_url ? Storage::url($usuario->foto_url) : null,
-            'tiene_pregunta_secreta' => !empty($usuario->pregunta_secreta),
+            'correo_verificado'      => (bool) ($usuario->correo_verificado ?? false),
+            'foto_url'               => $fotoUrl,
+            'tiene_pregunta_secreta' => ! empty($usuario->pregunta_secreta),
         ]);
     }
 

@@ -112,9 +112,17 @@ class Usuario extends Authenticatable
     // IDs de ciudades donde es responsable
     public function idsCiudadesEncargadas(): array
     {
-        return SucursalResponsable::where('id_usuario', $this->id_usuario)
-            ->pluck('id_ciudad')
-            ->map(fn ($id) => (int) $id)
-            ->all();
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('sucursal_responsables')) {
+                return [];
+            }
+            return SucursalResponsable::where('id_usuario', $this->id_usuario)
+                ->pluck('id_ciudad')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
     }
 }

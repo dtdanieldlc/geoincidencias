@@ -8,6 +8,8 @@ class SucursalResponsable extends Model
 {
     protected $table      = 'sucursal_responsables';
     protected $primaryKey = 'id_asignacion';
+    public $incrementing  = true;
+    protected $keyType    = 'int';
 
     protected $fillable = ['id_ciudad', 'id_usuario'];
 
@@ -15,7 +17,6 @@ class SucursalResponsable extends Model
     {
         return $this->belongsTo(Usuario::class, 'id_usuario', 'id_usuario');
     }
-
 
     public function ciudad()
     {

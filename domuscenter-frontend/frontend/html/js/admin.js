@@ -1433,11 +1433,20 @@ async function confirmarAsignarResponsable() {
 
   btn.disabled = true;
   try {
+    const idC = parseInt(idCiudad, 10);
+    const idU = parseInt(idUsuario, 10);
+    if (!idC || !idU) {
+      msg.className = 'alert alert-warning py-2 small mt-2';
+      msg.textContent = 'Datos incompletos (sucursal o administrador).';
+      msg.style.display = 'block';
+      return;
+    }
     const r = await fetchAPI(`${API}/superadmin/sucursales-responsables`, {
       method: 'POST',
-      body: JSON.stringify({ id_ciudad: parseInt(idCiudad), id_usuario: parseInt(idUsuario) }),
+      body: JSON.stringify({ id_ciudad: idC, id_usuario: idU }),
     });
-    const data = await r.json();
+    let data = {};
+    try { data = await r.json(); } catch (_) { data = {}; }
     if (r.ok && data.ok) {
       msg.className = 'alert alert-success py-2 small mt-2';
       msg.textContent = data.mensaje || 'Asignado.';
@@ -1445,7 +1454,7 @@ async function confirmarAsignarResponsable() {
       setTimeout(() => { _modalAsignarResponsable?.hide(); cargarSucursalesAdmin(); }, 700);
     } else {
       msg.className = 'alert alert-danger py-2 small mt-2';
-      msg.textContent = data.mensaje || 'No se pudo asignar.';
+      msg.textContent = data.mensaje || data.message || (`Error ${r.status}: no se pudo asignar`);
       msg.style.display = 'block';
     }
   } catch (e) {
