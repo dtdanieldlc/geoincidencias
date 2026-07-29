@@ -1273,24 +1273,53 @@ async function cargarSucursalesAdmin() {
   const tbody = document.getElementById('tbodySucursalesAdmin');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
+
   try {
-    const r = await fetchAPI(`${API}/admin/sucursales-responsables`);
-    const lista = await r.json();
-    _sucursalesAdminCache = Array.isArray(lista) ? lista : [];
+    // 1) Intentamos el endpoint admin (incluye responsables)
+    let lista = null;
+    try {
+      const r = await fetchAPI(`${API}/admin/sucursales-responsables`);
+      if (r.ok) {
+        const data = await r.json();
+        if (Array.isArray(data)) lista = data;
+      }
+    } catch (e) {
+      console.warn('admin/sucursales-responsables no disponible, usando catálogo:', e.message);
+    }
+
+    // 2) Fallback: catálogo de sucursales (mismas ciudades que usa Registrar)
+    if (!lista || lista.length === 0) {
+      const r2 = await fetchAPI(`${API}/catalogos/sucursales`);
+      const cats = await r2.json();
+      lista = (Array.isArray(cats) ? cats : []).map(s => ({
+        id_ciudad: s.id,
+        nombre: s.nombre,
+        ciudad: s.nombre,
+        provincia: null,
+        latitud: s.latitud,
+        longitud: s.longitud,
+        responsables: [],
+      }));
+    }
+
+    _sucursalesAdminCache = lista;
+
     if (!_sucursalesAdminCache.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-secondary">No hay sucursales registradas.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-secondary">No hay sucursales en el catálogo de ciudades.</td></tr>';
       return;
     }
+
     tbody.innerHTML = _sucursalesAdminCache.map(s => {
       const resp = (s.responsables || []);
       const chips = resp.length
-        ? resp.map(r => `<span class="badge bg-primary-subtle text-primary me-1 mb-1">${esc(r.nombre)}
+        ? resp.map(r => `<span class="badge bg-primary-subtle text-primary me-1 mb-1">${esc(r.nombre)}${r.rol ? ` <small>(${esc(r.rol)})</small>` : ''}
             <button class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:.7rem;line-height:1;" title="Quitar" onclick="quitarResponsable(${r.id_asignacion})"><i class="bi bi-x"></i></button>
           </span>`).join('')
-        : '<span class="text-secondary small">Sin asignar</span>';
+        : '<span class="text-secondary small">Sin encargado asignado</span>';
+      const ciudadCol = esc(s.provincia || s.ciudad || s.nombre || '—');
       return `<tr>
         <td style="padding:10px 16px;font-weight:600;color:#0b2340;">${esc(s.nombre)}</td>
-        <td style="padding:10px 16px;color:#64748b;">${esc(s.nombre)}</td>
+        <td style="padding:10px 16px;color:#64748b;">${ciudadCol}</td>
         <td style="padding:10px 16px;">${chips}</td>
         <td style="padding:10px 16px;">
           <button class="btn btn-sm btn-outline-danger" onclick="abrirModalAsignarResponsable(${s.id_ciudad}, '${esc(s.nombre).replace(/'/g,"\\'")}')">
@@ -1300,7 +1329,8 @@ async function cargarSucursalesAdmin() {
       </tr>`;
     }).join('');
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar sucursales.</td></tr>';
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar sucursales: ${esc(e.message || '')}</td></tr>`;
   }
 }
 
@@ -1318,22 +1348,47 @@ async function abrirModalAsignarResponsable(idCiudad, nombre) {
     cont.innerHTML = resp.length
       ? `<div class="small text-secondary mb-1">Ya asignados:</div>` +
         resp.map(r => `<span class="badge bg-secondary-subtle text-secondary me-1">${esc(r.nombre)}</span>`).join('')
-      : '<span class="small text-secondary">Ningún responsable asignado aún.</span>';
+      : '<span class="small text-secondary">Ningún encargado asignado aún. Los encargados deben ser administradores.</span>';
   }
 
+  // Solo admins/superadmins como candidatos a encargado
   const sel = document.getElementById('responsableUsuarioSelect');
-  sel.innerHTML = '<option value="">Cargando…</option>';
+  sel.innerHTML = '<option value="">Cargando administradores…</option>';
   try {
-    const r = await fetchAPI(`${API}/catalogos/usuarios`);
-    const empleados = await r.json();
+    let empleados = [];
+    try {
+      const r = await fetchAPI(`${API}/admin/sucursales-responsables/candidatos`);
+      if (r.ok) empleados = await r.json();
+    } catch (_) {}
+
+    if (!Array.isArray(empleados) || empleados.length === 0) {
+      const r2 = await fetchAPI(`${API}/catalogos/usuarios`);
+      const todos = await r2.json();
+      empleados = (Array.isArray(todos) ? todos : [])
+        .filter(e => e.rol === 'admin' || e.rol === 'superadmin')
+        .map(e => ({
+          id_usuario: e.id ?? e.id_usuario,
+          nombre: e.nombre,
+          correo: e.correo,
+          rol: e.rol,
+        }));
+    }
+
     const yaAsignados = new Set((suc?.responsables || []).map(x => String(x.id_usuario)));
-    sel.innerHTML = '<option value="">Seleccionar empleado…</option>' +
-      empleados
-        .filter(e => !yaAsignados.has(String(e.id ?? e.id_usuario)))
-        .map(e => `<option value="${e.id ?? e.id_usuario}">${esc(e.nombre)}${e.correo ? ' — ' + esc(e.correo) : ''}</option>`)
-        .join('');
+    const disponibles = empleados.filter(e => !yaAsignados.has(String(e.id_usuario ?? e.id)));
+
+    if (!disponibles.length) {
+      sel.innerHTML = '<option value="">No hay administradores disponibles</option>';
+    } else {
+      sel.innerHTML = '<option value="">Seleccionar administrador…</option>' +
+        disponibles.map(e => {
+          const id = e.id_usuario ?? e.id;
+          const rol = e.rol ? ` [${e.rol}]` : '';
+          return `<option value="${id}">${esc(e.nombre)}${rol}${e.correo ? ' — ' + esc(e.correo) : ''}</option>`;
+        }).join('');
+    }
   } catch {
-    sel.innerHTML = '<option value="">Error al cargar empleados</option>';
+    sel.innerHTML = '<option value="">Error al cargar administradores</option>';
   }
 
   _modalAsignarResponsable?.show();
@@ -1347,7 +1402,7 @@ async function confirmarAsignarResponsable() {
 
   if (!idUsuario) {
     msg.className = 'alert alert-warning py-2 small mt-2';
-    msg.textContent = 'Selecciona un empleado.';
+    msg.textContent = 'Selecciona un administrador.';
     msg.style.display = 'block';
     return;
   }
@@ -1369,9 +1424,9 @@ async function confirmarAsignarResponsable() {
       msg.textContent = data.mensaje || 'No se pudo asignar.';
       msg.style.display = 'block';
     }
-  } catch {
+  } catch (e) {
     msg.className = 'alert alert-danger py-2 small mt-2';
-    msg.textContent = 'Error de conexión.';
+    msg.textContent = e.message || 'Error de conexión. ¿El backend tiene las rutas de sucursales desplegadas?';
     msg.style.display = 'block';
   } finally {
     btn.disabled = false;
@@ -1389,7 +1444,7 @@ async function quitarResponsable(idAsignacion) {
     } else {
       showToast(data.mensaje || 'No se pudo quitar.', 'danger');
     }
-  } catch {
-    showToast('Error de conexión.', 'danger');
+  } catch (e) {
+    showToast(e.message || 'Error de conexión.', 'danger');
   }
 }

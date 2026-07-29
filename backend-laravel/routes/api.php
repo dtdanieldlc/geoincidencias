@@ -180,6 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Responsables por sucursal (HU-10)
         Route::get('sucursales-responsables',              [SucursalResponsableController::class, 'index']);
+        Route::get('sucursales-responsables/candidatos',   [SucursalResponsableController::class, 'candidatos']);
         Route::post('sucursales-responsables',             [SucursalResponsableController::class, 'asignar'])->middleware('permiso:incidencias,editar');
         Route::delete('sucursales-responsables/{id}',      [SucursalResponsableController::class, 'quitar'])->middleware('permiso:incidencias,editar');
     });

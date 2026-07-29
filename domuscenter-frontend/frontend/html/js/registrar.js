@@ -1,31 +1,13 @@
 // frontend/js/registrar.js
 exigirSesion();
 
-let mapaReg, marcador;
 let _sucursalesCache = [];
 
-// ── Mapa de solo lectura: se centra y marca según la sucursal elegida ──
-function iniciarMapa() {
-  if (mapaReg) return; // ya inicializado, no crear dos veces
-
-  mapaReg = L.map('mapaRegistrar', { zoomControl: true, dragging: true, scrollWheelZoom: false })
-    .setView([-2.2200, -80.9100], 11); // vista general de la península de Santa Elena
-
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri', maxZoom: 19
-  }).addTo(mapaReg);
-
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '', maxZoom: 19
-  }).addTo(mapaReg);
-}
-
-function ubicarSucursalEnMapa(lat, lng, nombre) {
-  document.getElementById('latitud').value  = Number(lat).toFixed(6);
-  document.getElementById('longitud').value = Number(lng).toFixed(6);
-  if (marcador) mapaReg.removeLayer(marcador);
-  marcador = L.marker([lat, lng]).addTo(mapaReg).bindPopup(nombre).openPopup();
-  mapaReg.setView([lat, lng], 15);
+function guardarCoordsSucursal(lat, lng) {
+  const latEl = document.getElementById('latitud');
+  const lngEl = document.getElementById('longitud');
+  if (latEl) latEl.value = lat != null ? Number(lat).toFixed(6) : '';
+  if (lngEl) lngEl.value = lng != null ? Number(lng).toFixed(6) : '';
 }
 
 function mostrarAlerta(msg, tipo = 'success') {
@@ -82,12 +64,11 @@ async function onCambiarSucursal() {
     selZona.innerHTML = '<option value="">Primero selecciona una sucursal…</option>';
     document.getElementById('latitud').value = '';
     document.getElementById('longitud').value = '';
-    if (marcador) { mapaReg.removeLayer(marcador); marcador = null; }
     return;
   }
 
   const sucursal = _sucursalesCache.find(s => String(s.id) === String(idSucursal));
-  if (sucursal) ubicarSucursalEnMapa(sucursal.latitud, sucursal.longitud, sucursal.nombre);
+  if (sucursal) guardarCoordsSucursal(sucursal.latitud, sucursal.longitud);
 
   try {
     const r = await fetchAPI(`${API}/catalogos/zonas?id_ciudad=${idSucursal}`);
@@ -222,7 +203,6 @@ async function guardarIncidencia() {
 
 // ── Init ──
 inicializarBarraUsuario();
-iniciarMapa();
 poblarSelect(`${API}/catalogos/tipos`, 'id_tipo');
 cargarSucursales();
 cargarEmpleadosReportante();

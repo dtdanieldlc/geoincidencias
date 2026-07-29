@@ -7,11 +7,9 @@
   <title>DomusCenter – Registrar Incidencia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     @keyframes spin { to { transform:rotate(360deg); } }
     .spin { display:inline-block; animation:spin .8s linear infinite; }
-    #mapaRegistrar { height: 420px; border-radius: 0.5rem; }
   </style>
 </head>
 <body>
@@ -24,12 +22,12 @@
 <div class="container-fluid px-4 py-4" style="background:#f4f7fb;min-height:100vh;">
   <div class="mb-4">
     <h4 class="fw-bold mb-0">Registrar Nueva Incidencia</h4>
-    <small class="text-secondary">Completa todos los campos obligatorios y ubica la incidencia en el mapa</small>
+    <small class="text-secondary">Completa todos los campos obligatorios y selecciona la sucursal y zona</small>
   </div>
 
   <div class="row g-4">
 
-    <!-- COLUMNA IZQUIERDA - Sucursal + Zona + Mapa (HU-04: zona antes del mapa) -->
+    <!-- COLUMNA IZQUIERDA - Sucursal + Zona -->
     <div class="col-lg-7">
       <!-- Sucursal -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
@@ -59,27 +57,9 @@
         </div>
       </div>
 
-      <!-- Mapa -->
-      <div class="rounded-3 border border-secondary border-opacity-25" style="background:#ffffff;">
-        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
-          <i class="bi bi-pin-map text-danger"></i>
-          <span class="small text-danger text-uppercase fw-semibold">Ubicación de la sucursal</span>
-        </div>
-        <div class="p-3">
-          <div id="mapaRegistrar" class="mb-3"></div>
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label text-secondary small text-uppercase">Latitud</label>
-              <input type="text" id="latitud" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" readonly/>
-            </div>
-            <div class="col-6">
-              <label class="form-label text-secondary small text-uppercase">Longitud</label>
-              <input type="text" id="longitud" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" readonly/>
-            </div>
-          </div>
-          <small class="text-secondary mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Se marca automáticamente al elegir la sucursal.</small>
-        </div>
-      </div>
+      <!-- Coordenadas ocultas: se rellenan al elegir sucursal (sin mapa) -->
+      <input type="hidden" id="latitud"/>
+      <input type="hidden" id="longitud"/>
     </div>
 
     <!-- COLUMNA DERECHA - Formulario + Reportante -->
@@ -180,7 +160,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./js/auth-guard.js"></script>
 <script src="./js/sidebar.js"></script>
 <script src="./js/registrar.js"></script>
