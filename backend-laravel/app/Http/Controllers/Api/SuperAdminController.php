@@ -49,16 +49,25 @@ class SuperAdminController extends Controller
     public function crear(Request $request)
     {
         $data = $request->validate([
-            'nombre'   => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
-            'correo'   => 'required|email|max:150|unique:usuarios,correo',
-            'password' => 'required|string|min:8',
-            'telefono' => 'nullable|string|max:20',
-            'cedula'   => 'nullable|string|max:10',
-            'rol'      => 'required|in:admin,usuario',
+            'nombre'    => 'required|string|max:100',
+            'apellido'  => 'nullable|string|max:100',
+            'correo'    => 'required|email|max:150|unique:usuarios,correo',
+            'password'  => 'required|string|min:8',
+            'telefono'  => 'nullable|string|max:20',
+            'cedula'    => 'nullable|string|max:10',
+            'rol'       => 'required|in:admin,usuario',
+            'id_ciudad' => 'nullable|integer|exists:ciudades,id_ciudad',
         ]);
 
-        $usuario = Usuario::create([
+        $idCiudad = $data['id_ciudad'] ?? null;
+        if (! $idCiudad && \Illuminate\Support\Facades\Schema::hasColumn('usuarios', 'id_ciudad')) {
+            $ids = \Illuminate\Support\Facades\DB::table('ciudades')->pluck('id_ciudad')->all();
+            if ($ids) {
+                $idCiudad = $ids[array_rand($ids)];
+            }
+        }
+
+        $attrs = [
             'nombre'            => $data['nombre'],
             'apellido'          => $data['apellido'] ?? null,
             'correo'            => $data['correo'],
@@ -68,7 +77,12 @@ class SuperAdminController extends Controller
             'rol'               => $data['rol'],
             'activo'            => true,
             'correo_verificado' => true,
-        ]);
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('usuarios', 'id_ciudad')) {
+            $attrs['id_ciudad'] = $idCiudad;
+        }
+
+        $usuario = Usuario::create($attrs);
 
         HistorialActividad::registrar(
             $request->user()->id_usuario, null, 'superadmin_crear_usuario',

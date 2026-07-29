@@ -182,12 +182,12 @@
           <div id="googleBtnLogin" class="d-flex justify-content-center"></div>
 
           <p class="text-center text-muted small mt-4 mb-0">
-            ¿No tienes una cuenta? <a class="link-teal" onclick="cambiarVista('registro')">Regístrate</a>
+            ¿No tienes acceso? Contacta al administrador de DomusCenter para que te den de alta.
           </p>
         </div>
 
         <!-- ---------- REGISTRO ---------- -->
-        <div id="formRegistro" style="display:none;">
+        <div id="formRegistro" style="display:none !important;" aria-hidden="true">
           <div class="mb-4">
             <span class="font-mono text-uppercase text-teal-dark fw-semibold" style="font-size:.68rem; letter-spacing:.12em;">Únete a DomusCenter</span>
             <h1 class="font-display fw-bold mt-1 mb-1" style="font-size:1.6rem;">Crear cuenta</h1>
@@ -270,7 +270,7 @@
         <!-- Botones ocultos: compatibilidad por si login.js referencia estos ids -->
         <div class="d-none">
           <button id="tabLoginBtn" class="active"></button>
-          <button id="tabRegistroBtn"></button>
+          <button id="tabRegistroBtn" style="display:none !important;"></button>
         </div>
 
       </div>

@@ -93,23 +93,14 @@ class AuthController extends Controller
 
         $correo = $payload['email'];
 
+        // Solo personal ya dado de alta por el administrador puede entrar.
         $usuario = Usuario::where('correo', $correo)->first();
 
         if (! $usuario) {
-            $usuario = Usuario::create([
-                'nombre'            => $payload['given_name'] ?? ($payload['name'] ?? 'Usuario'),
-                'apellido'          => $payload['family_name'] ?? null,
-                'correo'            => $correo,
-                'password'          => Str::random(32), // el modelo la hashea solo; no se usa, el login es solo por Google
-                'rol'               => 'usuario',
-                'activo'            => true,
-                'correo_verificado' => true,
-            ]);
-
-            HistorialActividad::registrar(
-                $usuario->id_usuario, null, 'registro_usuario',
-                "Nuevo usuario registrado vía Google: {$usuario->nombre} ({$usuario->correo})", $request->ip()
-            );
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'Este correo no está registrado en DomusCenter. Solicita al administrador que te den de alta.',
+            ], 403);
         }
 
         if (! $usuario->activo) {

@@ -50,7 +50,7 @@ function mostrarAlerta(msg, tipo='danger') {
 
 function mostrarTab(tab) {
   document.getElementById('formLogin').style.display    = tab==='login' ? '' : 'none';
-  document.getElementById('formRegistro').style.display  = tab==='registro' ? '' : 'none';
+  document.getElementById('formRegistro').style.display  = 'none'; // registro público deshabilitado
   document.getElementById('tabLoginBtn').classList.toggle('active', tab==='login');
   document.getElementById('tabRegistroBtn').classList.toggle('active', tab==='registro');
 }
@@ -86,48 +86,7 @@ async function iniciarSesion() {
 }
 
 async function crearCuenta() {
-  const nombre    = document.getElementById('regNombre').value.trim();
-  const apellido  = document.getElementById('regApellido').value.trim();
-  const correo    = document.getElementById('regCorreo').value.trim();
-  const cedula    = document.getElementById('regCedula').value.trim();
-  const telefono  = document.getElementById('regTelefono').value.trim();
-  const password  = document.getElementById('regPassword').value;
-  const pregunta  = document.getElementById('regPregunta').value;
-  const respuesta = document.getElementById('regRespuesta').value.trim();
-  const idCiudad  = document.getElementById('regSucursal')?.value;
-
-  if (!nombre || !correo || !password || !cedula || !respuesta || !idCiudad) {
-    return mostrarAlerta('Completa los campos obligatorios, incluida la sucursal.', 'warning');
-  }
-  if (password.length < 6) return mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', 'warning');
-  if (!/^\d{10}$/.test(cedula)) return mostrarAlerta('La cédula debe tener 10 dígitos.', 'warning');
-
-  const btn = document.getElementById('btnRegistro');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Creando…';
-
-  try {
-    const res  = await fetch(`${API}/auth/registro`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        nombre, apellido, correo, telefono, password,
-        cedula, pregunta_secreta: pregunta, respuesta_secreta: respuesta,
-        id_ciudad: parseInt(idCiudad),
-      })
-    });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-    mostrarAlerta('Cuenta creada. Ya puedes iniciar sesión.', 'success');
-    mostrarTab('login');
-    } else {
-      mostrarAlerta(data.mensaje || 'No se pudo crear la cuenta.', 'danger');
-    }
-  } catch(e) {
-    mostrarAlerta('No se pudo conectar con el servidor.', 'danger');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Crear cuenta';
-  }
+  mostrarAlerta('El registro público está deshabilitado. Solicita al administrador que te den de alta.', 'warning');
 }
 
 // ────────────────────────────────────────────────────────────────

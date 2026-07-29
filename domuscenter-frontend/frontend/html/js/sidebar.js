@@ -292,7 +292,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
     { id: 'usuarios', href: 'admin.html?tab=usuarios',    icon: 'bi-people',       label: 'Usuarios',     linkId: 'linkUsuarios', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html?tab=usuarios';" },
     { id: 'permisos', href: 'admin.html?tab=permisos',    icon: 'bi-key',          label: 'Solicitar Permisos', linkId: 'linkPermisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html?tab=permisos';" },
     { id: 'departamentos', href: 'admin.html?tab=departamentos', icon: 'bi-diagram-3', label: 'Departamentos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('departamentos');else location.href='admin.html?tab=departamentos';" },
-    { id: 'sucursales', href: 'admin.html?tab=sucursales', icon: 'bi-building', label: 'Sucursales', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('sucursales');else location.href='admin.html?tab=sucursales';" },
+    { id: 'sucursales', href: 'admin.html?tab=sucursales', icon: 'bi-building', label: 'Sucursales', soloSuperAdmin: true, onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('sucursales');else location.href='admin.html?tab=sucursales';" },
     { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial',    linkId: 'linkHistorial' },
   ];
 
@@ -391,6 +391,14 @@ function initSidebar(paginaActiva) {
   const sidebar = document.createElement('nav');
   sidebar.id = 'gi-sidebar';
   sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin);
+
+  // Hard-hide Sucursales para quien no sea superadmin (por si quedó en DOM)
+  if (!esSuperAdmin) {
+    sidebar.querySelectorAll('a[href*="tab=sucursales"], a[onclick*="sucursales"]').forEach(a => {
+      a.style.display = 'none';
+      a.remove();
+    });
+  }
   document.body.prepend(sidebar);
 
   // 1b. Backdrop para cerrar el sidebar tocando fuera (solo móvil)
