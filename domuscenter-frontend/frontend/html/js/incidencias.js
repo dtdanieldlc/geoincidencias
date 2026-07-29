@@ -377,6 +377,7 @@ async function abrirVer(id, titulo) {
   } catch { document.getElementById('verDescripcion').textContent = ''; }
 
   cargarFotosIncidencia(id);
+  cargarEvidenciasIncidencia(id);
   cargarComentariosIncidencia(id);
 }
 
@@ -479,4 +480,98 @@ async function enviarComentario() {
       mostrarAlerta(data.mensaje || 'No se pudo enviar el comentario.', 'danger');
     }
   } catch { mostrarAlerta('Error de conexión al comentar.', 'danger'); }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   HU-11: Evidencias (imagen / documento / comentario)
+══════════════════════════════════════════════════════ */
+async function cargarEvidenciasIncidencia(id) {
+  const cont = document.getElementById('listaEvidencias');
+  if (!cont) return;
+  cont.innerHTML = '<span class="text-secondary small">Cargando evidencias…</span>';
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/evidencias`);
+    const d = await r.json();
+    const lista = d.datos || [];
+    if (!lista.length) {
+      cont.innerHTML = '<span class="text-secondary small">Sin evidencias aún.</span>';
+      return;
+    }
+    const icono = t => t === 'imagen' ? 'bi-image' : (t === 'documento' ? 'bi-file-earmark-text' : 'bi-chat-left-quote');
+    cont.innerHTML = lista.map(e => `
+      <div class="d-flex align-items-start gap-2 mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+        <i class="bi ${icono(e.tipo)} text-danger mt-1"></i>
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between">
+            <strong class="small">${e.usuario ? e.usuario.nombre : 'Usuario'} · <span class="text-secondary text-uppercase" style="font-size:.7rem;">${e.tipo}</span></strong>
+            <span class="text-secondary" style="font-size:.7rem;">${e.fecha ? new Date(e.fecha).toLocaleString('es-EC') : ''}</span>
+          </div>
+          ${e.comentario ? `<div class="small text-secondary">${String(e.comentario).replace(/</g,'&lt;')}</div>` : ''}
+          ${e.archivo_url ? `<a href="${e.archivo_url}" target="_blank" class="small text-danger"><i class="bi bi-download me-1"></i>Ver archivo</a>` : ''}
+        </div>
+        <button class="btn btn-sm btn-outline-danger p-0" style="width:22px;height:22px;line-height:1;font-size:.7rem;" title="Eliminar" onclick="eliminarEvidencia(${e.id_evidencia})"><i class="bi bi-x"></i></button>
+      </div>`).join('');
+  } catch {
+    cont.innerHTML = '<span class="text-danger small">Error al cargar evidencias.</span>';
+  }
+}
+
+async function subirEvidencia() {
+  if (!idIncidenciaVer) return;
+  const tipo = document.getElementById('evidenciaTipo')?.value || 'comentario';
+  const comentario = document.getElementById('evidenciaComentario')?.value?.trim() || '';
+  const archivoInput = document.getElementById('evidenciaArchivo');
+  const archivo = archivoInput?.files?.[0];
+
+  if ((tipo === 'imagen' || tipo === 'documento') && !archivo) {
+    mostrarAlerta('Debes adjuntar un archivo para este tipo de evidencia.', 'warning');
+    return;
+  }
+  if (tipo === 'comentario' && !comentario) {
+    mostrarAlerta('Escribe un comentario.', 'warning');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('tipo', tipo);
+  if (comentario) fd.append('comentario', comentario);
+  if (archivo) fd.append('archivo', archivo);
+
+  try {
+    const res = await fetch(`${API}/incidencias/${idIncidenciaVer}/evidencias`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: fd,
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Evidencia agregada.', 'success');
+      if (archivoInput) archivoInput.value = '';
+      const c = document.getElementById('evidenciaComentario');
+      if (c) c.value = '';
+      cargarEvidenciasIncidencia(idIncidenciaVer);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo agregar la evidencia.', 'danger');
+    }
+  } catch {
+    mostrarAlerta('Error de conexión al subir la evidencia.', 'danger');
+  }
+}
+
+async function eliminarEvidencia(idEvidencia) {
+  if (!idIncidenciaVer) return;
+  if (!(await confirmarAccion('¿Eliminar esta evidencia?', { titulo: 'Eliminar evidencia', textoBoton: 'Sí, eliminar' }))) return;
+  try {
+    const res = await fetchAPI(`${API}/incidencias/${idIncidenciaVer}/evidencias/${idEvidencia}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      mostrarAlerta('Evidencia eliminada.', 'success');
+      cargarEvidenciasIncidencia(idIncidenciaVer);
+    } else {
+      mostrarAlerta(data.mensaje || 'No se pudo eliminar.', 'danger');
+    }
+  } catch {
+    mostrarAlerta('Error de conexión.', 'danger');
+  }
 }

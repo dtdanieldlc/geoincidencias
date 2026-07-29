@@ -29,7 +29,7 @@
 
   <div class="row g-4">
 
-    <!-- COLUMNA IZQUIERDA - Mapa + Ubicación Interna -->
+    <!-- COLUMNA IZQUIERDA - Sucursal + Zona + Mapa (HU-04: zona antes del mapa) -->
     <div class="col-lg-7">
       <!-- Sucursal -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
@@ -45,8 +45,22 @@
         </div>
       </div>
 
-      <!-- Mapa -->
+      <!-- Ubicación Interna (antes del mapa — HU-04) -->
       <div class="rounded-3 border border-secondary border-opacity-25 mb-4" style="background:#ffffff;">
+        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+          <i class="bi bi-geo-alt text-danger"></i>
+          <span class="small text-danger text-uppercase fw-semibold">Ubicación interna</span>
+        </div>
+        <div class="p-3">
+          <label class="form-label text-secondary small text-uppercase">Zona / Área <span class="text-danger">*</span></label>
+          <select id="id_zona" class="form-select border-secondary" style="background:#f4f7fb;" disabled onchange="verificarPosiblesDuplicados()">
+            <option value="">Primero selecciona una sucursal…</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mapa -->
+      <div class="rounded-3 border border-secondary border-opacity-25" style="background:#ffffff;">
         <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
           <i class="bi bi-pin-map text-danger"></i>
           <span class="small text-danger text-uppercase fw-semibold">Ubicación de la sucursal</span>
@@ -64,20 +78,6 @@
             </div>
           </div>
           <small class="text-secondary mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Se marca automáticamente al elegir la sucursal.</small>
-        </div>
-      </div>
-
-      <!-- Ubicación Interna (debajo del mapa) -->
-      <div class="rounded-3 border border-secondary border-opacity-25" style="background:#ffffff;">
-        <div class="px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
-          <i class="bi bi-geo-alt text-danger"></i>
-          <span class="small text-danger text-uppercase fw-semibold">Ubicación interna</span>
-        </div>
-        <div class="p-3">
-          <label class="form-label text-secondary small text-uppercase">Zona / Área <span class="text-danger">*</span></label>
-          <select id="id_zona" class="form-select border-secondary" style="background:#f4f7fb;" disabled onchange="verificarPosiblesDuplicados()">
-            <option value="">Primero selecciona una sucursal…</option>
-          </select>
         </div>
       </div>
     </div>

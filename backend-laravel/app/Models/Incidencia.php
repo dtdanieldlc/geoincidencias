@@ -17,6 +17,7 @@ class Incidencia extends Model
         'id_zona', 'latitud', 'longitud', 'direccion_texto',
         'fecha_ocurrencia', 'hora_ocurrencia', 'fecha_resolucion', 'tiempo_resolucion_horas',
         'reportante_nombre', 'reportante_contacto', 'id_usuario_creador',
+        'id_usuario_reportante', 'id_departamento',
     ];
 
     protected $casts = [
@@ -78,5 +79,15 @@ class Incidencia extends Model
     public function comentarios()
     {
         return $this->hasMany(IncidenciaComentario::class, 'id_incidencia', 'id_incidencia');
+    }
+
+    public function departamento()
+    {
+        return $this->belongsTo(Departamento::class, 'id_departamento', 'id_departamento');
+    }
+
+    public function evidencias()
+    {
+        return $this->hasMany(IncidenciaEvidencia::class, 'id_incidencia', 'id_incidencia');
     }
 }

@@ -279,6 +279,7 @@ public function index(Request $request)
             'fecha_ocurrencia' => 'required|date',
             'prioridad' => 'required|in:Baja,Media,Alta',
             'id_usuario_reportante' => 'required|integer|exists:usuarios,id_usuario',
+            'id_departamento'       => 'nullable|integer|exists:departamentos,id_departamento',
         ]);
 
         if ($validator->fails()) {
@@ -306,6 +307,7 @@ public function index(Request $request)
             'reportante_contacto' => $request->reportante_contacto,
             'id_usuario_reportante' => $request->id_usuario_reportante,
             'id_usuario_creador' => $usuario->id_usuario,
+            'id_departamento' => $request->id_departamento,
         ]);
 
         DB::table('incidencia_estados_historial')->insert([

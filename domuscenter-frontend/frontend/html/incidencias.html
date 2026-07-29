@@ -136,6 +136,33 @@
 
         <hr class="border-secondary opacity-25"/>
 
+        <!-- Evidencias (HU-11) -->
+        <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;"><i class="bi bi-folder2-open me-1"></i>Evidencias</h6>
+        <div id="listaEvidencias" class="mb-2" style="max-height:200px;overflow-y:auto;"></div>
+        <div class="row g-2 mb-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label text-secondary small text-uppercase mb-1">Tipo</label>
+            <select id="evidenciaTipo" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;">
+              <option value="imagen">Imagen</option>
+              <option value="documento">Documento</option>
+              <option value="comentario">Solo comentario</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label text-secondary small text-uppercase mb-1">Comentario</label>
+            <input type="text" id="evidenciaComentario" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" placeholder="Descripción de la evidencia…"/>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label text-secondary small text-uppercase mb-1">Archivo</label>
+            <input type="file" id="evidenciaArchivo" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"/>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-danger btn-sm w-100" onclick="subirEvidencia()"><i class="bi bi-plus-lg me-1"></i>Agregar</button>
+          </div>
+        </div>
+
+        <hr class="border-secondary opacity-25"/>
+
         <!-- Comentarios -->
         <h6 class="text-secondary text-uppercase small mb-2" style="letter-spacing:.06em;"><i class="bi bi-chat-left-text me-1"></i>Comentarios</h6>
         <div id="listaComentarios" class="mb-3" style="max-height:240px;overflow-y:auto;"></div>

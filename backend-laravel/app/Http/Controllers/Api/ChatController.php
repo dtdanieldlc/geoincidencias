@@ -15,17 +15,24 @@ class ChatController extends Controller
 {
     /* ══════════════════════════════════════════════════════
        GET /api/chat/usuarios
-       Directorio de personas con quien se puede iniciar un chat
-       (todos los roles, cualquiera con cualquiera).
+       Directorio de chat (HU-02): admins ven a todos; usuarios finales solo admins.
     ══════════════════════════════════════════════════════ */
     public function usuarios(Request $request)
     {
         $yo = $request->user();
 
+        // HU-02: el chat es exclusivo de admin/superadmin (middleware en rutas
+        // de conversación). Si un usuario final llega aquí, solo ve admins.
+        // El selector "Reportado por" de registrar.js usa /catalogos/usuarios.
         $query = Usuario::query()
             ->where('id_usuario', '!=', $yo->id_usuario)
             ->where('activo', true)
             ->select(['id_usuario', 'nombre', 'apellido', 'correo', 'rol', 'foto_url']);
+
+        $esAdmin = in_array($yo->rol, ['admin', 'superadmin'], true);
+        if (! $esAdmin) {
+            $query->whereIn('rol', ['admin', 'superadmin']);
+        }
 
         if ($buscar = $request->query('buscar')) {
             $query->where(function ($q) use ($buscar) {

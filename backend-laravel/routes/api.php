@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\ReportesController;
 use App\Http\Controllers\Api\AdminUsuariosController;
 use App\Http\Controllers\Api\SuperAdminController;
 use App\Http\Controllers\Api\PermisosController;
+use App\Http\Controllers\Api\DepartamentoController;
+use App\Http\Controllers\Api\SucursalResponsableController;
+use App\Http\Controllers\Api\EvidenciasController;
 
 Route::get('/health', fn () => response()->json(['ok' => true, 'mensaje' => 'Backend funcionando correctamente.']));
 
@@ -106,6 +109,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('catalogos/sucursales',        [CatalogosController::class, 'sucursales']);
     Route::get('catalogos/usuarios',          [CatalogosController::class, 'usuarios']);
     Route::get('catalogos/incentivos',        [CatalogosController::class, 'incentivos']);
+    Route::get('catalogos/departamentos',     [DepartamentoController::class, 'index']);
+
+    // ── Evidencias de incidencias (HU-11) ────────────────────────
+    Route::get('incidencias/{id}/evidencias',              [EvidenciasController::class, 'index']);
+    Route::post('incidencias/{id}/evidencias',             [EvidenciasController::class, 'store']);
+    Route::delete('incidencias/{id}/evidencias/{idEvidencia}', [EvidenciasController::class, 'destroy']);
 
     // ── Dashboard ────────────────────────────────────────────────
     Route::get('dashboard/resumen',    [DashboardController::class, 'resumen'])->middleware('solo.admin');
@@ -162,6 +171,17 @@ Route::middleware('auth:sanctum')->group(function () {
         // Solicitudes de permisos (admin solicita al superadmin)
         Route::get('solicitudes-permisos',  [PermisosController::class, 'misSolicitudes']);
         Route::post('solicitudes-permisos', [PermisosController::class, 'solicitarPermisos']);
+
+        // Departamentos (HU-09)
+        Route::get('departamentos',              [DepartamentoController::class, 'index']);
+        Route::post('departamentos',             [DepartamentoController::class, 'store'])->middleware('permiso:incidencias,editar');
+        Route::put('departamentos/{id}',         [DepartamentoController::class, 'update'])->middleware('permiso:incidencias,editar');
+        Route::put('departamentos/{id}/activo',  [DepartamentoController::class, 'toggleActivo'])->middleware('permiso:incidencias,editar');
+
+        // Responsables por sucursal (HU-10)
+        Route::get('sucursales-responsables',              [SucursalResponsableController::class, 'index']);
+        Route::post('sucursales-responsables',             [SucursalResponsableController::class, 'asignar'])->middleware('permiso:incidencias,editar');
+        Route::delete('sucursales-responsables/{id}',      [SucursalResponsableController::class, 'quitar'])->middleware('permiso:incidencias,editar');
     });
 
     // ── SuperAdmin exclusivo ──────────────────────────────────────

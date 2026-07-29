@@ -231,26 +231,44 @@ document.getElementById('reportante_id_usuario').addEventListener('change', onCa
 document.getElementById('fecha_ocurrencia').value = new Date().toISOString().split('T')[0];
 
 // Cargar el desplegable de empleados para "Reportado por"
+// HU-02/HU-04: usa /catalogos/usuarios (no chat/usuarios, que filtra por rol).
+// Para Usuario Final el combo queda readonly con su propio usuario.
 async function cargarEmpleadosReportante() {
   const sel = document.getElementById('reportante_id_usuario');
   const uActual = getUsuario();
+  const esAdmin = uActual && (uActual.rol === 'admin' || uActual.rol === 'superadmin');
 
   try {
-    const r = await fetchAPI(`${API}/chat/usuarios`);
-    const empleados = await r.json();
+    if (!esAdmin && uActual) {
+      // Usuario final: solo puede reportar en su nombre (readonly)
+      sel.innerHTML = `<option value="${uActual.id_usuario}" data-correo="${uActual.correo ?? ''}">${uActual.nombre} (tú)</option>`;
+      sel.value = uActual.id_usuario;
+      sel.disabled = true;
+      sel.title = 'Como usuario final solo puedes reportar en tu nombre';
+      onCambiarReportante();
+      return;
+    }
 
-    // El endpoint no incluye al propio usuario logueado (se armó para el
-    // chat, donde uno no puede escribirse a sí mismo), así que se agrega
-    // aparte y va primero, ya seleccionado por defecto.
-    const lista = uActual
-      ? [{ id_usuario: uActual.id_usuario, nombre: `${uActual.nombre} (tú)`, correo: uActual.correo }, ...empleados]
-      : empleados;
+    const r = await fetchAPI(`${API}/catalogos/usuarios`);
+    const empleados = await r.json();
+    // catalogos/usuarios devuelve { id, nombre, correo, rol }
+    const lista = empleados.map(e => ({
+      id_usuario: e.id ?? e.id_usuario,
+      nombre: e.nombre,
+      correo: e.correo,
+    }));
+
+    // Asegurar que el usuario actual aparezca primero
+    if (uActual && !lista.some(e => String(e.id_usuario) === String(uActual.id_usuario))) {
+      lista.unshift({ id_usuario: uActual.id_usuario, nombre: `${uActual.nombre} (tú)`, correo: uActual.correo });
+    }
 
     sel.innerHTML = lista.map(e =>
       `<option value="${e.id_usuario}" data-correo="${e.correo ?? ''}">${e.nombre}</option>`
     ).join('');
 
     if (uActual) sel.value = uActual.id_usuario;
+    sel.disabled = false;
     onCambiarReportante();
   } catch (e) {
     sel.innerHTML = '<option value="">No se pudo cargar la lista de empleados</option>';

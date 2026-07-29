@@ -1147,3 +1147,249 @@ async function guardarPermisosModal() {
     btn.disabled = false;
   }
 }
+
+/* ══════════════════════════════════════════════════════
+   HU-09: Departamentos
+══════════════════════════════════════════════════════ */
+let _modalDepartamento = null;
+
+function _initModalDepartamento() {
+  if (_modalDepartamento) return;
+  const el = document.getElementById('modalDepartamento');
+  if (!el) return;
+  _modalDepartamento = new bootstrap.Modal(el);
+  document.getElementById('btnGuardarDepartamento')?.addEventListener('click', guardarDepartamento);
+}
+
+async function cargarDepartamentos() {
+  const tbody = document.getElementById('tbodyDepartamentos');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
+  try {
+    const r = await fetchAPI(`${API}/admin/departamentos?todos=1`);
+    const lista = await r.json();
+    if (!Array.isArray(lista) || lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-secondary">No hay departamentos registrados.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(d => {
+      const activo = d.activo ? '<span class="badge bg-success-subtle text-success">Activo</span>' : '<span class="badge bg-secondary-subtle text-secondary">Inactivo</span>';
+      return `<tr>
+        <td style="padding:10px 16px;font-weight:600;color:#0b2340;">${esc(d.nombre)}</td>
+        <td style="padding:10px 16px;color:#64748b;font-size:.85rem;">${esc(d.descripcion || '—')}</td>
+        <td style="padding:10px 16px;">${activo}</td>
+        <td style="padding:10px 16px;">
+          <button class="btn-icon" title="Editar" onclick="abrirModalDepartamento(${d.id_departamento}, '${esc(d.nombre).replace(/'/g,"\\'")}', '${esc(d.descripcion||'').replace(/'/g,"\\'")}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn-icon" title="${d.activo ? 'Desactivar' : 'Activar'}" onclick="toggleDepartamentoActivo(${d.id_departamento})"><i class="bi bi-${d.activo ? 'toggle-on text-success' : 'toggle-off'}"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar departamentos.</td></tr>';
+  }
+}
+
+function abrirModalDepartamento(id = null, nombre = '', descripcion = '') {
+  _initModalDepartamento();
+  document.getElementById('departamentoId').value = id || '';
+  document.getElementById('departamentoNombre').value = nombre || '';
+  document.getElementById('departamentoDescripcion').value = descripcion || '';
+  document.getElementById('tituloModalDepartamento').innerHTML =
+    `<i class="bi bi-diagram-3 me-2 text-danger"></i>${id ? 'Editar departamento' : 'Nuevo departamento'}`;
+  const msg = document.getElementById('msgDepartamento');
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+  _modalDepartamento?.show();
+}
+
+async function guardarDepartamento() {
+  const id = document.getElementById('departamentoId').value;
+  const nombre = document.getElementById('departamentoNombre').value.trim();
+  const descripcion = document.getElementById('departamentoDescripcion').value.trim();
+  const msg = document.getElementById('msgDepartamento');
+  const btn = document.getElementById('btnGuardarDepartamento');
+
+  if (!nombre) {
+    msg.className = 'alert alert-warning py-2 small mt-3';
+    msg.textContent = 'El nombre es obligatorio.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const url = id ? `${API}/admin/departamentos/${id}` : `${API}/admin/departamentos`;
+    const method = id ? 'PUT' : 'POST';
+    const r = await fetchAPI(url, { method, body: JSON.stringify({ nombre, descripcion }) });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      msg.className = 'alert alert-success py-2 small mt-3';
+      msg.textContent = data.mensaje || 'Guardado.';
+      msg.style.display = 'block';
+      setTimeout(() => { _modalDepartamento?.hide(); cargarDepartamentos(); }, 700);
+    } else {
+      msg.className = 'alert alert-danger py-2 small mt-3';
+      msg.textContent = data.mensaje || 'No se pudo guardar.';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.className = 'alert alert-danger py-2 small mt-3';
+    msg.textContent = 'Error de conexión.';
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function toggleDepartamentoActivo(id) {
+  try {
+    const r = await fetchAPI(`${API}/admin/departamentos/${id}/activo`, { method: 'PUT' });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      showToast(data.mensaje || 'Estado actualizado.');
+      cargarDepartamentos();
+    } else {
+      showToast(data.mensaje || 'No se pudo cambiar el estado.', 'danger');
+    }
+  } catch {
+    showToast('Error de conexión.', 'danger');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   HU-10: Responsables por sucursal
+══════════════════════════════════════════════════════ */
+let _modalAsignarResponsable = null;
+let _sucursalesAdminCache = [];
+
+function _initModalAsignarResponsable() {
+  if (_modalAsignarResponsable) return;
+  const el = document.getElementById('modalAsignarResponsable');
+  if (!el) return;
+  _modalAsignarResponsable = new bootstrap.Modal(el);
+  document.getElementById('btnAsignarResponsable')?.addEventListener('click', confirmarAsignarResponsable);
+}
+
+async function cargarSucursalesAdmin() {
+  const tbody = document.getElementById('tbodySucursalesAdmin');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>';
+  try {
+    const r = await fetchAPI(`${API}/admin/sucursales-responsables`);
+    const lista = await r.json();
+    _sucursalesAdminCache = Array.isArray(lista) ? lista : [];
+    if (!_sucursalesAdminCache.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-secondary">No hay sucursales registradas.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = _sucursalesAdminCache.map(s => {
+      const resp = (s.responsables || []);
+      const chips = resp.length
+        ? resp.map(r => `<span class="badge bg-primary-subtle text-primary me-1 mb-1">${esc(r.nombre)}
+            <button class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:.7rem;line-height:1;" title="Quitar" onclick="quitarResponsable(${r.id_asignacion})"><i class="bi bi-x"></i></button>
+          </span>`).join('')
+        : '<span class="text-secondary small">Sin asignar</span>';
+      return `<tr>
+        <td style="padding:10px 16px;font-weight:600;color:#0b2340;">${esc(s.nombre)}</td>
+        <td style="padding:10px 16px;color:#64748b;">${esc(s.nombre)}</td>
+        <td style="padding:10px 16px;">${chips}</td>
+        <td style="padding:10px 16px;">
+          <button class="btn btn-sm btn-outline-danger" onclick="abrirModalAsignarResponsable(${s.id_ciudad}, '${esc(s.nombre).replace(/'/g,"\\'")}')">
+            <i class="bi bi-person-plus me-1"></i>Asignar
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar sucursales.</td></tr>';
+  }
+}
+
+async function abrirModalAsignarResponsable(idCiudad, nombre) {
+  _initModalAsignarResponsable();
+  document.getElementById('sucursalIdModal').value = idCiudad;
+  document.getElementById('sucursalNombreModal').textContent = nombre || '';
+  const msg = document.getElementById('msgAsignarResponsable');
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+
+  const suc = _sucursalesAdminCache.find(s => String(s.id_ciudad) === String(idCiudad));
+  const cont = document.getElementById('listaResponsablesActuales');
+  if (cont) {
+    const resp = suc?.responsables || [];
+    cont.innerHTML = resp.length
+      ? `<div class="small text-secondary mb-1">Ya asignados:</div>` +
+        resp.map(r => `<span class="badge bg-secondary-subtle text-secondary me-1">${esc(r.nombre)}</span>`).join('')
+      : '<span class="small text-secondary">Ningún responsable asignado aún.</span>';
+  }
+
+  const sel = document.getElementById('responsableUsuarioSelect');
+  sel.innerHTML = '<option value="">Cargando…</option>';
+  try {
+    const r = await fetchAPI(`${API}/catalogos/usuarios`);
+    const empleados = await r.json();
+    const yaAsignados = new Set((suc?.responsables || []).map(x => String(x.id_usuario)));
+    sel.innerHTML = '<option value="">Seleccionar empleado…</option>' +
+      empleados
+        .filter(e => !yaAsignados.has(String(e.id ?? e.id_usuario)))
+        .map(e => `<option value="${e.id ?? e.id_usuario}">${esc(e.nombre)}${e.correo ? ' — ' + esc(e.correo) : ''}</option>`)
+        .join('');
+  } catch {
+    sel.innerHTML = '<option value="">Error al cargar empleados</option>';
+  }
+
+  _modalAsignarResponsable?.show();
+}
+
+async function confirmarAsignarResponsable() {
+  const idCiudad = document.getElementById('sucursalIdModal').value;
+  const idUsuario = document.getElementById('responsableUsuarioSelect').value;
+  const msg = document.getElementById('msgAsignarResponsable');
+  const btn = document.getElementById('btnAsignarResponsable');
+
+  if (!idUsuario) {
+    msg.className = 'alert alert-warning py-2 small mt-2';
+    msg.textContent = 'Selecciona un empleado.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const r = await fetchAPI(`${API}/admin/sucursales-responsables`, {
+      method: 'POST',
+      body: JSON.stringify({ id_ciudad: parseInt(idCiudad), id_usuario: parseInt(idUsuario) }),
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      msg.className = 'alert alert-success py-2 small mt-2';
+      msg.textContent = data.mensaje || 'Asignado.';
+      msg.style.display = 'block';
+      setTimeout(() => { _modalAsignarResponsable?.hide(); cargarSucursalesAdmin(); }, 700);
+    } else {
+      msg.className = 'alert alert-danger py-2 small mt-2';
+      msg.textContent = data.mensaje || 'No se pudo asignar.';
+      msg.style.display = 'block';
+    }
+  } catch {
+    msg.className = 'alert alert-danger py-2 small mt-2';
+    msg.textContent = 'Error de conexión.';
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function quitarResponsable(idAsignacion) {
+  if (!(await confirmarAccion('¿Quitar este responsable de la sucursal?', { titulo: 'Quitar responsable', textoBoton: 'Sí, quitar' }))) return;
+  try {
+    const r = await fetchAPI(`${API}/admin/sucursales-responsables/${idAsignacion}`, { method: 'DELETE' });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      showToast(data.mensaje || 'Responsable quitado.');
+      cargarSucursalesAdmin();
+    } else {
+      showToast(data.mensaje || 'No se pudo quitar.', 'danger');
+    }
+  } catch {
+    showToast('Error de conexión.', 'danger');
+  }
+}
