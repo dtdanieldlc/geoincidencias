@@ -41,6 +41,7 @@ class AuthController extends Controller
             'correo'     => $usuario->correo,
             'nombre'     => $usuario->nombre_completo,
             'rol'        => $usuario->rol,
+            'id_ciudad'  => $usuario->id_ciudad,
         ];
 
         HistorialActividad::registrar(
@@ -122,6 +123,7 @@ class AuthController extends Controller
             'correo'     => $usuario->correo,
             'nombre'     => $usuario->nombre_completo,
             'rol'        => $usuario->rol,
+            'id_ciudad'  => $usuario->id_ciudad,
         ];
 
         HistorialActividad::registrar(
@@ -142,11 +144,15 @@ class AuthController extends Controller
     public function registro(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nombre'   => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
-            'correo'   => 'required|email|unique:usuarios,correo',
-            'password' => 'required|string|min:6',
-            'telefono' => 'nullable|string|max:20',
+            'nombre'    => 'required|string|max:100',
+            'apellido'  => 'nullable|string|max:100',
+            'correo'    => 'required|email|unique:usuarios,correo',
+            'password'  => 'required|string|min:6',
+            'telefono'  => 'nullable|string|max:20',
+            'id_ciudad' => 'required|integer|exists:ciudades,id_ciudad',
+            'cedula'    => 'nullable|string|max:20',
+            'pregunta_secreta'  => 'nullable|string|max:255',
+            'respuesta_secreta' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -160,6 +166,10 @@ class AuthController extends Controller
             'password'          => $request->password,
             'rol'               => 'usuario',
             'telefono'          => $request->telefono,
+            'id_ciudad'         => $request->id_ciudad,
+            'cedula'            => $request->cedula,
+            'pregunta_secreta'  => $request->pregunta_secreta,
+            'respuesta_secreta' => $request->respuesta_secreta,
             'activo'            => true,
             'correo_verificado' => true,
         ]);
@@ -182,6 +192,21 @@ class AuthController extends Controller
     {
         $usuario = $request->user();
 
+        $usuario->load('ciudad:id_ciudad,nombre');
+
+        $sucursalesEncargadas = [];
+        if (in_array($usuario->rol, ['admin', 'superadmin'], true)) {
+            $sucursalesEncargadas = \App\Models\SucursalResponsable::with('ciudad:id_ciudad,nombre')
+                ->where('id_usuario', $usuario->id_usuario)
+                ->get()
+                ->map(fn ($a) => [
+                    'id_ciudad' => $a->id_ciudad,
+                    'nombre'    => $a->ciudad->nombre ?? ('#' . $a->id_ciudad),
+                ])
+                ->values()
+                ->all();
+        }
+
         return response()->json([
             'id_usuario'             => $usuario->id_usuario,
             'nombre'                 => $usuario->nombre,
@@ -190,6 +215,9 @@ class AuthController extends Controller
             'rol'                    => $usuario->rol,
             'telefono'               => $usuario->telefono,
             'cedula'                 => $usuario->cedula,
+            'id_ciudad'              => $usuario->id_ciudad,
+            'sucursal'               => $usuario->ciudad ? ['id' => $usuario->ciudad->id_ciudad, 'nombre' => $usuario->ciudad->nombre] : null,
+            'sucursales_encargadas'  => $sucursalesEncargadas,
             'saldo_incentivos'       => $usuario->saldo_incentivos,
             'created_at'             => $usuario->created_at,
             'correo_verificado'      => $usuario->correo_verificado,

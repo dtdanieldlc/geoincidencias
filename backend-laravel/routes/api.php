@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\EvidenciasController;
 
 Route::get('/health', fn () => response()->json(['ok' => true, 'mensaje' => 'Backend funcionando correctamente.']));
 
+// Catálogo público de sucursales (necesario en el registro de cuenta)
+Route::get('catalogos/sucursales-publicas', [\App\Http\Controllers\Api\CatalogosController::class, 'sucursales']);
+
 // ── Autenticación (pública) ───────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:6,1');
@@ -178,11 +181,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('departamentos/{id}',         [DepartamentoController::class, 'update'])->middleware('permiso:incidencias,editar');
         Route::put('departamentos/{id}/activo',  [DepartamentoController::class, 'toggleActivo'])->middleware('permiso:incidencias,editar');
 
-        // Responsables por sucursal (HU-10)
+        // Responsables por sucursal — solo lectura para admin (asignar es superadmin)
         Route::get('sucursales-responsables',              [SucursalResponsableController::class, 'index']);
         Route::get('sucursales-responsables/candidatos',   [SucursalResponsableController::class, 'candidatos']);
-        Route::post('sucursales-responsables',             [SucursalResponsableController::class, 'asignar'])->middleware('permiso:incidencias,editar');
-        Route::delete('sucursales-responsables/{id}',      [SucursalResponsableController::class, 'quitar'])->middleware('permiso:incidencias,editar');
     });
 
     // ── SuperAdmin exclusivo ──────────────────────────────────────
@@ -209,5 +210,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('solicitudes-permisos',                  [PermisosController::class, 'todasLasSolicitudes']);
         Route::get('solicitudes-permisos/{id}',             [PermisosController::class, 'detalleSolicitud']);
         Route::put('solicitudes-permisos/{id}/revisar',     [PermisosController::class, 'revisarSolicitud']);
+
+        // Asignar/quitar encargados de sucursal — exclusivo Superadmin
+        Route::post('sucursales-responsables',             [SucursalResponsableController::class, 'asignar']);
+        Route::delete('sucursales-responsables/{id}',      [SucursalResponsableController::class, 'quitar']);
     });
 });

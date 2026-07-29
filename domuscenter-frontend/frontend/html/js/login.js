@@ -94,9 +94,10 @@ async function crearCuenta() {
   const password  = document.getElementById('regPassword').value;
   const pregunta  = document.getElementById('regPregunta').value;
   const respuesta = document.getElementById('regRespuesta').value.trim();
+  const idCiudad  = document.getElementById('regSucursal')?.value;
 
-  if (!nombre || !correo || !password || !cedula || !respuesta) {
-    return mostrarAlerta('Completa los campos obligatorios.', 'warning');
+  if (!nombre || !correo || !password || !cedula || !respuesta || !idCiudad) {
+    return mostrarAlerta('Completa los campos obligatorios, incluida la sucursal.', 'warning');
   }
   if (password.length < 6) return mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', 'warning');
   if (!/^\d{10}$/.test(cedula)) return mostrarAlerta('La cédula debe tener 10 dígitos.', 'warning');
@@ -111,6 +112,7 @@ async function crearCuenta() {
       body: JSON.stringify({
         nombre, apellido, correo, telefono, password,
         cedula, pregunta_secreta: pregunta, respuesta_secreta: respuesta,
+        id_ciudad: parseInt(idCiudad),
       })
     });
     const data = await res.json();
@@ -244,3 +246,18 @@ async function recuperarGuardarPassword() {
 if (localStorage.getItem('gi_token')) {
   window.location.href = 'index.html';
 }
+// Cargar sucursales para el registro (endpoint público)
+async function cargarSucursalesRegistro() {
+  const sel = document.getElementById('regSucursal');
+  if (!sel) return;
+  try {
+    const r = await fetch(`${API}/catalogos/sucursales-publicas`);
+    const datos = await r.json();
+    const lista = Array.isArray(datos) ? datos : [];
+    sel.innerHTML = '<option value="">¿En qué sucursal trabajas? *</option>' +
+      lista.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+  } catch (e) {
+    sel.innerHTML = '<option value="">No se pudieron cargar sucursales</option>';
+  }
+}
+cargarSucursalesRegistro();

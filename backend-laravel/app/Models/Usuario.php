@@ -17,7 +17,7 @@ class Usuario extends Authenticatable
 
     protected $fillable = [
         'nombre', 'apellido', 'correo', 'password', 'rol',
-        'telefono', 'saldo_incentivos', 'activo',
+        'telefono', 'id_ciudad', 'saldo_incentivos', 'activo',
         'correo_verificado',
         'ultima_presencia_at', 'ultima_pagina',
         'cedula', 'pregunta_secreta', 'respuesta_secreta',
@@ -95,5 +95,26 @@ class Usuario extends Authenticatable
     public function apoyos()
     {
         return $this->hasMany(IncidenciaApoyo::class, 'id_usuario', 'id_usuario');
+    }
+
+
+    public function ciudad()
+    {
+        return $this->belongsTo(Ciudad::class, 'id_ciudad', 'id_ciudad');
+    }
+
+    // Sucursales de las que este usuario es encargado (admin)
+    public function sucursalesEncargadas()
+    {
+        return $this->hasMany(SucursalResponsable::class, 'id_usuario', 'id_usuario');
+    }
+
+    // IDs de ciudades donde es responsable
+    public function idsCiudadesEncargadas(): array
+    {
+        return SucursalResponsable::where('id_usuario', $this->id_usuario)
+            ->pluck('id_ciudad')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 }

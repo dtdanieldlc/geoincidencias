@@ -1313,7 +1313,9 @@ async function cargarSucursalesAdmin() {
       const resp = (s.responsables || []);
       const chips = resp.length
         ? resp.map(r => `<span class="badge bg-primary-subtle text-primary me-1 mb-1">${esc(r.nombre)}${r.rol ? ` <small>(${esc(r.rol)})</small>` : ''}
-            <button class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:.7rem;line-height:1;" title="Quitar" onclick="quitarResponsable(${r.id_asignacion})"><i class="bi bi-x"></i></button>
+            ${typeof esSuperAdminActual === 'function' && esSuperAdminActual()
+              ? `<button class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:.7rem;line-height:1;" title="Quitar" onclick="quitarResponsable(${r.id_asignacion})"><i class="bi bi-x"></i></button>`
+              : ''}
           </span>`).join('')
         : '<span class="text-secondary small">Sin encargado asignado</span>';
       const ciudadCol = esc(s.provincia || s.ciudad || s.nombre || '—');
@@ -1322,9 +1324,11 @@ async function cargarSucursalesAdmin() {
         <td style="padding:10px 16px;color:#64748b;">${ciudadCol}</td>
         <td style="padding:10px 16px;">${chips}</td>
         <td style="padding:10px 16px;">
-          <button class="btn btn-sm btn-outline-danger" onclick="abrirModalAsignarResponsable(${s.id_ciudad}, '${esc(s.nombre).replace(/'/g,"\\'")}')">
-            <i class="bi bi-person-plus me-1"></i>Asignar
-          </button>
+          ${typeof esSuperAdminActual === 'function' && esSuperAdminActual()
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="abrirModalAsignarResponsable(${s.id_ciudad}, '${esc(s.nombre).replace(/'/g,"\\'")}')">
+                <i class="bi bi-person-plus me-1"></i>Asignar
+              </button>`
+            : '<span class="text-secondary small">Solo superadmin</span>'}
         </td>
       </tr>`;
     }).join('');
@@ -1409,7 +1413,7 @@ async function confirmarAsignarResponsable() {
 
   btn.disabled = true;
   try {
-    const r = await fetchAPI(`${API}/admin/sucursales-responsables`, {
+    const r = await fetchAPI(`${API}/superadmin/sucursales-responsables`, {
       method: 'POST',
       body: JSON.stringify({ id_ciudad: parseInt(idCiudad), id_usuario: parseInt(idUsuario) }),
     });
@@ -1436,7 +1440,7 @@ async function confirmarAsignarResponsable() {
 async function quitarResponsable(idAsignacion) {
   if (!(await confirmarAccion('¿Quitar este responsable de la sucursal?', { titulo: 'Quitar responsable', textoBoton: 'Sí, quitar' }))) return;
   try {
-    const r = await fetchAPI(`${API}/admin/sucursales-responsables/${idAsignacion}`, { method: 'DELETE' });
+    const r = await fetchAPI(`${API}/superadmin/sucursales-responsables/${idAsignacion}`, { method: 'DELETE' });
     const data = await r.json();
     if (r.ok && data.ok) {
       showToast(data.mensaje || 'Responsable quitado.');

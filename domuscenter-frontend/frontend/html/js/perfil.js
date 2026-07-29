@@ -50,6 +50,24 @@ async function cargarPerfil() {
       : '—';
     document.getElementById('miembroDesde').textContent = fechaCreacion;
 
+    const sucEl = document.getElementById('sucursalPerfil');
+    if (sucEl) sucEl.textContent = usuarioActual.sucursal?.nombre || 'Sin asignar';
+
+    const bloqueEnc = document.getElementById('bloqueEncargadas');
+    const listEnc = document.getElementById('sucursalesEncargadas');
+    const encargadas = usuarioActual.sucursales_encargadas || [];
+    if (bloqueEnc && listEnc) {
+      if (encargadas.length > 0) {
+        bloqueEnc.classList.remove('d-none');
+        listEnc.textContent = encargadas.map(s => s.nombre).join(', ');
+      } else if (usuarioActual.rol === 'admin' || usuarioActual.rol === 'superadmin') {
+        bloqueEnc.classList.remove('d-none');
+        listEnc.textContent = 'Ninguna sucursal asignada';
+      } else {
+        bloqueEnc.classList.add('d-none');
+      }
+    }
+
     // Rellenar formulario
     document.getElementById('editNombre').value    = usuarioActual.nombre    || '';
     document.getElementById('editApellido').value  = usuarioActual.apellido  || '';

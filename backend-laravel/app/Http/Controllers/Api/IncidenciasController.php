@@ -52,7 +52,7 @@ public function index(Request $request)
     $usuario = $request->user();
     $query = $this->baseQuery();
 
-    $verTodas = $request->boolean('todas') && $usuario->rol === 'admin';
+    $verTodas = $request->boolean('todas') && in_array($usuario->rol, ['admin', 'superadmin'], true);
     if (! $verTodas) {
         $query->where('incidencias.estado_aprobacion', 'aprobada');
     }
@@ -62,6 +62,16 @@ public function index(Request $request)
     // reciba la petición.
     if ($usuario->rol === 'usuario') {
         $query->where('incidencias.id_usuario_creador', $usuario->id_usuario);
+    }
+
+    // Admin encargado: solo incidencias de las sucursales a su cargo
+    if ($usuario->rol === 'admin') {
+        $ids = $usuario->idsCiudadesEncargadas();
+        if (empty($ids)) {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('c.id_ciudad', $ids);
+        }
     }
 
     if ($buscar = $request->query('buscar')) {
@@ -205,13 +215,22 @@ public function index(Request $request)
     }
 
     // GET /api/incidencias/pendientes-aprobacion
-    public function pendientesAprobacion()
+    public function pendientesAprobacion(Request $request)
     {
-        $datos = $this->baseQuery()
-            ->where('incidencias.estado_aprobacion', 'pendiente_revision')
-            ->orderBy('incidencias.fecha_registro')
-            ->get();
+        $usuario = $request->user();
+        $query = $this->baseQuery()
+            ->where('incidencias.estado_aprobacion', 'pendiente_revision');
 
+        // Admin encargado solo ve pendientes de SUS sucursales; superadmin ve todas
+        if ($usuario->rol === 'admin') {
+            $ids = $usuario->idsCiudadesEncargadas();
+            if (empty($ids)) {
+                return response()->json([]);
+            }
+            $query->whereIn('c.id_ciudad', $ids);
+        }
+
+        $datos = $query->orderBy('incidencias.fecha_registro')->get();
         return response()->json($datos);
     }
 
@@ -325,14 +344,25 @@ public function index(Request $request)
             $request->ip()
         );
 
-        // Notificar a admins
-        $admins = Usuario::where('rol', 'admin')->where('activo', 1)->get();
-        foreach ($admins as $admin) {
+        // Notificar a encargados de la sucursal de la incidencia + superadmins
+        $idCiudadInc = \App\Models\Zona::where('id_zona', $incidencia->id_zona)->value('id_ciudad');
+        $idsNotificar = [];
+
+        if ($idCiudadInc) {
+            $idsNotificar = \App\Models\SucursalResponsable::where('id_ciudad', $idCiudadInc)
+                ->pluck('id_usuario')
+                ->all();
+        }
+
+        $superadmins = Usuario::where('rol', 'superadmin')->where('activo', 1)->pluck('id_usuario')->all();
+        $idsNotificar = array_unique(array_merge($idsNotificar, $superadmins));
+
+        foreach ($idsNotificar as $idAdmin) {
             Notificacion::create([
-                'id_usuario' => $admin->id_usuario,
+                'id_usuario'    => $idAdmin,
                 'id_incidencia' => $incidencia->id_incidencia,
-                'titulo' => 'Nueva incidencia por revisar',
-                'mensaje' => "\"{$incidencia->titulo}\" necesita tu aprobación.",
+                'titulo'        => 'Nueva incidencia por revisar',
+                'mensaje'       => "\"{$incidencia->titulo}\" necesita tu aprobación.",
             ]);
         }
 
