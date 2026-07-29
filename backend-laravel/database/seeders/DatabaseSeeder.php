@@ -78,6 +78,21 @@ class DatabaseSeeder extends Seeder
             ['id_estado' => 4, 'nombre' => 'Cerrado', 'descripcion' => 'Incidencia verificada y cerrada oficialmente', 'color' => '#64748b', 'orden' => 4, 'activo' => 1],
         ]);
 
+        // Departamentos responsables (alineados a tipos de incidencia)
+        DB::table('departamentos')->insert([
+            ['nombre' => 'Mantenimiento', 'descripcion' => 'Averías de infraestructura, equipos, instalaciones eléctricas, plomería, aire acondicionado y reparaciones generales en sucursal.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Seguridad', 'descripcion' => 'Incidentes de seguridad física, accesos no autorizados, robos, vandalismo, alarmas y control de vigilancia.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Tecnologías de la Información', 'descripcion' => 'Fallos de sistemas, red, POS, impresoras, software interno, correos y equipos de cómputo.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Operaciones', 'descripcion' => 'Problemas del día a día en sucursal: flujos de trabajo, turnos, coordinación entre áreas y continuidad del servicio.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Limpieza y Servicios Generales', 'descripcion' => 'Aseo, higiene, desechos, áreas comunes, baños y condiciones de limpieza del local.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Atención al Cliente', 'descripcion' => 'Quejas, reclamos, atención deficiente, tiempos de espera y experiencia del cliente en sucursal.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Inventario y Logística', 'descripcion' => 'Faltantes, daños de mercadería, recepción de pedidos, almacenamiento y movimiento de insumos.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Recursos Humanos', 'descripcion' => 'Conflictos laborales, ausentismo, clima organizacional, capacitaciones y temas de personal.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Finanzas y Caja', 'descripcion' => 'Diferencias de caja, pagos, facturación, arqueos y reportes económicos de sucursal.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Calidad y Cumplimiento', 'descripcion' => 'Incumplimiento de normas internas, auditorías, protocolos de calidad y estándares corporativos.', 'activo' => 1, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+
         DB::table('incentivos_prioridad')->insert([
             ['prioridad' => 'Baja', 'monto' => 5.00],
             ['prioridad' => 'Media', 'monto' => 10.00],
