@@ -209,58 +209,33 @@ poblarSelect(`${API}/catalogos/departamentos`, 'id_departamento');
 cargarSucursales();
 cargarEmpleadosReportante();
 document.getElementById('id_sucursal').addEventListener('change', onCambiarSucursal);
-document.getElementById('reportante_id_usuario').addEventListener('change', onCambiarReportante);
 document.getElementById('fecha_ocurrencia').value = new Date().toISOString().split('T')[0];
 
-// Cargar el desplegable de empleados para "Reportado por"
-// HU-02/HU-04: usa /catalogos/usuarios (no chat/usuarios, que filtra por rol).
-// Para Usuario Final el combo queda readonly con su propio usuario.
+// Reportado por = siempre el usuario en sesión (no editable).
 async function cargarEmpleadosReportante() {
   const sel = document.getElementById('reportante_id_usuario');
+  const inputContacto = document.getElementById('reportante_contacto');
   const uActual = getUsuario();
-  const esAdmin = uActual && (uActual.rol === 'admin' || uActual.rol === 'superadmin');
 
-  try {
-    if (!esAdmin && uActual) {
-      // Usuario final: solo puede reportar en su nombre (readonly)
-      sel.innerHTML = `<option value="${uActual.id_usuario}" data-correo="${uActual.correo ?? ''}">${uActual.nombre} (tú)</option>`;
-      sel.value = uActual.id_usuario;
-      sel.disabled = true;
-      sel.title = 'Como usuario final solo puedes reportar en tu nombre';
-      onCambiarReportante();
-      return;
-    }
+  if (!uActual || !uActual.id_usuario) {
+    if (sel) sel.innerHTML = '<option value="">Sesión no válida</option>';
+    return;
+  }
 
-    const r = await fetchAPI(`${API}/catalogos/usuarios`);
-    const empleados = await r.json();
-    // catalogos/usuarios devuelve { id, nombre, correo, rol }
-    const lista = empleados.map(e => ({
-      id_usuario: e.id ?? e.id_usuario,
-      nombre: e.nombre,
-      correo: e.correo,
-    }));
+  const nombre = (uActual.nombre || 'Usuario') + (uActual.apellido ? ' ' + uActual.apellido : '');
+  sel.innerHTML = `<option value="${uActual.id_usuario}" data-correo="${uActual.correo ?? ''}">${nombre} (tú)</option>`;
+  sel.value = uActual.id_usuario;
+  sel.disabled = true;
+  sel.title = 'Siempre reportas en tu nombre';
 
-    // Asegurar que el usuario actual aparezca primero
-    if (uActual && !lista.some(e => String(e.id_usuario) === String(uActual.id_usuario))) {
-      lista.unshift({ id_usuario: uActual.id_usuario, nombre: `${uActual.nombre} (tú)`, correo: uActual.correo });
-    }
-
-    sel.innerHTML = lista.map(e =>
-      `<option value="${e.id_usuario}" data-correo="${e.correo ?? ''}">${e.nombre}</option>`
-    ).join('');
-
-    if (uActual) sel.value = uActual.id_usuario;
-    sel.disabled = false;
-    onCambiarReportante();
-  } catch (e) {
-    sel.innerHTML = '<option value="">No se pudo cargar la lista de empleados</option>';
+  if (inputContacto) {
+    inputContacto.value = uActual.correo || uActual.telefono || '';
+    inputContacto.readOnly = true;
+    inputContacto.disabled = true;
+    inputContacto.title = 'Contacto de tu cuenta (no editable)';
   }
 }
 
-// Al elegir otro empleado, sugiere su correo como contacto (editable)
 function onCambiarReportante() {
-  const sel = document.getElementById('reportante_id_usuario');
-  const correo = sel.selectedOptions[0]?.dataset.correo;
-  const inputContacto = document.getElementById('reportante_contacto');
-  if (correo && !inputContacto.value) inputContacto.value = correo;
+  // Ya no se cambia el reportante; se mantiene por compatibilidad.
 }
