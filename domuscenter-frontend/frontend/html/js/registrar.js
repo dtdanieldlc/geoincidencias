@@ -216,6 +216,77 @@ async function guardarIncidencia() {
 inicializarBarraUsuario();
 poblarSelect(`${API}/catalogos/tipos`, 'id_tipo');
 poblarSelect(`${API}/catalogos/departamentos`, 'id_departamento');
+
+// ── Sugerir departamento según título + descripción (el usuario puede cambiarlo) ──
+const _DEPT_KEYWORDS = [
+  { keys: ['pc','computador','laptop','impresora','software','sistema','red','internet','wifi','correo','email','servidor','pos','pantalla','monitor','mouse','teclado','ti','tic','tecnolog'], match: /tecnolog|informaci/i },
+  { keys: ['robo','alarma','c[aá]mara','seguridad','acceso','vandal','hurto','vigilanc'], match: /seguridad/i },
+  { keys: ['luz','gotera','filtraci','puerta','aire','a/?c','plomer','tuber[ií]a','el[eé]ctri','reparaci','aver[ií]a','mantenim','mobiliario','techo'], match: /mantenim/i },
+  { keys: ['limpieza','aseo','basura','ba[nñ]o','higiene','desecho','sucio'], match: /limpieza/i },
+  { keys: ['cliente','queja','reclamo','atenci[oó]n','espera','servicio al cliente'], match: /atenci[oó]n|cliente/i },
+  { keys: ['inventario','bodega','stock','mercader[ií]a','pedido','log[ií]stica','insumo','falta de'], match: /inventario|log[ií]stica/i },
+  { keys: ['personal','empleado','rrhh','ausent','conflicto laboral','capacitaci'], match: /recursos humanos|rrhh|humano/i },
+  { keys: ['caja','pago','factura','arqueo','dinero','cobro','finanza','contab'], match: /finanza|caja/i },
+  { keys: ['norma','auditor[ií]a','calidad','protocolo','cumplimiento','est[aá]ndar'], match: /calidad|cumplimiento/i },
+  { keys: ['turno','operaci','flujo','continuidad','sucursal'], match: /operaciones/i },
+];
+
+let _deptSugeridoManual = false; // si el usuario cambia a mano, no sobrescribir
+
+function sugerirDepartamento() {
+  const sel = document.getElementById('id_departamento');
+  if (!sel || _deptSugeridoManual) return;
+
+  const texto = (
+    (document.getElementById('titulo')?.value || '') + ' ' +
+    (document.getElementById('descripcion')?.value || '')
+  ).toLowerCase();
+
+  if (texto.trim().length < 4) return;
+
+  const opciones = [...sel.options].filter(o => o.value);
+  let mejor = null;
+  let mejorScore = 0;
+
+  for (const rule of _DEPT_KEYWORDS) {
+    let score = 0;
+    for (const k of rule.keys) {
+      try {
+        if (new RegExp(k, 'i').test(texto)) score += 1;
+      } catch (_) {}
+    }
+    if (score === 0) continue;
+    // encontrar option cuyo nombre coincida con el depto
+    const opt = opciones.find(o => rule.match.test(o.textContent || ''));
+    if (opt && score > mejorScore) {
+      mejorScore = score;
+      mejor = opt.value;
+    }
+  }
+
+  if (mejor) {
+    sel.value = mejor;
+    sel.dispatchEvent(new Event('change'));
+  }
+}
+
+document.getElementById('titulo')?.addEventListener('input', () => {
+  clearTimeout(window._deptSugTimer);
+  window._deptSugTimer = setTimeout(sugerirDepartamento, 400);
+});
+document.getElementById('descripcion')?.addEventListener('input', () => {
+  clearTimeout(window._deptSugTimer);
+  window._deptSugTimer = setTimeout(sugerirDepartamento, 400);
+});
+document.getElementById('id_departamento')?.addEventListener('change', () => {
+  // Si el usuario elige a mano, respetar su elección
+  _deptSugeridoManual = true;
+});
+// Si borra el departamento, permitir sugerir de nuevo
+document.getElementById('id_departamento')?.addEventListener('change', function () {
+  if (!this.value) _deptSugeridoManual = false;
+});
+
 cargarSucursales();
 cargarEmpleadosReportante();
 document.getElementById('id_sucursal').addEventListener('change', onCambiarSucursal);

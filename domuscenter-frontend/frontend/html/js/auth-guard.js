@@ -150,7 +150,7 @@ function inicializarBarraUsuario() {
   const nombreEl = document.getElementById('nombreUsuarioActual');
   if (nombreEl) nombreEl.textContent = u.nombre;
   const rolEl = document.getElementById('rolUsuarioActual');
-  if (rolEl) rolEl.textContent = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
+  if (rolEl) rolEl.textContent = ({superadmin:'Superadmin',admin:'Administrador',encargado:'Encargado',usuario:'Usuario'})[u.rol] || u.rol;
 
   if (u.rol !== 'admin' && u.rol !== 'superadmin') {
     document.querySelectorAll('.solo-admin').forEach(el => el.classList.add('d-none'));

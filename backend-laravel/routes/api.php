@@ -93,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('incidencias/{id}/ficha-pdf',           [IncidenciasController::class, 'fichaPdf'])->middleware('solo.admin');
     Route::apiResource('incidencias', IncidenciasController::class)->except(['destroy', 'update']);
     Route::match(['put', 'patch'], 'incidencias/{id}', [IncidenciasController::class, 'update'])
-        ->middleware(['solo.admin', 'permiso:incidencias,editar']);
+        ->middleware(['solo.staff']);
 
     // ── Apoyos — MÓDULO ELIMINADO (HU-06): la empresa ya cuenta con
     // personal designado por tipo de incidencia; se conservan los
@@ -218,5 +218,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('departamentos',             [DepartamentoController::class, 'store']);
         Route::put('departamentos/{id}',         [DepartamentoController::class, 'update']);
         Route::put('departamentos/{id}/activo',  [DepartamentoController::class, 'toggleActivo']);
+
+        // Asignar encargados de departamento
+        Route::get('departamento-responsables',            [\App\Http\Controllers\Api\DepartamentoResponsableController::class, 'index']);
+        Route::post('departamento-responsables',           [\App\Http\Controllers\Api\DepartamentoResponsableController::class, 'asignar']);
+        Route::delete('departamento-responsables/{id}',    [\App\Http\Controllers\Api\DepartamentoResponsableController::class, 'quitar']);
     });
 });

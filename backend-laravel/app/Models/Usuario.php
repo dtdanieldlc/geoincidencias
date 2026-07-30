@@ -125,4 +125,26 @@ class Usuario extends Authenticatable
             return [];
         }
     }
+
+    public function departamentosEncargados()
+    {
+        return $this->hasMany(DepartamentoResponsable::class, 'id_usuario', 'id_usuario');
+    }
+
+    /** IDs de departamentos donde este usuario es encargado */
+    public function idsDepartamentosEncargados(): array
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')) {
+                return [];
+            }
+            return DepartamentoResponsable::where('id_usuario', $this->id_usuario)
+                ->pluck('id_departamento')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
 }

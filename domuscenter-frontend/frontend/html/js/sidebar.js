@@ -19,264 +19,240 @@
   style.id = 'sidebar-styles';
   style.textContent = `
     :root {
-      --navy:       #0b2340;
-      --navy-2:     #123a63;
-      --teal:       #14b8a6;
-      --teal-dark:  #0d9488;
-      --bg-page:    #f4f7fb;
-      --bg-surface: #ffffff;
-      --bg-hover:   #eef4f8;
-      --border:     rgba(11,35,64,.08);
-      --text:       #0b2340;
-      --text-muted: #64748b;
-      --accent:     #dc2626;
-      --sidebar-w:  220px;
+      --dc-ink: #1c1917;
+      --dc-ink-soft: #44403c;
+      --dc-muted: #78716c;
+      --dc-faint: #a8a29e;
+      --dc-bg: #f5f2eb;
+      --dc-bg-2: #ebe6dc;
+      --dc-surface: #fffcf7;
+      --dc-accent: #c2410c;
+      --dc-accent-2: #ea580c;
+      --dc-accent-soft: rgba(194, 65, 12, 0.14);
+      --dc-sidebar: #1c1917;
+      --dc-sidebar-2: #292524;
+      --navy: var(--dc-ink);
+      --navy-2: var(--dc-sidebar-2);
+      --teal: var(--dc-accent-2);
+      --teal-dark: var(--dc-accent);
+      --bg-page: var(--dc-bg);
+      --bg-surface: var(--dc-surface);
+      --bg-hover: var(--dc-bg-2);
+      --border: rgba(28,25,23,.08);
+      --text: var(--dc-ink);
+      --text-muted: var(--dc-muted);
+      --accent: var(--dc-accent);
+      --sidebar-w: 240px;
     }
 
-    /* ── Modo oscuro: invierte colores del contenido, sin tocar el sidebar
-       (que ya es oscuro por diseño) ni imágenes/mapas (se re-invierten
-       para que se sigan viendo con sus colores reales). ── */
     html.dark-mode #gi-main {
-      filter: invert(93%) hue-rotate(180deg) contrast(115%);
-      background: #f4f7fb;
+      filter: invert(92%) hue-rotate(180deg) contrast(112%);
+      background: var(--dc-bg);
     }
     html.dark-mode #gi-main img,
     html.dark-mode #gi-main .leaflet-container,
     html.dark-mode #gi-main video,
     html.dark-mode #gi-main iframe {
-      filter: invert(93%) hue-rotate(180deg) contrast(115%);
+      filter: invert(92%) hue-rotate(180deg) contrast(112%);
     }
 
     .gi-theme-btn {
       background: none; border: none; color: var(--text-muted);
-      font-size: 1.1rem; cursor: pointer; padding: 6px; border-radius: 8px;
+      font-size: 1.15rem; cursor: pointer; padding: 8px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      transition: background .15s, color .15s;
+      transition: background .15s, color .15s, transform .15s;
     }
-    .gi-theme-btn:hover { background: var(--bg-hover); color: var(--navy); }
+    .gi-theme-btn:hover { background: var(--bg-hover); color: var(--dc-accent); transform: scale(1.05); }
 
     * { box-sizing: border-box; }
 
     body {
       background: var(--bg-page);
       color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: 'Outfit', system-ui, sans-serif;
       display: flex;
       min-height: 100vh;
       margin: 0;
     }
 
-    /* ── Sidebar ── */
     #gi-sidebar {
       width: var(--sidebar-w);
       height: 100vh;
-      height: 100dvh; /* más confiable en celulares */
-      background: linear-gradient(170deg, var(--navy) 0%, var(--navy-2) 60%, #0c4f47 150%);
+      height: 100dvh;
+      background: linear-gradient(165deg, #1c1917 0%, #292524 55%, #1c1917 100%);
       border-right: 1px solid rgba(255,255,255,.06);
       display: flex;
       flex-direction: column;
       position: fixed;
       top: 0; left: 0;
       z-index: 1200;
-      transition: transform .25s ease;
-      overflow-y: auto; /* si el menú no cabe, hace scroll adentro, no se corta */
-      overflow-x: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,.25) transparent;
+      overflow: hidden;
+      box-shadow: 4px 0 32px rgba(0,0,0,.18);
     }
-    #gi-sidebar::-webkit-scrollbar { width: 5px; }
-    #gi-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 10px; }
-    #gi-sidebar .sb-brand {
-      padding: 18px 16px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.1);
-      display: flex; align-items: center; gap: 10px;
-      text-decoration: none;
+    #gi-sidebar::before {
+      content: "";
+      position: absolute; top: -80px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(234,88,12,.22), transparent 70%);
+      pointer-events: none;
     }
-    #gi-sidebar .sb-brand-icon {
-      background: linear-gradient(145deg, var(--teal), var(--teal-dark));
-      box-shadow: 0 4px 12px -4px rgba(20,184,166,.6);
-      border-radius: 8px;
-      width: 32px; height: 32px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+    #gi-sidebar::after {
+      content: "";
+      position: absolute; bottom: 10%; left: -40px;
+      width: 140px; height: 140px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(194,65,12,.12), transparent 70%);
+      pointer-events: none;
     }
-    #gi-sidebar .sb-brand-name { font-weight: 700; font-size: .95rem; color: #fff; font-family: 'Sora', sans-serif; }
-    #gi-sidebar .sb-brand-name .text-teal { color: var(--teal) !important; }
-    #gi-sidebar .sb-brand-badge {
-      font-size: .6rem; background: rgba(20,184,166,.18); color: #5eead4;
-      padding: 2px 6px; border-radius: 4px; font-weight: 600;
+
+    .sb-brand {
+      padding: 22px 18px 16px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      position: relative; z-index: 1;
     }
+    .sb-brand img {
+      width: 36px; height: 36px; border-radius: 10px;
+      object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .sb-brand-text { display: flex; flex-direction: column; gap: 2px; }
+    .sb-brand-name {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600; font-size: 1.05rem;
+      color: #fffcf7; letter-spacing: -0.02em;
+    }
+    .sb-brand-badge {
+      font-size: .62rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(234,88,12,.25); color: #fdba74;
+      width: fit-content;
+    }
+
+    .sb-nav {
+      flex: 1; overflow-y: auto; padding: 12px 10px 20px;
+      position: relative; z-index: 1;
+    }
+    .sb-nav::-webkit-scrollbar { width: 4px; }
+    .sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 99px; }
 
     .sb-section {
-      padding: 8px 10px 2px;
-      font-size: .65rem;
+      padding: 14px 12px 6px;
+      font-size: .62rem;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      color: rgba(255,255,255,.4);
-      font-weight: 600;
-    }
-    .sb-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      margin: 1px 8px;
-      color: rgba(255,255,255,.78);
-      text-decoration: none;
-      font-size: .875rem;
-      transition: background .15s;
-    }
-    .sb-link:hover  { background: rgba(255,255,255,.08); color: #fff; }
-    .sb-link.active { background: rgba(20,184,166,.16); color: #5eead4; font-weight: 600; }
-    .sb-link .bi    { font-size: 1rem; width: 18px; text-align: center; }
-    .sb-link .sb-badge {
-      margin-left: auto; font-size: .6rem; min-width: 18px;
-      padding: 2px 5px; border-radius: 20px;
+      letter-spacing: .12em;
+      color: rgba(255,252,247,.35);
+      font-weight: 700;
     }
 
-    /* ── Bottom user card ── */
-    #gi-sidebar-bottom {
-      margin-top: auto;
-      flex-shrink: 0;
-      border-top: 1px solid rgba(255,255,255,.1);
-      padding: 10px 8px;
-    }
-    .sb-user-card {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px; border-radius: 8px;
-      cursor: pointer; transition: background .15s;
+    .sb-link {
+      display: flex; align-items: center; gap: 11px;
+      padding: 9px 12px;
+      margin: 2px 0;
+      border-radius: 12px;
+      color: rgba(255,252,247,.68);
+      text-decoration: none !important;
+      font-size: .88rem; font-weight: 500;
+      transition: background .15s, color .15s, transform .12s;
       position: relative;
     }
-    .sb-user-card:hover { background: rgba(255,255,255,.08); }
+    .sb-link i { font-size: 1.05rem; width: 1.25rem; text-align: center; opacity: .85; }
+    .sb-link:hover {
+      background: rgba(255,255,255,.07);
+      color: #fffcf7;
+      transform: translateX(2px);
+    }
+    .sb-link.active {
+      background: linear-gradient(135deg, rgba(234,88,12,.28), rgba(194,65,12,.18));
+      color: #fffcf7;
+      box-shadow: inset 0 0 0 1px rgba(253,186,116,.25);
+    }
+    .sb-link.active i { color: #fdba74; opacity: 1; }
+    .sb-badge {
+      margin-left: auto;
+      font-size: .65rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 999px;
+    }
 
+    .sb-footer {
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      position: relative; z-index: 1;
+    }
+    .sb-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+    }
     .sb-avatar {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: rgba(20,184,166,.2);
+      width: 36px; height: 36px; border-radius: 11px;
+      background: linear-gradient(135deg, #ea580c, #9a3412);
+      color: #fff; font-weight: 700; font-size: .9rem;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      font-size: .85rem; color: #5eead4; font-weight: 700;
-      overflow: hidden;
+      overflow: hidden; flex-shrink: 0;
     }
-    .sb-avatar img {
-      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
-    }
-    .sb-user-info { overflow: hidden; flex: 1; min-width: 0; }
-    .sb-user-info .sb-name {
-      font-size: .8rem; font-weight: 600;
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sb-user-meta { flex: 1; min-width: 0; }
+    .sb-user-name {
+      font-size: .82rem; font-weight: 600; color: #fffcf7;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      color: #fff;
     }
-    .sb-user-info .sb-role { font-size: .68rem; color: rgba(255,255,255,.5); }
+    .sb-user-rol {
+      font-size: .68rem; color: rgba(255,252,247,.45);
+      text-transform: capitalize;
+    }
+    .sb-logout {
+      background: none; border: none; color: rgba(255,252,247,.4);
+      cursor: pointer; padding: 6px; border-radius: 8px;
+      transition: color .15s, background .15s;
+    }
+    .sb-logout:hover { color: #fda4af; background: rgba(190,18,60,.15); }
 
-    /* Dropdown del user card */
-    .sb-user-dropdown {
-      display: none;
-      position: absolute;
-      bottom: 100%; left: 0; right: 0;
-      background: var(--navy-2);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 8px;
-      margin-bottom: 4px;
-      overflow: hidden;
-      z-index: 1210;
-      box-shadow: 0 12px 28px -8px rgba(11,35,64,.5);
-    }
-    .sb-user-dropdown.open { display: block; }
-    .sb-user-dropdown a,
-    .sb-user-dropdown button {
-      display: flex; align-items: center; gap: 8px;
-      padding: 9px 14px;
-      color: rgba(255,255,255,.8); text-decoration: none;
-      font-size: .83rem;
-      background: none; border: none; width: 100%; cursor: pointer;
-      transition: background .15s;
-    }
-    .sb-user-dropdown a:hover,
-    .sb-user-dropdown button:hover { background: rgba(255,255,255,.08); color: #fff; }
-    .sb-user-dropdown button { color: #f87171; }
-    .sb-divider { border-top: 1px solid rgba(255,255,255,.1); margin: 2px 0; }
-
-    /* ── Main wrapper ── */
     #gi-main {
       margin-left: var(--sidebar-w);
       flex: 1;
-      display: flex;
-      flex-direction: column;
       min-width: 0;
+      min-height: 100vh;
+      background: var(--bg-page);
     }
 
-    /* ── Topbar ── */
-    #gi-topbar {
-      height: 56px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px;
-      position: sticky; top: 0; z-index: 100;
-    }
-    #gi-topbar .gi-page-title { font-size: 1rem; font-weight: 700; color: var(--navy); font-family: 'Sora', sans-serif; }
-    .gi-topbar-actions { display: flex; align-items: center; gap: 14px; }
-
-    .gi-notif-btn {
-      position: relative; background: none; border: none;
-      color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px;
-    }
-    .gi-notif-btn:hover { color: var(--teal-dark); }
-    .gi-notif-btn .notif-dot {
-      position: absolute; top: 2px; right: 2px;
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--accent); display: none;
-      border: 2px solid var(--bg-surface);
+    .gi-topbar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; padding: 12px 20px 0;
     }
 
-    /* ── Sidebar toggle mobile ── */
-    #gi-sidebar-toggle {
-      display: none; background: none; border: none;
-      color: var(--navy); font-size: 1.3rem; cursor: pointer;
+    /* Mobile */
+    .sb-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(28,25,23,.5); z-index: 1190;
+      backdrop-filter: blur(2px);
     }
-
-    @media (max-width: 768px) {
-      #gi-sidebar { transform: translateX(-100%); }
-      #gi-sidebar.open { transform: none; }
+    .sb-burger {
+      display: none; position: fixed; top: 12px; left: 12px; z-index: 1210;
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--dc-surface); border: 1px solid var(--border);
+      box-shadow: var(--dc-shadow, 0 4px 16px rgba(0,0,0,.08));
+      align-items: center; justify-content: center;
+      color: var(--dc-ink); font-size: 1.2rem; cursor: pointer;
+    }
+    @media (max-width: 900px) {
+      #gi-sidebar {
+        transform: translateX(-105%);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+      }
+      #gi-sidebar.open { transform: translateX(0); }
       #gi-main { margin-left: 0; }
-      #gi-sidebar-toggle { display: block; }
+      .sb-burger { display: flex; }
+      .sb-overlay.show { display: block; }
     }
-
-    /* ── Fix: Leaflet crea sus propios z-index internos (controles, popups
-       llegan hasta ~1000) que NO están contenidos en un stacking context
-       propio, así que "se salían" por encima del sidebar en móvil.
-       Forzamos que cada mapa cree su propio stacking context aislado. ── */
-    .leaflet-container {
-      position: relative;
-      z-index: 0;
-      isolation: isolate;
-    }
-
-    /* ── Backdrop del sidebar en móvil ── */
-    #gi-sidebar-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(11,35,64,.45);
-      z-index: 1100;
-    }
-    #gi-sidebar-backdrop.open { display: block; }
-
-    /* ── Retoques de tema claro para el contenido de cada página ── */
-    [style*="background:#ffffff"] { box-shadow: 0 2px 10px -4px rgba(11,35,64,.07); }
-    .table { color: var(--text); }
-    .table > :not(caption) > * > * { border-bottom-color: var(--border) !important; }
-    .btn-outline-secondary { color: var(--text-muted); border-color: var(--border); }
-    .btn-outline-secondary:hover { background: var(--bg-hover); color: var(--text); border-color: var(--border); }
-    .form-control, .form-select { color: var(--text); }
-    .modal-content { background: var(--bg-surface); color: var(--text); }
-  `;
+`;
   document.head.appendChild(style);
 })();
 
 // ════════════════════════════════════════════════════════
 //  HTML del sidebar
 // ════════════════════════════════════════════════════════
-function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
+function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado) {
   const links = [
     { id: 'index',       href: 'index.html',        icon: 'bi-speedometer2',      label: 'Dashboard', soloAdmin: true },
     { id: 'mensajes',    href: 'mensajes.html',     icon: 'bi-chat-dots',         label: 'Mensajes', soloAdmin: true, badge: '<span class="sb-badge bg-danger text-white" id="sideMsgBadge" style="display:none">0</span>' },
@@ -314,6 +290,16 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
     ${adminLinks.filter(l => !(esSuperAdmin && l.id === 'permisos') && !(l.soloSuperAdmin && !esSuperAdmin)).map(renderLink).join('')}
   ` : '';
 
+  const encargadoSection = esEncargado ? `
+    <div class="sb-section" style="margin-top:8px;">Mi departamento</div>
+    <a class="sb-link ${paginaActiva==='incidencias'||paginaActiva==='admin'?'active':''}" href="incidencias.html">
+      <i class="bi bi-inbox"></i><span>Cola de trabajo</span>
+    </a>
+    <a class="sb-link ${paginaActiva==='mensajes'?'active':''}" href="mensajes.html">
+      <i class="bi bi-chat-dots"></i><span>Mensajes</span>
+    </a>
+  ` : '';
+
   const superAdminSection = esSuperAdmin ? `
     <div class="sb-section" style="margin-top:8px;">SuperAdmin</div>
     ${superAdminLinks.map(renderLink).join('')}
@@ -324,7 +310,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
       <div class="sb-brand-icon"><img src="../img/logo_domus_center.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><i class="bi bi-geo-alt-fill text-white" style="display:none;"></i></div>
       <div>
         <div class="sb-brand-name">DomusCenter</div>
-        ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:rgba(168,85,247,.2);color:#d8b4fe;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
+        ${esSuperAdmin ? '<div class="sb-brand-badge" style="background:rgba(234,88,12,.25);color:#fdba74;">SUPERADMIN</div>' : (esAdmin ? '<div class="sb-brand-badge">ADMIN</div>' : '')}
       </div>
     </a>
 
@@ -332,6 +318,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin) {
       <div class="sb-section">General</div>
       ${links.filter(l => !l.soloAdmin || esAdmin).map(renderLink).join('')}
       ${adminSection}
+      ${encargadoSection}
       ${superAdminSection}
     </div>
 
@@ -386,11 +373,12 @@ function initSidebar(paginaActiva) {
 
   const esAdmin = u.rol === 'admin' || u.rol === 'superadmin';
   const esSuperAdmin = u.rol === 'superadmin';
+  const esEncargado = u.rol === 'encargado';
 
   // 1. Crear el sidebar
   const sidebar = document.createElement('nav');
   sidebar.id = 'gi-sidebar';
-  sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin);
+  sidebar.innerHTML = _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado);
 
   // Hard-hide Sucursales para quien no sea superadmin (por si quedó en DOM)
   if (!esSuperAdmin) {
@@ -507,7 +495,7 @@ function _cargarDatosUsuario(u) {
   const sbAvatar = document.getElementById('sbAvatar');
 
   if (sbNombre) sbNombre.textContent = nombre;
-  if (sbRol)    sbRol.textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : 'Usuario');
+  if (sbRol)    sbRol.textContent    = u.rol === 'superadmin' ? 'Superadmin' : (u.rol === 'admin' ? 'Administrador' : (u.rol === 'encargado' ? 'Encargado' : 'Usuario'));
   if (sbLetra)  sbLetra.textContent  = inicial;
 
   // Foto de perfil: si tiene foto_url la muestra, si no muestra la inicial

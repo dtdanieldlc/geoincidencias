@@ -67,7 +67,7 @@ public function index(Request $request)
         $query->where('incidencias.id_usuario_creador', $usuario->id_usuario);
     }
 
-    // Admin encargado: solo incidencias de las sucursales a su cargo
+    // Admin de sucursal: solo incidencias de las sucursales a su cargo
     if ($usuario->rol === 'admin') {
         $ids = $usuario->idsCiudadesEncargadas();
         if (empty($ids)) {
@@ -75,6 +75,18 @@ public function index(Request $request)
         } else {
             $query->whereIn('c.id_ciudad', $ids);
         }
+    }
+
+    // Encargado de departamento: solo incidencias de sus departamentos
+    if ($usuario->rol === 'encargado') {
+        $idsDept = $usuario->idsDepartamentosEncargados();
+        if (empty($idsDept)) {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('incidencias.id_departamento', $idsDept);
+        }
+        // Ve pendientes de revisión y aprobadas de su área
+        $query->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision']);
     }
 
     if ($buscar = $request->query('buscar')) {
@@ -346,6 +358,27 @@ public function index(Request $request)
             "{$usuario->nombre_completo} registró la incidencia \"{$incidencia->titulo}\" (pendiente de revisión)",
             $request->ip()
         );
+
+        // Notificar a encargados del departamento asignado
+        try {
+            if ($request->id_departamento && Schema::hasTable('departamento_responsables')) {
+                $idsEnc = DB::table('departamento_responsables')
+                    ->where('id_departamento', $request->id_departamento)
+                    ->pluck('id_usuario');
+                $nomDepto = DB::table('departamentos')->where('id_departamento', $request->id_departamento)->value('nombre');
+                foreach ($idsEnc as $idEnc) {
+                    Notificacion::create([
+                        'id_usuario'    => $idEnc,
+                        'id_incidencia' => $incidencia->id_incidencia,
+                        'titulo'        => 'Nueva incidencia para tu departamento',
+                        'mensaje'       => 'Se registró "' . $incidencia->titulo . '" para el área ' . ($nomDepto ?? '') . '. Revisa tu panel de incidencias.',
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
 
         // Notificar a encargados de la sucursal de la incidencia + superadmins
         $idCiudadInc = \App\Models\Zona::where('id_zona', $incidencia->id_zona)->value('id_ciudad');

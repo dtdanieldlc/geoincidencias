@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\SoloAdmin;
 use App\Http\Middleware\SoloSuperAdmin;
+use App\Http\Middleware\SoloStaff;
 use App\Http\Middleware\VerificarPermiso;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'solo.admin'      => SoloAdmin::class,
             'solo.superadmin' => SoloSuperAdmin::class,
+            'solo.staff'      => SoloStaff::class,
             'permiso'         => VerificarPermiso::class,
         ]);
     })

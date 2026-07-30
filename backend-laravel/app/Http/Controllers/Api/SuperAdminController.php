@@ -55,7 +55,8 @@ class SuperAdminController extends Controller
             'password'  => 'required|string|min:8',
             'telefono'  => 'nullable|string|max:20',
             'cedula'    => 'nullable|string|max:10',
-            'rol'       => 'required|in:admin,usuario',
+            'rol'       => 'required|in:admin,usuario,encargado',
+            'id_departamento' => 'nullable|integer|exists:departamentos,id_departamento',
             'id_ciudad' => 'nullable|integer|exists:ciudades,id_ciudad',
         ]);
 

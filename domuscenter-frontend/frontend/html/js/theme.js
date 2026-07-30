@@ -21,7 +21,7 @@
   style.textContent = `
     html.dark-mode #main {
       filter: invert(93%) hue-rotate(180deg) contrast(115%);
-      background: #f4f7fb;
+      background: #f5f2eb;
     }
     html.dark-mode #main img,
     html.dark-mode #main .leaflet-container,
@@ -35,7 +35,7 @@
       display: flex; align-items: center; justify-content: center;
       transition: background .15s;
     }
-    .gi-theme-btn:hover { background: rgba(0,0,0,.06); }
+    .gi-theme-btn:hover { background: rgba(194,65,12,.1); }
   `;
   document.head.appendChild(style);
 })();

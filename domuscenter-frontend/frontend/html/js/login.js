@@ -30,7 +30,8 @@ async function manejarRespuestaGoogle(respuesta) {
     if (res.ok && data.ok) {
       localStorage.setItem('gi_token', data.token);
       localStorage.setItem('gi_usuario', JSON.stringify(data.usuario));
-      window.location.href = 'index.html';
+      const dest = data.usuario?.rol === 'encargado' ? 'incidencias.html' : (['admin','superadmin'].includes(data.usuario?.rol) ? 'index.html' : 'incidencias.html');
+      window.location.href = dest;
     } else {
       mostrarAlerta(data.mensaje || 'No se pudo iniciar sesión con Google.', 'danger');
     }
@@ -73,7 +74,8 @@ async function iniciarSesion() {
     if (res.ok && data.ok) {
       localStorage.setItem('gi_token', data.token);
       localStorage.setItem('gi_usuario', JSON.stringify(data.usuario));
-      window.location.href = 'index.html';
+      const dest = data.usuario?.rol === 'encargado' ? 'incidencias.html' : (['admin','superadmin'].includes(data.usuario?.rol) ? 'index.html' : 'incidencias.html');
+      window.location.href = dest;
     } else {
       mostrarAlerta(data.mensaje || 'Credenciales incorrectas.', 'danger');
     }
