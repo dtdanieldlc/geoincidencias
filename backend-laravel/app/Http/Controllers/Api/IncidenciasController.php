@@ -418,21 +418,26 @@ public function index(Request $request)
             ->orderByDesc('incidencias.fecha_registro')
             ->get()
             ->map(function ($inc) {
-                $arr = (array) $inc;
+                // Conservar el modelo/objeto original (evita perder titulo, id, etc.)
                 $estado = $inc->estado ?? null;
                 $fechaRes = $inc->fecha_resolucion ?? null;
                 $puede = false;
                 $horasRestantes = null;
                 if ($estado === 'Resuelto' && $fechaRes) {
-                    $limite = \Carbon\Carbon::parse($fechaRes)->addHours(24);
-                    if (now()->lt($limite)) {
-                        $puede = true;
-                        $horasRestantes = max(0, now()->diffInHours($limite, false));
+                    try {
+                        $limite = \Carbon\Carbon::parse($fechaRes)->addHours(24);
+                        if (now()->lt($limite)) {
+                            $puede = true;
+                            $horasRestantes = max(0, (int) now()->diffInHours($limite, false));
+                        }
+                    } catch (\Throwable $e) {
+                        report($e);
                     }
                 }
-                $arr['puede_confirmar'] = $puede;
-                $arr['horas_restantes_confirmacion'] = $horasRestantes;
-                // Encargados de la sucursal (si hay)
+                $inc->setAttribute('puede_confirmar', $puede);
+                $inc->setAttribute('horas_restantes_confirmacion', $horasRestantes);
+
+                $encargados = [];
                 try {
                     $idCiudad = $inc->id_ciudad ?? null;
                     if ($idCiudad && \Illuminate\Support\Facades\Schema::hasTable('sucursal_responsables')) {
@@ -440,19 +445,20 @@ public function index(Request $request)
                             ->join('usuarios as u', 'u.id_usuario', '=', 'sr.id_usuario')
                             ->where('sr.id_ciudad', $idCiudad)
                             ->get(['u.nombre', 'u.apellido', 'u.correo']);
-                        $arr['encargados'] = $enc->map(fn ($e) => [
+                        $encargados = $enc->map(fn ($e) => [
                             'nombre' => trim(($e->nombre ?? '') . ' ' . ($e->apellido ?? '')),
                             'correo' => $e->correo ?? null,
                         ])->values()->all();
-                    } else {
-                        $arr['encargados'] = [];
                     }
                 } catch (\Throwable $e) {
-                    $arr['encargados'] = [];
+                    report($e);
                 }
-                return $arr;
+                $inc->setAttribute('encargados', $encargados);
+
+                return $inc;
             });
-        return response()->json(['datos' => $datos, 'total' => $datos->count()]);
+
+        return response()->json(['datos' => $datos->values(), 'total' => $datos->count()]);
     }
 
     // ──────────────────────────────────────────────────────────────
