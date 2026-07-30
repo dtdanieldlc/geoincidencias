@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class IncidenciasController extends Controller
@@ -43,12 +44,14 @@ class IncidenciasController extends Controller
                 'incidencias.reportante_nombre', 'incidencias.reportante_contacto',
                 DB::raw("CONCAT(uc.nombre,' ',IFNULL(uc.apellido,'')) as creado_por"),
                 'incidencias.id_tipo', 'incidencias.id_subtipo', 'incidencias.id_estado_actual',
-                'incidencias.id_zona', 'incidencias.id_usuario_creador',
+                'incidencias.id_zona', 'incidencias.id_usuario_creador', 'incidencias.id_usuario_reportante',
+                'c.id_ciudad',
             ]);
     }
 // GET /api/incidencias
 public function index(Request $request)
 {
+    try { $this->autoCerrarResueltas(); } catch (\Throwable $e) { report($e); }
     $usuario = $request->user();
     $query = $this->baseQuery();
 
@@ -399,11 +402,56 @@ public function index(Request $request)
     // GET /api/incidencias/mis-reportes
     public function misReportes(Request $request)
     {
+        $this->autoCerrarResueltas();
+        // alias body start
+        return $this->_misReportesBody($request);
+    }
+
+    private function _misReportesBody(Request $request)
+    {
         $usuario = $request->user();
         $datos = $this->baseQuery()
-            ->where('incidencias.id_usuario_creador', $usuario->id_usuario)
+            ->where(function ($q) use ($usuario) {
+                $q->where('incidencias.id_usuario_creador', $usuario->id_usuario)
+                  ->orWhere('incidencias.id_usuario_reportante', $usuario->id_usuario);
+            })
             ->orderByDesc('incidencias.fecha_registro')
-            ->get();
+            ->get()
+            ->map(function ($inc) {
+                $arr = (array) $inc;
+                $estado = $inc->estado ?? null;
+                $fechaRes = $inc->fecha_resolucion ?? null;
+                $puede = false;
+                $horasRestantes = null;
+                if ($estado === 'Resuelto' && $fechaRes) {
+                    $limite = \Carbon\Carbon::parse($fechaRes)->addHours(24);
+                    if (now()->lt($limite)) {
+                        $puede = true;
+                        $horasRestantes = max(0, now()->diffInHours($limite, false));
+                    }
+                }
+                $arr['puede_confirmar'] = $puede;
+                $arr['horas_restantes_confirmacion'] = $horasRestantes;
+                // Encargados de la sucursal (si hay)
+                try {
+                    $idCiudad = $inc->id_ciudad ?? null;
+                    if ($idCiudad && \Illuminate\Support\Facades\Schema::hasTable('sucursal_responsables')) {
+                        $enc = \Illuminate\Support\Facades\DB::table('sucursal_responsables as sr')
+                            ->join('usuarios as u', 'u.id_usuario', '=', 'sr.id_usuario')
+                            ->where('sr.id_ciudad', $idCiudad)
+                            ->get(['u.nombre', 'u.apellido', 'u.correo']);
+                        $arr['encargados'] = $enc->map(fn ($e) => [
+                            'nombre' => trim(($e->nombre ?? '') . ' ' . ($e->apellido ?? '')),
+                            'correo' => $e->correo ?? null,
+                        ])->values()->all();
+                    } else {
+                        $arr['encargados'] = [];
+                    }
+                } catch (\Throwable $e) {
+                    $arr['encargados'] = [];
+                }
+                return $arr;
+            });
         return response()->json(['datos' => $datos, 'total' => $datos->count()]);
     }
 
@@ -473,10 +521,62 @@ public function index(Request $request)
             ], 403);
         }
 
-        $incidencia->update($request->only([
+        $estadoAnteriorId = $incidencia->id_estado_actual;
+        $datos = $request->only([
             'titulo', 'descripcion', 'prioridad', 'id_tipo', 'id_subtipo',
             'id_estado_actual', 'id_zona', 'latitud', 'longitud', 'fecha_ocurrencia',
-        ]));
+        ]);
+
+        $nuevoEstadoId = isset($datos['id_estado_actual'])
+            ? (int) $datos['id_estado_actual']
+            : null;
+
+        // Si pasa a Resuelto → marcar fecha de resolución
+        if ($nuevoEstadoId && $nuevoEstadoId !== (int) $estadoAnteriorId) {
+            $estadoNuevo = Estado::find($nuevoEstadoId);
+            if ($estadoNuevo && $estadoNuevo->nombre === 'Resuelto') {
+                $datos['fecha_resolucion'] = now();
+            }
+        }
+
+        $incidencia->update($datos);
+
+        // Historial de cambio de estado
+        if ($nuevoEstadoId && $nuevoEstadoId !== (int) $estadoAnteriorId) {
+            $estadoNuevo = Estado::find($nuevoEstadoId);
+            $nombreEstado = $estadoNuevo?->nombre ?? 'estado desconocido';
+
+            DB::table('incidencia_estados_historial')->insert([
+                'id_incidencia'     => $id,
+                'id_estado_anterior'=> $estadoAnteriorId,
+                'id_estado_nuevo'   => $nuevoEstadoId,
+                'id_usuario'        => $usuario->id_usuario,
+                'comentario'        => $request->input('comentario_estado', "Cambio de estado a {$nombreEstado}"),
+                'fecha_cambio'      => now(),
+            ]);
+
+            $reportanteId = $incidencia->id_usuario_creador
+                ?? $incidencia->id_usuario_reportante
+                ?? null;
+
+            if ($reportanteId && $nombreEstado === 'En proceso') {
+                Notificacion::create([
+                    'id_usuario'    => $reportanteId,
+                    'id_incidencia' => $id,
+                    'titulo'        => 'Tu incidencia está siendo atendida',
+                    'mensaje'       => '"' . $incidencia->titulo . '" pasó a En proceso. El equipo de tu sucursal ya está trabajando en ella.',
+                ]);
+            }
+
+            if ($reportanteId && $nombreEstado === 'Resuelto') {
+                Notificacion::create([
+                    'id_usuario'    => $reportanteId,
+                    'id_incidencia' => $id,
+                    'titulo'        => 'Incidencia marcada como resuelta',
+                    'mensaje'       => '"' . $incidencia->titulo . '" fue marcada como resuelta. Tienes 24 horas para confirmar que todo está bien o reportar una novedad. Si no respondes, se cerrará automáticamente.',
+                ]);
+            }
+        }
 
         HistorialActividad::registrar(
             $usuario->id_usuario, $id, 'edito_incidencia',
@@ -813,4 +913,191 @@ public function index(Request $request)
 
         return response()->json(['ok' => true, 'mensaje' => 'Foto eliminada.']);
     }
+
+    /**
+     * Auto-cierra incidencias en "Resuelto" con más de 24h desde fecha_resolucion.
+     */
+    public function autoCerrarResueltas(): int
+    {
+        $estadoResuelto = Estado::where('nombre', 'Resuelto')->first();
+        $estadoCerrado  = Estado::where('nombre', 'Cerrado')->first();
+        if (! $estadoResuelto || ! $estadoCerrado) {
+            return 0;
+        }
+
+        $vencidas = Incidencia::where('id_estado_actual', $estadoResuelto->id_estado)
+            ->whereNotNull('fecha_resolucion')
+            ->where('fecha_resolucion', '<=', now()->subHours(24))
+            ->get();
+
+        $n = 0;
+        foreach ($vencidas as $inc) {
+            $inc->update(['id_estado_actual' => $estadoCerrado->id_estado]);
+            DB::table('incidencia_estados_historial')->insert([
+                'id_incidencia'      => $inc->id_incidencia,
+                'id_estado_anterior' => $estadoResuelto->id_estado,
+                'id_estado_nuevo'    => $estadoCerrado->id_estado,
+                'id_usuario'         => null,
+                'comentario'         => 'Cierre automático: sin confirmación del reportante en 24 horas',
+                'fecha_cambio'       => now(),
+            ]);
+            $uid = $inc->id_usuario_creador ?? $inc->id_usuario_reportante;
+            if ($uid) {
+                Notificacion::create([
+                    'id_usuario'    => $uid,
+                    'id_incidencia' => $inc->id_incidencia,
+                    'titulo'        => 'Incidencia cerrada automáticamente',
+                    'mensaje'       => '"' . $inc->titulo . '" se cerró porque no hubo novedades en 24 horas tras la resolución.',
+                ]);
+            }
+            $n++;
+        }
+        return $n;
+    }
+
+    // POST /api/incidencias/{id}/confirmar-resolucion
+    // El reportante confirma que todo está bien → Cerrado
+    public function confirmarResolucion(Request $request, int $id)
+    {
+        $this->autoCerrarResueltas();
+
+        $incidencia = Incidencia::with('estado')->find($id);
+        if (! $incidencia) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $usuario = $request->user();
+        $esDuenio = (int) ($incidencia->id_usuario_creador ?? 0) === (int) $usuario->id_usuario
+            || (int) ($incidencia->id_usuario_reportante ?? 0) === (int) $usuario->id_usuario;
+
+        if (! $esDuenio && $usuario->rol === 'usuario') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo el reportante puede confirmar.'], 403);
+        }
+
+        if ($incidencia->estado?->nombre !== 'Resuelto') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo se puede confirmar una incidencia en estado Resuelto.'], 400);
+        }
+
+        if ($incidencia->fecha_resolucion && $incidencia->fecha_resolucion->lt(now()->subHours(24))) {
+            // Ya pasó el plazo: cerrar y avisar
+            $cerrado = Estado::where('nombre', 'Cerrado')->first();
+            if ($cerrado) {
+                $incidencia->update(['id_estado_actual' => $cerrado->id_estado]);
+            }
+            return response()->json(['ok' => false, 'mensaje' => 'El plazo de 24 horas ya venció; la incidencia se cerró automáticamente.'], 400);
+        }
+
+        $cerrado = Estado::where('nombre', 'Cerrado')->first();
+        $resuelto = Estado::where('nombre', 'Resuelto')->first();
+        if (! $cerrado) {
+            return response()->json(['ok' => false, 'mensaje' => 'Estado Cerrado no configurado.'], 500);
+        }
+
+        $incidencia->update(['id_estado_actual' => $cerrado->id_estado]);
+        DB::table('incidencia_estados_historial')->insert([
+            'id_incidencia'      => $id,
+            'id_estado_anterior' => $resuelto?->id_estado,
+            'id_estado_nuevo'    => $cerrado->id_estado,
+            'id_usuario'         => $usuario->id_usuario,
+            'comentario'         => 'Confirmado por el reportante: todo en orden',
+            'fecha_cambio'       => now(),
+        ]);
+
+        HistorialActividad::registrar(
+            $usuario->id_usuario, $id, 'confirmo_resolucion',
+            "{$usuario->nombre_completo} confirmó la resolución de #{$id}", $request->ip()
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => 'Gracias. La incidencia quedó cerrada.']);
+    }
+
+    // POST /api/incidencias/{id}/reportar-novedad
+    // El reportante indica que no quedó bien → vuelve a En proceso
+    public function reportarNovedad(Request $request, int $id)
+    {
+        $incidencia = Incidencia::with('estado')->find($id);
+        if (! $incidencia) {
+            return response()->json(['ok' => false, 'mensaje' => 'Incidencia no encontrada'], 404);
+        }
+
+        $usuario = $request->user();
+        $esDuenio = (int) ($incidencia->id_usuario_creador ?? 0) === (int) $usuario->id_usuario
+            || (int) ($incidencia->id_usuario_reportante ?? 0) === (int) $usuario->id_usuario;
+
+        if (! $esDuenio && $usuario->rol === 'usuario') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo el reportante puede reportar una novedad.'], 403);
+        }
+
+        if ($incidencia->estado?->nombre !== 'Resuelto') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo aplica a incidencias en estado Resuelto.'], 400);
+        }
+
+        if ($incidencia->fecha_resolucion && $incidencia->fecha_resolucion->lt(now()->subHours(24))) {
+            return response()->json(['ok' => false, 'mensaje' => 'El plazo de 24 horas ya venció.'], 400);
+        }
+
+        $comentario = trim((string) $request->input('comentario', ''));
+        if ($comentario === '') {
+            return response()->json(['ok' => false, 'mensaje' => 'Describe la novedad o el problema que persiste.'], 400);
+        }
+
+        $enProceso = Estado::where('nombre', 'En proceso')->first();
+        $resuelto  = Estado::where('nombre', 'Resuelto')->first();
+        if (! $enProceso) {
+            return response()->json(['ok' => false, 'mensaje' => 'Estado En proceso no configurado.'], 500);
+        }
+
+        $incidencia->update([
+            'id_estado_actual' => $enProceso->id_estado,
+            'fecha_resolucion' => null,
+        ]);
+
+        DB::table('incidencia_estados_historial')->insert([
+            'id_incidencia'      => $id,
+            'id_estado_anterior' => $resuelto?->id_estado,
+            'id_estado_nuevo'    => $enProceso->id_estado,
+            'id_usuario'         => $usuario->id_usuario,
+            'comentario'         => 'Novedad del reportante: ' . $comentario,
+            'fecha_cambio'       => now(),
+        ]);
+
+        // Comentario visible en el hilo
+        try {
+            IncidenciaComentario::create([
+                'id_incidencia' => $id,
+                'id_usuario'    => $usuario->id_usuario,
+                'comentario'    => '[Novedad tras resolución] ' . $comentario,
+                'fecha'         => now(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        // Avisar a encargados de la sucursal
+        try {
+            $idCiudad = DB::table('zonas')->where('id_zona', $incidencia->id_zona)->value('id_ciudad');
+            if ($idCiudad && Schema::hasTable('sucursal_responsables')) {
+                $ids = DB::table('sucursal_responsables')->where('id_ciudad', $idCiudad)->pluck('id_usuario');
+                foreach ($ids as $idAdmin) {
+                    Notificacion::create([
+                        'id_usuario'    => $idAdmin,
+                        'id_incidencia' => $id,
+                        'titulo'        => 'Novedad en incidencia resuelta',
+                        'mensaje'       => 'El reportante indicó un problema en "' . $incidencia->titulo . '": ' . $comentario,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        HistorialActividad::registrar(
+            $usuario->id_usuario, $id, 'reporto_novedad',
+            "{$usuario->nombre_completo} reportó novedad en #{$id}", $request->ip()
+        );
+
+        return response()->json(['ok' => true, 'mensaje' => 'Novedad registrada. El encargado volverá a atender el caso.']);
+    }
+
+
 }

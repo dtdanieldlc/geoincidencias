@@ -139,8 +139,73 @@ function tarjeta(i) {
       <div class="d-flex align-items-center flex-wrap gap-1" style="font-size:.75rem;">
         ${timelineEstado(i.estado)}
       </div>
+      ${i.encargados && i.encargados.length ? `
+        <div class="mt-2 small text-secondary">
+          <i class="bi bi-person-gear me-1"></i>Encargado(s):
+          <strong>${i.encargados.map(e => e.nombre).join(', ')}</strong>
+        </div>` : ''}
+      ${i.estado === 'En proceso' ? `
+        <div class="mt-2 alert alert-info py-2 px-3 mb-0 small">
+          Tu caso está siendo atendido por el equipo de la sucursal.
+        </div>` : ''}
+      ${i.estado === 'Resuelto' && i.puede_confirmar ? `
+        <div class="mt-3 p-3 rounded-3" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+          <div class="small fw-semibold mb-1" style="color:#166534;">¿Quedó resuelto el problema?</div>
+          <div class="small text-secondary mb-2">Tienes ~${Math.ceil(i.horas_restantes_confirmacion ?? 24)} h para responder. Si no dices nada, se cierra solo.</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-success" onclick="confirmarResolucion(${i.id_incidencia})">
+              <i class="bi bi-check2-circle me-1"></i>Todo bien, cerrar
+            </button>
+            <button class="btn btn-sm btn-outline-warning" onclick="reportarNovedad(${i.id_incidencia})">
+              <i class="bi bi-exclamation-triangle me-1"></i>Hay una novedad
+            </button>
+          </div>
+        </div>` : ''}
+      ${i.estado === 'Resuelto' && !i.puede_confirmar ? `
+        <div class="mt-2 small text-secondary">Resuelta. El plazo de confirmación venció o está por cerrarse.</div>` : ''}
     </div>
   </div>`;
+}
+
+async function confirmarResolucion(id) {
+  if (!(await (typeof confirmarAccion === 'function'
+    ? confirmarAccion('¿Confirmas que el problema quedó resuelto?', { titulo: 'Confirmar resolución', textoBoton: 'Sí, todo bien' })
+    : Promise.resolve(confirm('¿Confirmas que el problema quedó resuelto?'))))) return;
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/confirmar-resolucion`, { method: 'POST', body: '{}' });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok && data.ok) {
+      if (typeof showToast === 'function') showToast(data.mensaje || 'Cerrada.');
+      else alert(data.mensaje || 'Cerrada.');
+      cargarMisReportes();
+    } else {
+      alert(data.mensaje || 'No se pudo confirmar.');
+    }
+  } catch (e) {
+    alert(e.message || 'Error de conexión');
+  }
+}
+
+async function reportarNovedad(id) {
+  const comentario = prompt('Describe qué problema sigue o qué novedad hay:');
+  if (comentario === null) return;
+  if (!comentario.trim()) { alert('Debes escribir la novedad.'); return; }
+  try {
+    const r = await fetchAPI(`${API}/incidencias/${id}/reportar-novedad`, {
+      method: 'POST',
+      body: JSON.stringify({ comentario: comentario.trim() }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok && data.ok) {
+      if (typeof showToast === 'function') showToast(data.mensaje || 'Novedad enviada.');
+      else alert(data.mensaje || 'Novedad enviada.');
+      cargarMisReportes();
+    } else {
+      alert(data.mensaje || 'No se pudo enviar.');
+    }
+  } catch (e) {
+    alert(e.message || 'Error de conexión');
+  }
 }
 
 function timelineEstado(estadoActual) {
