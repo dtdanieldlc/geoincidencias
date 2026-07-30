@@ -86,16 +86,26 @@ async function cargarSubtipos() {
   const idTipo = document.getElementById('id_tipo').value;
   const selSubtipo = document.getElementById('id_subtipo');
   selSubtipo.innerHTML = '<option value="">Sin subtipo específico</option>';
-  if (!idTipo) return;
+  if (!idTipo) {
+    selSubtipo.disabled = true;
+    return;
+  }
   try {
     const r = await fetchAPI(`${API}/catalogos/subtipos/${idTipo}`);
     const datos = await r.json();
-    datos.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.id; opt.textContent = d.nombre;
-      selSubtipo.appendChild(opt);
-    });
-  } catch(e) {}
+    if (Array.isArray(datos)) {
+      datos.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id ?? d.id_subtipo;
+        opt.textContent = d.nombre;
+        selSubtipo.appendChild(opt);
+      });
+    }
+    selSubtipo.disabled = false;
+  } catch (e) {
+    console.error('Error cargando subtipos:', e);
+    selSubtipo.disabled = true;
+  }
   verificarPosiblesDuplicados();
 }
 
