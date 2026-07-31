@@ -223,6 +223,35 @@ class AuthController extends Controller
             report($e);
         }
 
+        $departamentosEncargados = [];
+        try {
+            if (
+                $usuario->rol === 'encargado'
+                && \Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')
+            ) {
+                $hasCiudad = \Illuminate\Support\Facades\Schema::hasColumn('departamento_responsables', 'id_ciudad');
+                $q = \Illuminate\Support\Facades\DB::table('departamento_responsables as dr')
+                    ->leftJoin('departamentos as d', 'd.id_departamento', '=', 'dr.id_departamento')
+                    ->where('dr.id_usuario', $usuario->id_usuario);
+                if ($hasCiudad) {
+                    $q->leftJoin('ciudades as c', 'c.id_ciudad', '=', 'dr.id_ciudad');
+                    $rows = $q->get(['d.nombre as departamento', 'c.nombre as sucursal', 'dr.id_departamento', 'dr.id_ciudad']);
+                } else {
+                    $rows = $q->get(['d.nombre as departamento', 'dr.id_departamento']);
+                }
+                $departamentosEncargados = $rows->map(function ($r) use ($hasCiudad, $sucursal) {
+                    return [
+                        'departamento' => $r->departamento ?? '—',
+                        'sucursal'     => $hasCiudad ? ($r->sucursal ?? '—') : ($sucursal['nombre'] ?? '—'),
+                        'id_departamento' => $r->id_departamento ?? null,
+                        'id_ciudad'    => $hasCiudad ? ($r->id_ciudad ?? null) : null,
+                    ];
+                })->values()->all();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         $fotoUrl = null;
         try {
             if (! empty($usuario->foto_url)) {
@@ -243,6 +272,7 @@ class AuthController extends Controller
             'id_ciudad'              => $idCiudad,
             'sucursal'               => $sucursal,
             'sucursales_encargadas'  => $sucursalesEncargadas,
+            'departamentos_encargados' => $departamentosEncargados,
             'saldo_incentivos'       => $usuario->saldo_incentivos ?? 0,
             'created_at'             => $usuario->created_at,
             'correo_verificado'      => (bool) ($usuario->correo_verificado ?? false),

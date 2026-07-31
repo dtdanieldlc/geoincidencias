@@ -280,11 +280,20 @@ class ReportesController extends Controller
             ->whereIn('e.nombre', ['Resuelto', 'Cerrado', 'En proceso', 'Pendiente']);
 
         if ($usuario->rol === 'encargado') {
-            $ids = $usuario->idsDepartamentosEncargados();
-            if (empty($ids)) {
-                return response()->json(['datos' => [], 'total' => 0, 'desde' => $desde, 'hasta' => $hasta]);
+            $pares = $usuario->paresDepartamentoSucursalEncargado();
+            if (empty($pares)) {
+                return response()->json(['datos' => [], 'total' => 0, 'resueltas' => 0, 'desde' => $desde, 'hasta' => $hasta]);
             }
-            $q->whereIn('i.id_departamento', $ids);
+            $q->where(function ($qq) use ($pares) {
+                foreach ($pares as $par) {
+                    $qq->orWhere(function ($q2) use ($par) {
+                        $q2->where('i.id_departamento', $par['id_departamento']);
+                        if (!empty($par['id_ciudad'])) {
+                            $q2->where('c.id_ciudad', $par['id_ciudad']);
+                        }
+                    });
+                }
+            });
         }
 
         $datos = $q->orderByDesc('i.fecha_ocurrencia')
@@ -325,11 +334,21 @@ class ReportesController extends Controller
             ->whereDate('i.fecha_ocurrencia', '<=', $hasta);
 
         if ($usuario->rol === 'encargado') {
-            $ids = $usuario->idsDepartamentosEncargados();
-            if (empty($ids)) {
-                $ids = [-1];
+            $pares = $usuario->paresDepartamentoSucursalEncargado();
+            if (empty($pares)) {
+                $q->whereRaw('1 = 0');
+            } else {
+                $q->where(function ($qq) use ($pares) {
+                    foreach ($pares as $par) {
+                        $qq->orWhere(function ($q2) use ($par) {
+                            $q2->where('i.id_departamento', $par['id_departamento']);
+                            if (!empty($par['id_ciudad'])) {
+                                $q2->where('c.id_ciudad', $par['id_ciudad']);
+                            }
+                        });
+                    }
+                });
             }
-            $q->whereIn('i.id_departamento', $ids);
         }
 
         $incidencias = $q->orderByDesc('i.fecha_ocurrencia')

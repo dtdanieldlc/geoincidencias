@@ -78,13 +78,22 @@ public function index(Request $request)
         }
     }
 
-    // Encargado: SOLO incidencias de su(s) departamento(s). Nada más.
+    // Encargado: solo incidencias de SU departamento en SU sucursal.
     if ($usuario->rol === 'encargado') {
-        $idsDept = $usuario->idsDepartamentosEncargados();
-        if (empty($idsDept)) {
+        $pares = $usuario->paresDepartamentoSucursalEncargado();
+        if (empty($pares)) {
             $query->whereRaw('1 = 0');
         } else {
-            $query->whereIn('incidencias.id_departamento', $idsDept);
+            $query->where(function ($q) use ($pares) {
+                foreach ($pares as $par) {
+                    $q->orWhere(function ($q2) use ($par) {
+                        $q2->where('incidencias.id_departamento', $par['id_departamento']);
+                        if (! empty($par['id_ciudad'])) {
+                            $q2->where('c.id_ciudad', $par['id_ciudad']);
+                        }
+                    });
+                }
+            });
         }
         $query->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision']);
     }

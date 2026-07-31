@@ -181,4 +181,30 @@ class Usuario extends Authenticatable
             return [];
         }
     }
+
+    /**
+     * Pares departamento+sucursal donde este usuario es encargado.
+     * @return array<int, array{id_departamento:int,id_ciudad:?int}>
+     */
+    public function paresDepartamentoSucursalEncargado(): array
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')) {
+                return [];
+            }
+            $q = \Illuminate\Support\Facades\DB::table('departamento_responsables')
+                ->where('id_usuario', $this->id_usuario);
+            $hasCiudad = \Illuminate\Support\Facades\Schema::hasColumn('departamento_responsables', 'id_ciudad');
+            $rows = $q->get($hasCiudad ? ['id_departamento', 'id_ciudad'] : ['id_departamento']);
+            return $rows->map(function ($r) use ($hasCiudad) {
+                return [
+                    'id_departamento' => (int) $r->id_departamento,
+                    'id_ciudad'       => $hasCiudad ? ($r->id_ciudad !== null ? (int) $r->id_ciudad : null) : ((int) ($this->id_ciudad ?? 0) ?: null),
+                ];
+            })->values()->all();
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
 }

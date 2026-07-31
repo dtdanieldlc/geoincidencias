@@ -56,6 +56,18 @@ async function cargarPerfil() {
     const bloqueEnc = document.getElementById('bloqueEncargadas');
     const listEnc = document.getElementById('sucursalesEncargadas');
     const encargadas = usuarioActual.sucursales_encargadas || [];
+    const listDept = document.getElementById('departamentosEncargados');
+    const bloqueDept = document.getElementById('bloqueDepartamentosEnc');
+    const depts = usuarioActual.departamentos_encargados || [];
+    if (bloqueDept && listDept) {
+      if (depts.length) {
+        bloqueDept.classList.remove('d-none');
+        listDept.textContent = depts.map(d => `${d.departamento}${d.sucursal ? ' · ' + d.sucursal : ''}`).join(' · ');
+      } else if (usuarioActual.rol === 'encargado') {
+        bloqueDept.classList.remove('d-none');
+        listDept.textContent = 'Sin departamento asignado';
+      }
+    }
     if (bloqueEnc && listEnc) {
       if (encargadas.length > 0) {
         bloqueEnc.classList.remove('d-none');
