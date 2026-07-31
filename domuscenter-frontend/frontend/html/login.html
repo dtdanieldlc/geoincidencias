@@ -16,158 +16,59 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <style>
-    :root {
-      --dc-ink: #1c1917;
-      --dc-accent: #c2410c;
-      --dc-accent-2: #ea580c;
-      --dc-surface: #fffcf7;
-      --dc-bg: #f5f2eb;
-      --dc-muted: #78716c;
+      <style>
+    :root{
+      --navy:#0b2340;
+      --navy-2:#123a63;
+      --teal:#14b8a6;
+      --teal-dark:#0d9488;
     }
-    body {
-      font-family: 'Outfit', system-ui, sans-serif;
-      color: var(--dc-ink);
-      margin: 0;
-      min-height: 100vh;
-      background: var(--dc-bg);
-    }
-    .font-display { font-family: 'Fraunces', Georgia, serif; }
-    .font-mono { font-family: ui-monospace, monospace; }
+    body{ font-family:'Inter', system-ui, sans-serif; color:var(--navy); }
+    .font-display{ font-family:'Sora', sans-serif; }
+    .font-mono{ font-family:'JetBrains Mono', monospace; }
 
-    .auth-shell {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+    .text-teal{ color: var(--teal) !important; }
+    .text-teal-dark{ color: var(--teal-dark) !important; }
+    .text-navy{ color: var(--navy) !important; }
+    .bg-navy-gradient, .auth-hero{
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 55%, #0c4f47 130%) !important;
+      position:relative;
+      overflow:hidden;
     }
-    @media (max-width: 960px) {
-      .auth-shell { grid-template-columns: 1fr; }
-      .auth-hero { min-height: 220px; padding: 2rem !important; }
-      .auth-hero .hero-extra { display: none; }
+    .bg-navy-gradient::before, .auth-hero::before{
+      content:"";
+      position:absolute; top:-140px; right:-160px;
+      width:420px; height:420px; border-radius:50%;
+      background: radial-gradient(circle, rgba(20,184,166,0.35), transparent 70%);
+      pointer-events:none;
     }
-
-    .auth-hero {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(155deg, #1c1917 0%, #292524 45%, #431407 120%) !important;
-      color: #fffcf7;
-      padding: 3rem 3.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .auth-hero::before {
-      content: "";
-      position: absolute; top: -20%; right: -15%;
-      width: 55%; height: 70%; border-radius: 50%;
-      background: radial-gradient(circle, rgba(234,88,12,.35), transparent 68%);
-      pointer-events: none;
-    }
-    .auth-hero::after {
-      content: "";
-      position: absolute; bottom: -10%; left: -10%;
-      width: 40%; height: 50%; border-radius: 50%;
-      background: radial-gradient(circle, rgba(194,65,12,.2), transparent 70%);
-      pointer-events: none;
+    .bg-navy-gradient::after, .auth-hero::after{
+      content:"";
+      position:absolute; bottom:-100px; left:-80px;
+      width:320px; height:320px; border-radius:50%;
+      background: radial-gradient(circle, rgba(20,184,166,0.18), transparent 70%);
+      pointer-events:none;
     }
     .auth-hero > * { position: relative; z-index: 1; }
-
-    .hero-kicker {
-      font-size: .72rem; font-weight: 700;
-      letter-spacing: .14em; text-transform: uppercase;
-      color: #fdba74;
+    .btn-teal, #btnLogin{
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark)) !important;
+      border:none !important; color:#fff !important;
+      font-weight:600 !important; border-radius:12px !important;
     }
-    .hero-title {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(2rem, 3.5vw, 2.75rem);
-      font-weight: 600; line-height: 1.15;
-      letter-spacing: -0.03em; margin: .6rem 0 1rem;
+    .btn-teal:hover, #btnLogin:hover{ filter:brightness(1.05); color:#fff !important; }
+    .link-teal{ color:var(--teal-dark) !important; font-weight:600; cursor:pointer; }
+    .link-teal:hover{ text-decoration:underline; }
+    .auth-card, #formLogin{
+      background:#fff; border-radius:16px;
+      box-shadow:0 8px 30px rgba(11,35,64,.08);
+      padding:1.5rem;
     }
-    .hero-lead {
-      color: rgba(255,252,247,.65);
-      font-size: 1.02rem; line-height: 1.55;
-      max-width: 28rem;
-    }
-    .hero-stats {
-      display: flex; gap: 1.5rem; flex-wrap: wrap;
-      margin-top: 2.5rem;
-    }
-    .hero-stat {
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px; padding: 1rem 1.2rem;
-      min-width: 120px;
-    }
-    .hero-stat strong {
-      display: block; font-family: 'Fraunces', serif;
-      font-size: 1.5rem; color: #fdba74;
-    }
-    .hero-stat span { font-size: .78rem; color: rgba(255,252,247,.5); }
-
-    .auth-panel {
-      display: flex; align-items: center; justify-content: center;
-      padding: 2.5rem 1.5rem;
-      background:
-        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(234,88,12,.07), transparent),
-        var(--dc-bg);
-    }
-    .auth-card {
-      width: 100%; max-width: 420px;
-      background: var(--dc-surface);
-      border-radius: 24px;
-      border: 1px solid rgba(28,25,23,.08);
-      box-shadow: 0 4px 6px rgba(28,25,23,.03), 0 20px 48px rgba(28,25,23,.08);
-      padding: 2rem 2rem 1.75rem;
-    }
-    .auth-card h1 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: 1.75rem; font-weight: 600;
-      letter-spacing: -0.02em; margin: 0.25rem 0 0.35rem;
-    }
-    .auth-card .subtitle { color: var(--dc-muted); font-size: .92rem; margin-bottom: 1.5rem; }
-
-    .input-group-text {
-      background: #faf6f0 !important;
-      border-color: rgba(28,25,23,.12) !important;
-      color: var(--dc-muted) !important;
-      border-radius: 12px 0 0 12px !important;
-    }
-    .form-control {
-      background: #faf6f0 !important;
-      border-color: rgba(28,25,23,.12) !important;
-      border-radius: 0 12px 12px 0 !important;
-      padding: 0.65rem 0.9rem !important;
-    }
-    .form-control:focus {
-      border-color: var(--dc-accent) !important;
-      box-shadow: 0 0 0 3px rgba(194,65,12,.15) !important;
-      background: #fffcf7 !important;
-    }
-    .btn-teal, #btnLogin {
-      background: linear-gradient(135deg, #ea580c, #c2410c) !important;
-      border: none !important;
-      color: #fff !important;
-      font-weight: 600 !important;
-      border-radius: 999px !important;
-      padding: 0.7rem 1.25rem !important;
-      box-shadow: 0 6px 20px rgba(234,88,12,.28);
-      transition: transform .15s, box-shadow .15s;
-    }
-    .btn-teal:hover, #btnLogin:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(234,88,12,.35);
-      color: #fff !important;
-    }
-    .link-teal { color: var(--dc-accent) !important; font-weight: 600; cursor: pointer; text-decoration: none; }
-    .link-teal:hover { color: #9a3412 !important; text-decoration: underline; }
-
-    .text-teal, .text-teal-dark { color: var(--dc-accent) !important; }
-    .text-navy { color: var(--dc-ink) !important; }
-
+    .auth-panel{ background:#fff !important; }
   </style>
 
+
 </head>
-<body style="background:#f5f2eb !important;">
+<body class="bg-light">
 
 <div id="alerta" class="position-fixed top-0 end-0 p-3" style="display:none; z-index:9999;"></div>
 
@@ -181,7 +82,7 @@
         <div class="brand-mark rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width:44px;height:44px;">
           <img src="../img/logo_domus_center.png" alt="DomusCenter" class="w-100 h-100" style="object-fit:cover;">
         </div>
-        <span class="fw-bold fs-5">Domus<span style="color:#fdba74">Center</span></span>
+        <span class="fw-bold fs-5">Domus<span class="text-teal">Center</span></span>
       </div>
 
       <div class="my-4" style="max-width:440px;">
@@ -229,7 +130,7 @@
     </aside>
 
     <!-- ============ COLUMNA DERECHA: FORMULARIO ============ -->
-    <main class="col-lg-7 d-flex align-items-center justify-content-center p-4 p-md-5 auth-panel" style="background:transparent !important;">
+    <main class="col-lg-7 d-flex align-items-center justify-content-center p-4 p-md-5 bg-white">
       <div class="w-100" style="max-width:400px;">
 
         <!-- Header compacto solo visible en móvil -->

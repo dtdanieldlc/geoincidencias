@@ -21,7 +21,7 @@
   style.textContent = `
     html.dark-mode #main {
       filter: invert(93%) hue-rotate(180deg) contrast(115%);
-      background: #f5f2eb;
+      background: #f4f7fb;
     }
     html.dark-mode #main img,
     html.dark-mode #main .leaflet-container,
