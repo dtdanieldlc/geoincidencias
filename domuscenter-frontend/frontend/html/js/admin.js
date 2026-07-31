@@ -528,7 +528,12 @@ async function cargarUsuarios(pagina = 1) {
       return `
         <tr>
           <td style="color:var(--text-muted);font-size:.78rem;" title="ID interno: ${u.id_usuario}">#${numFila}</td>
-          <td><strong>${esc(u.nombre)} ${esc(u.apellido ?? '')}</strong></td>
+          <td>
+            <strong>${esc(u.nombre)} ${esc(u.apellido ?? '')}</strong>
+            ${(u.rol === 'encargado' && (u.departamentos || []).length)
+              ? `<div style="font-size:.72rem;color:#0d9488;margin-top:2px;">${esc((u.departamentos || []).map(d => d.nombre + (d.sucursal ? ' · ' + d.sucursal : '')).join(', '))}</div>`
+              : ''}
+          </td>
           <td style="color:var(--text-muted);font-size:.82rem;">${esc(u.correo)}</td>
           <td>${rolBadge(u.rol)}</td>
           <td>${activoBadge(u.activo)}</td>
@@ -591,12 +596,25 @@ function aplicarFiltros() {
     const a = document.getElementById('filtActivo').value;
     const r = document.getElementById('filtRol').value;
     const v = document.getElementById('filtVerif').value;
+    const dep = document.getElementById('filtDepartamento')?.value || '';
     if (b) uFiltros.buscar     = b;
     if (a) uFiltros.activo     = a;
     if (r) uFiltros.rol        = r;
     if (v) uFiltros.verificado = v;
+    if (dep) uFiltros.departamento = dep;
     cargarUsuarios(1);
   }, 350);
+}
+
+function onFiltRolChange() {
+  const r = document.getElementById('filtRol')?.value || '';
+  const depSel = document.getElementById('filtDepartamento');
+  if (depSel) {
+    // Departamento solo tiene sentido con encargados (o todos)
+    depSel.disabled = (r !== '' && r !== 'encargado');
+    if (depSel.disabled) depSel.value = '';
+  }
+  aplicarFiltros();
 }
 
 function limpiarFiltros() {
@@ -604,8 +622,27 @@ function limpiarFiltros() {
   document.getElementById('filtActivo').value = '';
   document.getElementById('filtRol').value    = '';
   document.getElementById('filtVerif').value  = '';
+  const dep = document.getElementById('filtDepartamento');
+  if (dep) { dep.value = ''; dep.disabled = false; }
   uFiltros = {};
   cargarUsuarios(1);
+}
+
+async function cargarFiltroDepartamentos() {
+  const sel = document.getElementById('filtDepartamento');
+  if (!sel) return;
+  try {
+    const r = await fetch(`${API}/catalogos/departamentos`, { headers: headers() });
+    if (!r.ok) return;
+    const datos = await r.json();
+    const lista = Array.isArray(datos) ? datos : (datos.data || []);
+    lista.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id ?? d.id_departamento;
+      opt.textContent = d.nombre;
+      sel.appendChild(opt);
+    });
+  } catch (e) { /* silencioso */ }
 }
 
 async function toggleActivo(id, activo) {
@@ -812,9 +849,9 @@ function fmtDatetime(d) {
 
 function rolBadge(rol) {
   if (rol === 'superadmin') return '<span class="badge-admin" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>';
-  return rol === 'admin'
-    ? '<span class="badge-admin">Admin</span>'
-    : '<span class="badge-usuario">Usuario</span>';
+  if (rol === 'admin') return '<span class="badge-admin">Admin</span>';
+  if (rol === 'encargado') return '<span class="badge-admin" style="background:#ecfdf5;color:#047857;">Encargado</span>';
+  return '<span class="badge-usuario">Usuario</span>';
 }
 
 function activoBadge(a) {
@@ -853,6 +890,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('filtBuscar').addEventListener('input',    aplicarFiltros);
   document.getElementById('filtActivo').addEventListener('change',   aplicarFiltros);
+  document.getElementById('filtDepartamento')?.addEventListener('change', aplicarFiltros);
   document.getElementById('filtRol').addEventListener('change',      aplicarFiltros);
   document.getElementById('filtVerif').addEventListener('change',    aplicarFiltros);
   document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);

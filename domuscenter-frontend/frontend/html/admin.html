@@ -318,10 +318,15 @@
           <option value="true">Activos</option>
           <option value="false">Inactivos</option>
         </select>
-        <select id="filtRol">
+        <select id="filtRol" onchange="onFiltRolChange()">
           <option value="">Rol: todos</option>
+          <option value="superadmin">Superadmin</option>
           <option value="admin">Admin</option>
+          <option value="encargado">Encargado</option>
           <option value="usuario">Usuario</option>
+        </select>
+        <select id="filtDepartamento" title="Filtrar por departamento (encargados)">
+          <option value="">Depto: todos</option>
         </select>
         <select id="filtVerif">
           <option value="">Correo: todos</option>

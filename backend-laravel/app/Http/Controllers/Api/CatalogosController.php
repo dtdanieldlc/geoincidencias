@@ -71,6 +71,20 @@ class CatalogosController extends Controller
             ->get();
     }
 
+    public function departamentos()
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('departamentos')) {
+            return response()->json([]);
+        }
+        $q = \Illuminate\Support\Facades\DB::table('departamentos')->orderBy('nombre');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('departamentos', 'activo')) {
+            $q->where('activo', 1);
+        }
+        return response()->json(
+            $q->get(['id_departamento as id', 'nombre', 'descripcion'])
+        );
+    }
+
     public function incentivos()
     {
         return IncentivoPrioridad::all(['prioridad', 'monto']);

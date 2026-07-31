@@ -42,8 +42,47 @@ class AdminUsuariosController extends Controller
             $query->where('correo_verificado', filter_var($request->query('verificado'), FILTER_VALIDATE_BOOLEAN));
         }
 
+        if ($dept = $request->query('departamento')) {
+            if (\Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')) {
+                $query->whereIn('id_usuario', function ($q) use ($dept) {
+                    $q->select('id_usuario')
+                        ->from('departamento_responsables')
+                        ->where('id_departamento', $dept);
+                });
+            }
+        }
+
         $porPagina = min((int) ($request->query('por_pagina', 20)), 100);
         $usuarios  = $query->orderBy('created_at', 'desc')->paginate($porPagina);
+
+        // Adjuntar departamentos (y sucursal) a encargados
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')) {
+                $ids = collect($usuarios->items())->pluck('id_usuario')->all();
+                $hasCiudad = \Illuminate\Support\Facades\Schema::hasColumn('departamento_responsables', 'id_ciudad');
+                $q = \Illuminate\Support\Facades\DB::table('departamento_responsables as dr')
+                    ->leftJoin('departamentos as d', 'd.id_departamento', '=', 'dr.id_departamento')
+                    ->whereIn('dr.id_usuario', $ids);
+                if ($hasCiudad) {
+                    $q->leftJoin('ciudades as c', 'c.id_ciudad', '=', 'dr.id_ciudad');
+                    $rows = $q->get(['dr.id_usuario', 'd.nombre as departamento', 'c.nombre as sucursal']);
+                } else {
+                    $rows = $q->get(['dr.id_usuario', 'd.nombre as departamento']);
+                }
+                $map = [];
+                foreach ($rows as $r) {
+                    $map[$r->id_usuario][] = [
+                        'nombre'   => $r->departamento ?? '—',
+                        'sucursal' => $hasCiudad ? ($r->sucursal ?? null) : null,
+                    ];
+                }
+                foreach ($usuarios->items() as $u) {
+                    $u->setAttribute('departamentos', $map[$u->id_usuario] ?? []);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json(['ok' => true, 'data' => $usuarios]);
     }
