@@ -85,16 +85,19 @@ async function cargarResumen() {
   try {
     const r = await fetchAPI(`${API}/dashboard/resumen`);
     const d = await r.json();
-    const t = d.total || 0;
-    document.getElementById('cntTotal').textContent = d.total || 0;
-    document.getElementById('cntAbiertas').textContent  = d.abiertas    || 0;
+    const total = Number(d.total || 0);
+    document.getElementById('cntTotal').textContent = total;
+    document.getElementById('cntAbiertas').textContent  = d.abiertas    || d.pendientes || 0;
     document.getElementById('cntEnProceso').textContent = d.en_proceso  || 0;
     document.getElementById('cntResueltas').textContent = d.resueltas   || 0;
-    if (t > 0) {
-      document.getElementById('pctAbiertas').textContent  = `${((d.abiertas/t)*100).toFixed(1)}% del total`;
-      document.getElementById('pctEnProceso').textContent = `${((d.en_proceso/t)*100).toFixed(1)}% del total`;
-      document.getElementById('pctResueltas').textContent = `${((d.resueltas/t)*100).toFixed(1)}% del total`;
-    }
+    const elCerr = document.getElementById('cntCerradas');
+    if (elCerr) elCerr.textContent = d.cerradas || 0;
+    const pct = (n) => total > 0 ? `${((Number(n||0)/total)*100).toFixed(1)}% del total` : '0% del total';
+    document.getElementById('pctAbiertas').textContent  = pct(d.abiertas ?? d.pendientes);
+    document.getElementById('pctEnProceso').textContent = pct(d.en_proceso);
+    document.getElementById('pctResueltas').textContent = pct(d.resueltas);
+    const pctC = document.getElementById('pctCerradas');
+    if (pctC) pctC.textContent = pct(d.cerradas);
 
     const vencidas = d.vencidas || 0;
     const banner = document.getElementById('alertaVencidas');

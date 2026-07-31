@@ -26,9 +26,11 @@ class ReportesController extends Controller
 
     public function porSucursal(Request $request)
     {
+        $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
         $query = DB::table('incidencias as i')
             ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
-            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad');
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->whereIn('c.nombre', $permitidas);
         $query = $this->aplicarFiltros($query, $request);
 
         $datos = $query->groupBy('c.id_ciudad', 'c.nombre')

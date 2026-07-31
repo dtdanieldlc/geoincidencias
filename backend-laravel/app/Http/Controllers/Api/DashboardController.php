@@ -89,7 +89,9 @@ class DashboardController extends Controller
 
     public function porSucursal()
     {
+        $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
         $datos = DB::table('ciudades as c')
+            ->whereIn('c.nombre', $permitidas)
             ->leftJoin('zonas as z', 'z.id_ciudad', '=', 'c.id_ciudad')
             ->leftJoin('incidencias as i', function ($join) {
                 $join->on('z.id_zona', '=', 'i.id_zona')->where('i.estado_aprobacion', '=', 'aprobada');

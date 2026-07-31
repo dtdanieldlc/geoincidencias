@@ -40,7 +40,12 @@ class CatalogosController extends Controller
     // Devuelve las sucursales (ciudades) activas para elegir al registrar una incidencia
     public function sucursales()
     {
-        return Ciudad::orderBy('nombre')
+        $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
+        $q = Ciudad::query()->whereIn('nombre', $permitidas);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('ciudades', 'activo')) {
+            $q->where('activo', 1);
+        }
+        return $q->orderBy('nombre')
             ->get(['id_ciudad as id', 'nombre', 'latitud_ref as latitud', 'longitud_ref as longitud']);
     }
 
