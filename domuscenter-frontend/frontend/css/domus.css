@@ -1,2 +1,66 @@
-/* Tema anterior restaurado: navy + teal.
-   Este archivo queda vacío a propósito para no sobreescribir el estilo original. */
+/* DomusCenter — utilidades de layout (estilo navy/teal en sidebar.js) */
+
+/* Scrollbars ocultas en toda la app (sigue scrolleable) */
+html, body, #gi-main, #gi-sidebar,
+#gi-main *, #gi-sidebar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#gi-main::-webkit-scrollbar,
+#gi-sidebar::-webkit-scrollbar,
+#gi-main *::-webkit-scrollbar,
+#gi-sidebar *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#gi-main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Contenedores más cómodos en pantallas chicas */
+@media (max-width: 768px) {
+  #gi-main .container-fluid {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+    padding-top: 0.75rem !important;
+  }
+  #gi-main h4, #gi-main .h4 {
+    font-size: 1.15rem !important;
+  }
+  #gi-main .btn {
+    font-size: 0.85rem;
+  }
+  /* Formularios a una columna en móvil */
+  #gi-main .row > [class*="col-"] {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  #gi-topbar {
+    padding: 10px 12px 6px !important;
+  }
+  .gi-page-title {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Tablas: scroll horizontal suave sin barra fea si hace falta */
+.table-responsive {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.table-responsive::-webkit-scrollbar {
+  display: none;
+}
