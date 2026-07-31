@@ -44,7 +44,7 @@ async function cargarIncidencias(pag = 1) {
   });
 
   // Capturar valores de los filtros
-  const buscar     = document.getElementById('buscar').value.trim();
+  const buscar     = document.getElementById('buscar')?.value?.trim() || '';
   const tipo       = document.getElementById('filtroTipo').value;
   const estado     = document.getElementById('filtroEstado').value;
   const prioridad  = document.getElementById('filtroPrioridad').value;

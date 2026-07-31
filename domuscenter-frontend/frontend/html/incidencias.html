@@ -198,70 +198,69 @@
     <span class="badge px-3 py-2 border border-success border-opacity-25" style="background:rgba(34,197,94,.1);color:#16a34a;">Resueltas: <strong id="cntResueltas">—</strong></span>
   </div>
 
+      
       <!-- Filtros avanzados -->
-    <div class="rounded-3 border border-secondary border-opacity-25 p-3 mb-3" style="background:#ffffff;">
-      <div class="row g-2 align-items-end">
-        <div class="col-12 col-sm-6 col-lg-3">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-search me-1"></i>Buscar</label>
-          <input type="text" id="buscar" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" placeholder="Título o descripción..." onkeyup="if(event.key==='Enter') cargarIncidencias()"/>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-tag me-1"></i>Tipo</label>
-          <select id="filtroTipo" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-flag me-1"></i>Estado</label>
-          <select id="filtroEstado" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-exclamation-diamond me-1"></i>Prioridad</label>
-          <select id="filtroPrioridad" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todas</option>
-            <option value="Alta">Alta</option>
-            <option value="Media">Media</option>
-            <option value="Baja">Baja</option>
-          </select>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-shop me-1"></i>Sucursal</label>
-          <select id="filtroSucursal" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todas</option>
-          </select>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-geo me-1"></i>Zona</label>
-          <select id="filtroZona" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todas</option>
-          </select>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1"><i class="bi bi-person me-1"></i>Reportado por</label>
-          <select id="filtroUsuario" class="form-select form-select-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()">
-            <option value="">Todos</option>
-          </select>
+      <div class="dc-filters mb-3">
+        <div class="dc-filters-grid">
+          <div class="dc-field dc-field-grow">
+            <label for="buscar">Buscar</label>
+            <input type="text" id="buscar" class="form-control" placeholder="Título o descripción…" oninput="cargarIncidencias()"/>
+          </div>
+          <div class="dc-field">
+            <label for="filtroTipo">Tipo</label>
+            <select id="filtroTipo" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroEstado">Estado</label>
+            <select id="filtroEstado" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroPrioridad">Prioridad</label>
+            <select id="filtroPrioridad" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todas</option>
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroSucursal">Sucursal</label>
+            <select id="filtroSucursal" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroZona">Zona</label>
+            <select id="filtroZona" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroUsuario">Reportado por</label>
+            <select id="filtroUsuario" class="form-select" onchange="cargarIncidencias()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="dc-field">
+            <label for="filtroDesde">Desde</label>
+            <input type="date" id="filtroDesde" class="form-control" onchange="cargarIncidencias()"/>
+          </div>
+          <div class="dc-field">
+            <label for="filtroHasta">Hasta</label>
+            <input type="date" id="filtroHasta" class="form-control" onchange="cargarIncidencias()"/>
+          </div>
+          <div class="dc-field dc-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+              <i class="bi bi-x-circle me-1"></i>Limpiar
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="row g-2 mt-2">
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1">Desde</label>
-          <input type="date" id="filtroDesde" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()"/>
-        </div>
-        <div class="col-6 col-sm-3 col-lg-2">
-          <label class="form-label text-secondary small mb-1">Hasta</label>
-          <input type="date" id="filtroHasta" class="form-control form-control-sm border-secondary" style="background:#f4f7fb;" onchange="cargarIncidencias()"/>
-        </div>
-        <div class="col-12 col-sm-3 col-lg-2 d-flex align-items-end">
-          <button class="btn btn-outline-secondary btn-sm w-100" onclick="limpiarFiltros()">
-            <i class="bi bi-x-lg me-1"></i>Limpiar
-          </button>
-        </div>
-      </div>
-    </div>
 
   <!-- Tabla de incidencias -->
   <div class="rounded-3 border border-secondary border-opacity-25 overflow-hidden" style="background:#ffffff;">

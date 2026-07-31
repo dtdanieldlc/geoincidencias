@@ -64,3 +64,103 @@ html, body {
 .table-responsive::-webkit-scrollbar {
   display: none;
 }
+
+
+/* ═══ Barras de filtros unificadas ═══ */
+.dc-filters {
+  background: #ffffff;
+  border: 1px solid rgba(11, 35, 64, 0.08);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 1px 2px rgba(11, 35, 64, 0.04);
+  margin-bottom: 1rem;
+}
+.dc-filters .dc-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem 0.85rem;
+  align-items: end;
+}
+.dc-filters .dc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.dc-filters .dc-field.dc-field-grow {
+  grid-column: span 2;
+}
+@media (max-width: 768px) {
+  .dc-filters .dc-field.dc-field-grow { grid-column: span 1; }
+  .dc-filters .dc-filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .dc-filters .dc-filters-grid { grid-template-columns: 1fr; }
+}
+.dc-filters .dc-field label,
+.dc-filters .form-label {
+  margin: 0 !important;
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dc-filters .form-control,
+.dc-filters .form-select,
+.dc-filters input,
+.dc-filters select {
+  height: 36px !important;
+  min-height: 36px !important;
+  font-size: 0.84rem !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(11, 35, 64, 0.12) !important;
+  background: #f8fafc !important;
+  color: #0b2340 !important;
+  padding: 0.35rem 0.7rem !important;
+  box-shadow: none !important;
+}
+.dc-filters .form-control:focus,
+.dc-filters .form-select:focus {
+  border-color: #14b8a6 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15) !important;
+}
+.dc-filters .dc-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.dc-filters .dc-actions .btn {
+  height: 36px;
+  border-radius: 9px !important;
+  font-size: 0.8rem !important;
+  padding: 0 0.85rem !important;
+  white-space: nowrap;
+}
+/* Compat: filtros antiguos dentro de cards */
+.rounded-3 .row.g-2.align-items-end .form-label,
+.card .row.g-2 .form-label {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b !important;
+  margin-bottom: 0.3rem !important;
+}
+.rounded-3 .row.g-2.align-items-end .form-control,
+.rounded-3 .row.g-2.align-items-end .form-select,
+.rounded-3 .row.g-2 .form-control-sm,
+.rounded-3 .row.g-2 .form-select-sm {
+  height: 36px !important;
+  font-size: 0.84rem !important;
+  border-radius: 9px !important;
+  background: #f8fafc !important;
+  border-color: rgba(11, 35, 64, 0.12) !important;
+}
