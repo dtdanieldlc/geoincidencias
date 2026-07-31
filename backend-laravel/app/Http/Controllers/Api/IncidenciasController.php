@@ -78,21 +78,14 @@ public function index(Request $request)
         }
     }
 
-    // Encargado de departamento: incidencias de su(s) área(s).
-    // También ve casos SIN departamento asignado (para que la cola no quede vacía
-    // si al registrar no eligieron departamento).
+    // Encargado: SOLO incidencias de su(s) departamento(s). Nada más.
     if ($usuario->rol === 'encargado') {
         $idsDept = $usuario->idsDepartamentosEncargados();
         if (empty($idsDept)) {
-            // Sin asignación: igual puede ver las no asignadas a ningún depto
-            $query->whereNull('incidencias.id_departamento');
+            $query->whereRaw('1 = 0');
         } else {
-            $query->where(function ($q) use ($idsDept) {
-                $q->whereIn('incidencias.id_departamento', $idsDept)
-                  ->orWhereNull('incidencias.id_departamento');
-            });
+            $query->whereIn('incidencias.id_departamento', $idsDept);
         }
-        // Solo estados de trabajo (no rechazadas)
         $query->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision']);
     }
 

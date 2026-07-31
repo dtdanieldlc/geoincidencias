@@ -370,7 +370,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado) {
 
     <div style="overflow-y:auto; flex:1; padding-bottom:4px; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="sb-section">General</div>
-      ${links.filter(l => !l.soloAdmin || esAdmin).map(renderLink).join('')}
+      ${links.filter(l => (!l.soloAdmin || esAdmin) && !(esEncargado && l.id === 'incidencias')).map(renderLink).join('')}
       ${adminSection}
       ${encargadoSection}
       ${superAdminSection}
