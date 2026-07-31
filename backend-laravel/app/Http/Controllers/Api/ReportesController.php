@@ -33,8 +33,14 @@ class ReportesController extends Controller
 
         $datos = $query->groupBy('c.id_ciudad', 'c.nombre')
             ->orderByDesc(DB::raw('COUNT(*)'))
-            ->select('c.nombre as sucursal', DB::raw('COUNT(*) as total'),
-                DB::raw("SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as criticas"))
+            ->select(
+                'c.nombre as sucursal',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as alta"),
+                DB::raw("SUM(CASE WHEN i.prioridad='Media' THEN 1 ELSE 0 END) as media"),
+                DB::raw("SUM(CASE WHEN i.prioridad='Baja' THEN 1 ELSE 0 END) as baja"),
+                DB::raw("SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as criticas")
+            )
             ->get();
 
         return response()->json($datos);
@@ -69,7 +75,13 @@ class ReportesController extends Controller
 
         $datos = $query->groupBy('ti.nombre')
             ->orderByDesc(DB::raw('COUNT(*)'))
-            ->select('ti.nombre as categoria', DB::raw('COUNT(*) as total'))
+            ->select(
+                'ti.nombre as categoria',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN i.prioridad='Alta' THEN 1 ELSE 0 END) as alta"),
+                DB::raw("SUM(CASE WHEN i.prioridad='Media' THEN 1 ELSE 0 END) as media"),
+                DB::raw("SUM(CASE WHEN i.prioridad='Baja' THEN 1 ELSE 0 END) as baja")
+            )
             ->get();
 
         return response()->json($datos);

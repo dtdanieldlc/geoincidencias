@@ -69,6 +69,16 @@
       z-index: 1200;
       overflow: hidden;
     }
+    /* Ocultar barra de desplazamiento del menú (sigue siendo scrolleable) */
+    #gi-sidebar * {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    #gi-sidebar *::-webkit-scrollbar {
+      width: 0 !important;
+      height: 0 !important;
+      display: none;
+    }
 
     .sb-brand {
       display: flex; align-items: center; gap: 12px;
