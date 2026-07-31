@@ -164,7 +164,7 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
       <td class="border-secondary small text-secondary">${new Date(inc.fecha_ocurrencia).toLocaleDateString('es-EC')}</td>
       <td class="border-secondary">
         <div class="d-flex gap-1 flex-wrap">
-          <button class="btn btn-sm btn-outline-light" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-sm btn-outline-secondary" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
           ${esAdmin ? `<button class="btn btn-sm btn-outline-secondary" title="Descargar ficha (PDF)" onclick="descargarFichaPdf(${inc.id_incidencia})"><i class="bi bi-file-earmark-pdf"></i></button>` : ''}
           
           ${((esAdmin && misPermisosIncidencias.puede_editar) || esEncargado) ? `<button class="btn btn-sm btn-outline-primary" title="Gestionar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
