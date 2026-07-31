@@ -30,7 +30,7 @@
       --text:       #0b2340;
       --text-muted: #64748b;
       --accent:     #dc2626;
-      --sidebar-w:  240px;
+      --sidebar-w:  220px;
     }
 
     html.dark-mode #gi-main {
@@ -69,62 +69,64 @@
       z-index: 1200;
       overflow: hidden;
     }
-    /* Ocultar barra de desplazamiento del menú (sigue siendo scrolleable) */
-    #gi-sidebar * {
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE/Edge */
+    /* Menú compacto + sin barra visible */
+    #gi-sidebar, #gi-sidebar * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
     }
+    #gi-sidebar::-webkit-scrollbar,
     #gi-sidebar *::-webkit-scrollbar {
       width: 0 !important;
       height: 0 !important;
-      display: none;
+      background: transparent !important;
+      display: none !important;
     }
 
     .sb-brand {
-      display: flex; align-items: center; gap: 12px;
-      padding: 18px 16px 14px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 12px 10px;
       text-decoration: none !important;
       border-bottom: 1px solid rgba(255,255,255,.08);
       flex-shrink: 0;
     }
     .sb-brand-icon {
-      width: 38px; height: 38px; border-radius: 10px;
+      width: 32px; height: 32px; border-radius: 8px;
       background: rgba(255,255,255,.08);
       display: flex; align-items: center; justify-content: center;
       overflow: hidden; flex-shrink: 0;
     }
     .sb-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
     .sb-brand-name {
-      font-weight: 700; font-size: 1rem; color: #fff; line-height: 1.2;
+      font-weight: 700; font-size: .9rem; color: #fff; line-height: 1.15;
     }
     .sb-brand-badge {
-      font-size: .6rem; font-weight: 700;
-      letter-spacing: .06em; text-transform: uppercase;
-      padding: 2px 7px; border-radius: 999px;
+      font-size: .55rem; font-weight: 700;
+      letter-spacing: .05em; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 999px;
       background: rgba(20,184,166,.22); color: #5eead4;
-      width: fit-content; margin-top: 2px;
+      width: fit-content; margin-top: 1px;
     }
 
     .sb-section {
-      padding: 14px 16px 6px;
-      font-size: .65rem;
+      padding: 8px 12px 3px;
+      font-size: .6rem;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      color: rgba(255,255,255,.4);
+      letter-spacing: .07em;
+      color: rgba(255,255,255,.38);
       font-weight: 600;
     }
 
     .sb-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 14px;
-      margin: 1px 8px;
-      border-radius: 10px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px;
+      margin: 0 6px;
+      border-radius: 8px;
       color: rgba(255,255,255,.75);
       text-decoration: none !important;
-      font-size: .875rem; font-weight: 500;
+      font-size: .8rem; font-weight: 500;
       transition: background .15s, color .15s;
     }
-    .sb-link i { font-size: 1.05rem; width: 1.2rem; text-align: center; flex-shrink: 0; }
+    .sb-link i { font-size: .95rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
     .sb-link:hover { background: rgba(255,255,255,.08); color: #fff; }
     .sb-link.active {
       background: rgba(20,184,166,.22);
@@ -140,14 +142,14 @@
     /* Footer usuario */
     #gi-sidebar-bottom {
       flex-shrink: 0;
-      padding: 10px 12px 14px;
+      padding: 8px 10px 10px;
       border-top: 1px solid rgba(255,255,255,.08);
       position: relative;
     }
     .sb-user-card {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px;
-      border-radius: 12px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px;
+      border-radius: 10px;
       background: rgba(255,255,255,.06);
       cursor: pointer;
       position: relative;
@@ -155,7 +157,7 @@
     }
     .sb-user-card:hover { background: rgba(255,255,255,.1); }
     .sb-avatar {
-      width: 34px; height: 34px; border-radius: 10px;
+      width: 30px; height: 30px; border-radius: 8px;
       background: linear-gradient(135deg, #14b8a6, #0d9488);
       color: #fff; font-weight: 700; font-size: .85rem;
       display: flex; align-items: center; justify-content: center;
@@ -164,7 +166,7 @@
     .sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .sb-user-info { flex: 1; min-width: 0; }
     .sb-name {
-      font-size: .8rem; font-weight: 600; color: #fff;
+      font-size: .75rem; font-weight: 600; color: #fff;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .sb-role {
@@ -345,7 +347,7 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado) {
       </div>
     </a>
 
-    <div style="overflow-y:auto; flex:1; padding-bottom:8px;">
+    <div style="overflow-y:auto; flex:1; padding-bottom:4px; scrollbar-width:none; -ms-overflow-style:none;">
       <div class="sb-section">General</div>
       ${links.filter(l => !l.soloAdmin || esAdmin).map(renderLink).join('')}
       ${adminSection}
