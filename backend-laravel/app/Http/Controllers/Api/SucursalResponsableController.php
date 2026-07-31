@@ -18,7 +18,9 @@ class SucursalResponsableController extends Controller
     public function index()
     {
         try {
+            $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
             $sucursales = Ciudad::query()
+                ->whereIn('nombre', $permitidas)
                 ->orderBy('nombre')
                 ->get(['id_ciudad', 'id_provincia', 'nombre', 'latitud_ref', 'longitud_ref']);
 
@@ -110,6 +112,14 @@ class SucursalResponsableController extends Controller
             }
 
             $idCiudad  = (int) $request->id_ciudad;
+            $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
+            $nombreCiudad = Ciudad::where('id_ciudad', $idCiudad)->value('nombre');
+            if (! in_array($nombreCiudad, $permitidas, true)) {
+                return response()->json([
+                    'ok' => false,
+                    'mensaje' => 'Solo se permiten las sucursales: Salinas, La Libertad, Santa Elena y Quito.',
+                ], 422);
+            }
             $idUsuario = (int) $request->id_usuario;
 
             $usuario = Usuario::find($idUsuario);

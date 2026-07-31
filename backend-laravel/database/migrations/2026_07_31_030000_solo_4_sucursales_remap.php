@@ -54,9 +54,18 @@ return new class extends Migration
             return;
         }
 
-        // Desactivar el resto
+        // Desactivar el resto y renombrar para que no confundan en listados viejos
         if (Schema::hasColumn('ciudades', 'activo')) {
             DB::table('ciudades')->whereNotIn('id_ciudad', $idsOk)->update(['activo' => 0]);
+        }
+        // Prefijo [INACTIVA] en nombre de las no permitidas (idempotente)
+        $otrasCiudades = DB::table('ciudades')->whereNotIn('id_ciudad', $idsOk)->get(['id_ciudad', 'nombre']);
+        foreach ($otrasCiudades as $oc) {
+            $nom = (string) $oc->nombre;
+            if (! str_starts_with($nom, '[INACTIVA]')) {
+                DB::table('ciudades')->where('id_ciudad', $oc->id_ciudad)
+                    ->update(['nombre' => '[INACTIVA] ' . $nom]);
+            }
         }
 
         // Remapear zonas de otras ciudades → ciclo entre las 4
