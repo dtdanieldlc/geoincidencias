@@ -147,11 +147,8 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
   }
   const usuarioActual = getUsuario();
   const esAdmin = usuarioActual.rol === 'admin' || usuarioActual.rol === 'superadmin';
+  const esEncargado = usuarioActual.rol === 'encargado';
   const html = datos.map((inc,i) => {
-    const monto = incentivosPorPrioridad[inc.prioridad] || 0;
-    const yaApoya = misApoyosSet.has(inc.id_incidencia);
-    const puedeApoyar = inc.estado !== 'Cerrado' && !yaApoya;
-
     return `
     <tr style="border-color:#e2e8f0;">
       <td class="border-secondary text-secondary small">${(pagina-1)*por_pagina+i+1}</td>
@@ -169,8 +166,8 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
         <div class="d-flex gap-1 flex-wrap">
           <button class="btn btn-sm btn-outline-light" title="Ver detalle / fotos / comentarios" onclick="abrirVer(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
           ${esAdmin ? `<button class="btn btn-sm btn-outline-secondary" title="Descargar ficha (PDF)" onclick="descargarFichaPdf(${inc.id_incidencia})"><i class="bi bi-file-earmark-pdf"></i></button>` : ''}
-          ${puedeApoyar ? `<button class="btn btn-sm btn-outline-danger" title="Apoyar ($${monto})" onclick="window.location.href='mis-apoyos.html'"><i class="bi bi-hand-thumbs-up"></i></button>` : ''}
-          ${(esAdmin && misPermisosIncidencias.puede_editar) ? `<button class="btn btn-sm btn-outline-primary" title="Editar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
+          
+          ${((esAdmin && misPermisosIncidencias.puede_editar) || esEncargado) ? `<button class="btn btn-sm btn-outline-primary" title="Gestionar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
           ${(esAdmin && misPermisosIncidencias.puede_eliminar) ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
         </div>
       </td>
@@ -232,16 +229,9 @@ async function poblarSelect(url, selectId) {
 }
 
 async function cargarIncentivosYApoyos() {
-  try {
-    const [rInc, rApoyos] = await Promise.all([
-      fetchAPI(`${API}/catalogos/incentivos`),
-      fetchAPI(`${API}/apoyos/mis-apoyos`),
-    ]);
-    const incentivos = await rInc.json();
-    incentivos.forEach(i => incentivosPorPrioridad[i.prioridad] = i.monto);
-    const misApoyos = await rApoyos.json();
-    misApoyosSet = new Set(misApoyos.map(a => a.id_incidencia));
-  } catch(e) {}
+  // Módulo de apoyos/incentivos retirado del proyecto
+  incentivosPorPrioridad = {};
+  misApoyosSet = new Set();
 }
 
 // ── Abrir modal editar ──
