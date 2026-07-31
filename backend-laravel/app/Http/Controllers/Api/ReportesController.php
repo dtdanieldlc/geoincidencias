@@ -257,4 +257,104 @@ class ReportesController extends Controller
 
         return $pdf->download('detalle-incidencias-geoincidencias-' . now()->format('Y-m-d') . '.pdf');
     }
+
+
+    /**
+     * Incidencias del área del encargado (o todas si admin/superadmin),
+     * filtrables por rango de fechas. Por defecto últimos 30 días.
+     */
+    public function misResoluciones(Request $request)
+    {
+        $usuario = $request->user();
+        $desde = $request->query('desde') ?: now()->subDays(30)->toDateString();
+        $hasta = $request->query('hasta') ?: now()->toDateString();
+
+        $q = DB::table('incidencias as i')
+            ->leftJoin('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
+            ->leftJoin('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
+            ->leftJoin('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->leftJoin('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->leftJoin('departamentos as d', 'i.id_departamento', '=', 'd.id_departamento')
+            ->whereDate('i.fecha_ocurrencia', '>=', $desde)
+            ->whereDate('i.fecha_ocurrencia', '<=', $hasta)
+            ->whereIn('e.nombre', ['Resuelto', 'Cerrado', 'En proceso', 'Pendiente']);
+
+        if ($usuario->rol === 'encargado') {
+            $ids = $usuario->idsDepartamentosEncargados();
+            if (empty($ids)) {
+                return response()->json(['datos' => [], 'total' => 0, 'desde' => $desde, 'hasta' => $hasta]);
+            }
+            $q->whereIn('i.id_departamento', $ids);
+        }
+
+        $datos = $q->orderByDesc('i.fecha_ocurrencia')
+            ->select([
+                'i.id_incidencia', 'i.titulo', 'i.prioridad',
+                'e.nombre as estado', 'ti.nombre as tipo',
+                'c.nombre as sucursal', 'z.nombre as zona',
+                'd.nombre as departamento',
+                'i.fecha_ocurrencia', 'i.fecha_resolucion',
+                'i.reportante_nombre',
+            ])
+            ->get();
+
+        $resueltas = $datos->whereIn('estado', ['Resuelto', 'Cerrado'])->count();
+
+        return response()->json([
+            'datos' => $datos,
+            'total' => $datos->count(),
+            'resueltas' => $resueltas,
+            'desde' => $desde,
+            'hasta' => $hasta,
+        ]);
+    }
+
+    public function misResolucionesPdf(Request $request)
+    {
+        $usuario = $request->user();
+        $desde = $request->query('desde') ?: now()->subDays(30)->toDateString();
+        $hasta = $request->query('hasta') ?: now()->toDateString();
+
+        $q = DB::table('incidencias as i')
+            ->leftJoin('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
+            ->leftJoin('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
+            ->leftJoin('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->leftJoin('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->leftJoin('departamentos as d', 'i.id_departamento', '=', 'd.id_departamento')
+            ->whereDate('i.fecha_ocurrencia', '>=', $desde)
+            ->whereDate('i.fecha_ocurrencia', '<=', $hasta);
+
+        if ($usuario->rol === 'encargado') {
+            $ids = $usuario->idsDepartamentosEncargados();
+            if (empty($ids)) {
+                $ids = [-1];
+            }
+            $q->whereIn('i.id_departamento', $ids);
+        }
+
+        $incidencias = $q->orderByDesc('i.fecha_ocurrencia')
+            ->select([
+                'i.id_incidencia', 'i.titulo', 'i.prioridad',
+                'e.nombre as estado', 'ti.nombre as tipo',
+                'c.nombre as sucursal', 'z.nombre as zona',
+                'd.nombre as departamento',
+                'i.fecha_ocurrencia', 'i.fecha_resolucion',
+                'i.reportante_nombre',
+            ])
+            ->get();
+
+        $nombre = trim(($usuario->nombre ?? '') . ' ' . ($usuario->apellido ?? ''));
+        $html = view('reportes.pdf-mis-resoluciones', [
+            'incidencias' => $incidencias,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'generadoEn' => now()->format('d/m/Y H:i'),
+            'generadoPor' => $nombre,
+            'rol' => $usuario->rol,
+        ])->render();
+
+        $pdf = Pdf::loadHTML($html)->setPaper('a4', 'landscape');
+        return $pdf->download('resoluciones-' . now()->format('Y-m-d') . '.pdf');
+    }
+
 }

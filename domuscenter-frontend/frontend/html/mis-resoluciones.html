@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="icon" type="image/png" href="../img/logo_domus_center.png">
+  <title>DomusCenter – Mis resoluciones</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/domus.css"/>
+</head>
+<body>
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0">Mis resoluciones</h4>
+      <small class="text-secondary">Incidencias de tu departamento · exporta PDF por rango de fechas</small>
+    </div>
+    <button class="btn btn-danger btn-sm" id="btnPdf" onclick="descargarPdf()">
+      <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
+    </button>
+  </div>
+
+  <div class="rounded-3 border bg-white p-3 mb-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label small text-secondary mb-1">Desde</label>
+        <input type="date" id="desde" class="form-control form-control-sm"/>
+      </div>
+      <div class="col-auto">
+        <label class="form-label small text-secondary mb-1">Hasta</label>
+        <input type="date" id="hasta" class="form-control form-control-sm"/>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-sm btn-outline-secondary" onclick="cargar()">Aplicar</button>
+      </div>
+      <div class="col-auto">
+        <select id="periodoRapido" class="form-select form-select-sm" onchange="periodoRapido()">
+          <option value="30">Últimos 30 días</option>
+          <option value="7">Últimos 7 días</option>
+          <option value="90">Últimos 90 días</option>
+          <option value="365">Último año</option>
+        </select>
+      </div>
+      <div class="col-auto ms-auto">
+        <span class="badge bg-secondary bg-opacity-10 text-secondary border" id="lblTotal">0</span>
+        <span class="badge bg-success bg-opacity-10 text-success border ms-1" id="lblResueltas">0 resueltas</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-3 border bg-white overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>#</th><th>Título</th><th>Tipo</th><th>Depto</th><th>Sucursal</th>
+            <th>Prioridad</th><th>Estado</th><th>Ocurrencia</th><th>Resolución</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="9" class="text-center text-secondary py-4">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="./js/auth-guard.js"></script>
+<script src="./js/sidebar.js"></script>
+<script src="./js/mis-resoluciones.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => initSidebar('mis-resoluciones'));</script>
+</body>
+</html>

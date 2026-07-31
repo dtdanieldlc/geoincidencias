@@ -20,6 +20,12 @@ function exigirAdmin() {
   if (!u || (u.rol !== 'admin' && u.rol !== 'superadmin')) window.location.href = 'incidencias.html';
 }
 
+function exigirStaff() {
+  exigirSesion();
+  const u = getUsuario();
+  if (!u || !['admin','superadmin','encargado'].includes(u.rol)) window.location.href = 'incidencias.html';
+}
+
 function exigirSuperAdmin() {
   exigirSesion();
   const u = getUsuario();

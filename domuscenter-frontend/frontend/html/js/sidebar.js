@@ -346,6 +346,9 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado) {
     <a class="sb-link ${paginaActiva==='incidencias'||paginaActiva==='admin'?'active':''}" href="incidencias.html">
       <i class="bi bi-inbox"></i><span>Cola de trabajo</span>
     </a>
+    <a class="sb-link ${paginaActiva==='mis-resoluciones'?'active':''}" href="mis-resoluciones.html">
+      <i class="bi bi-file-earmark-pdf"></i><span>Mis resoluciones</span>
+    </a>
     <a class="sb-link ${paginaActiva==='mensajes'?'active':''}" href="mensajes.html">
       <i class="bi bi-chat-dots"></i><span>Mensajes</span>
     </a>
@@ -406,6 +409,7 @@ const _TITULOS = {
   'admin':       'Panel de Administración',
   'historial':   'Historial de Actividad',
   'superadmin':  'Solicitudes y Permisos',
+  'mis-resoluciones': 'Mis resoluciones',
 };
 
 // ════════════════════════════════════════════════════════

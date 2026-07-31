@@ -29,8 +29,10 @@ class ChatController extends Controller
             ->where('activo', true)
             ->select(['id_usuario', 'nombre', 'apellido', 'correo', 'rol', 'foto_url']);
 
-        $esAdmin = in_array($yo->rol, ['admin', 'superadmin'], true);
-        if (! $esAdmin) {
+        $esStaff = in_array($yo->rol, ['admin', 'superadmin', 'encargado'], true);
+        if ($esStaff) {
+            $query->whereIn('rol', ['admin', 'superadmin', 'encargado']);
+        } else {
             $query->whereIn('rol', ['admin', 'superadmin']);
         }
 

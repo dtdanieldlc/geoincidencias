@@ -136,12 +136,46 @@ class Usuario extends Authenticatable
     {
         try {
             if (! \Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')) {
-                return [];
+                return $this->idsDepartamentosPorNombreFallback();
             }
-            return DepartamentoResponsable::where('id_usuario', $this->id_usuario)
+            $ids = \Illuminate\Support\Facades\DB::table('departamento_responsables')
+                ->where('id_usuario', $this->id_usuario)
                 ->pluck('id_departamento')
                 ->map(fn ($id) => (int) $id)
+                ->values()
                 ->all();
+            if (! empty($ids)) {
+                return $ids;
+            }
+            return $this->idsDepartamentosPorNombreFallback();
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->idsDepartamentosPorNombreFallback();
+        }
+    }
+
+    /** Fallback: buscar departamento por apellido o correo del encargado */
+    private function idsDepartamentosPorNombreFallback(): array
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('departamentos')) {
+                return [];
+            }
+            $q = \Illuminate\Support\Facades\DB::table('departamentos')->where('activo', 1);
+            $ap = trim((string) ($this->apellido ?? ''));
+            $correo = (string) ($this->correo ?? '');
+            if ($ap !== '') {
+                $q->where(function ($w) use ($ap) {
+                    $w->where('nombre', 'like', '%' . $ap . '%')
+                      ->orWhere('nombre', 'like', '%' . explode(' ', $ap)[0] . '%');
+                });
+            } elseif (preg_match('/encargado\.([a-z]+)@/i', $correo, $m)) {
+                $slug = $m[1];
+                $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(nombre,' ',''),'á','a'),'é','e')) LIKE ?", ['%' . $slug . '%']);
+            } else {
+                return [];
+            }
+            return $q->pluck('id_departamento')->map(fn ($id) => (int) $id)->values()->all();
         } catch (\Throwable $e) {
             report($e);
             return [];

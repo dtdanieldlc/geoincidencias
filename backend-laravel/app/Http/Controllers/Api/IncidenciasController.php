@@ -56,7 +56,8 @@ public function index(Request $request)
     $query = $this->baseQuery();
 
     $verTodas = $request->boolean('todas') && in_array($usuario->rol, ['admin', 'superadmin'], true);
-    if (! $verTodas) {
+    // Encargado aplica su propio filtro de estado_aprobacion más abajo
+    if (! $verTodas && $usuario->rol !== 'encargado') {
         $query->where('incidencias.estado_aprobacion', 'aprobada');
     }
 
@@ -77,15 +78,21 @@ public function index(Request $request)
         }
     }
 
-    // Encargado de departamento: solo incidencias de sus departamentos
+    // Encargado de departamento: incidencias de su(s) área(s).
+    // También ve casos SIN departamento asignado (para que la cola no quede vacía
+    // si al registrar no eligieron departamento).
     if ($usuario->rol === 'encargado') {
         $idsDept = $usuario->idsDepartamentosEncargados();
         if (empty($idsDept)) {
-            $query->whereRaw('1 = 0');
+            // Sin asignación: igual puede ver las no asignadas a ningún depto
+            $query->whereNull('incidencias.id_departamento');
         } else {
-            $query->whereIn('incidencias.id_departamento', $idsDept);
+            $query->where(function ($q) use ($idsDept) {
+                $q->whereIn('incidencias.id_departamento', $idsDept)
+                  ->orWhereNull('incidencias.id_departamento');
+            });
         }
-        // Ve pendientes de revisión y aprobadas de su área
+        // Solo estados de trabajo (no rechazadas)
         $query->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision']);
     }
 

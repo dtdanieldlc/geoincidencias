@@ -58,13 +58,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('chat/usuarios', [ChatController::class, 'usuarios']);
 
     // ── Chat / Mensajería — exclusivo Admin/Superadmin (HU-02) ──────
-    Route::middleware('solo.admin')->group(function () {
+    Route::middleware('solo.staff')->group(function () {
         Route::get('chat/conversaciones',                 [ChatController::class, 'conversaciones']);
         Route::get('chat/conversaciones/{id}/mensajes',   [ChatController::class, 'mensajes']);
         Route::post('chat/mensajes',                      [ChatController::class, 'enviar']);
         Route::post('chat/mensajes/imagen',               [ChatController::class, 'enviarImagen']);
         Route::post('chat/escribiendo',                    [ChatController::class, 'escribiendo']);
         Route::post('chat/pusher-auth',                   [ChatController::class, 'pusherAuth']);
+
+        Route::get('reportes/mis-resoluciones',     [ReportesController::class, 'misResoluciones']);
+        Route::get('reportes/mis-resoluciones/pdf', [ReportesController::class, 'misResolucionesPdf']);
     });
 
     // ── Reportar / denunciar usuarios (cualquier rol) ───────────────
