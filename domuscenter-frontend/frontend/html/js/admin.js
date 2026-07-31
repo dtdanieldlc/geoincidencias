@@ -597,11 +597,13 @@ function aplicarFiltros() {
     const r = document.getElementById('filtRol').value;
     const v = document.getElementById('filtVerif').value;
     const dep = document.getElementById('filtDepartamento')?.value || '';
+    const suc = document.getElementById('filtSucursal')?.value || '';
     if (b) uFiltros.buscar     = b;
     if (a) uFiltros.activo     = a;
     if (r) uFiltros.rol        = r;
     if (v) uFiltros.verificado = v;
     if (dep) uFiltros.departamento = dep;
+    if (suc) uFiltros.sucursal = suc;
     cargarUsuarios(1);
   }, 350);
 }
@@ -624,8 +626,58 @@ function limpiarFiltros() {
   document.getElementById('filtVerif').value  = '';
   const dep = document.getElementById('filtDepartamento');
   if (dep) { dep.value = ''; dep.disabled = false; }
+  const suc = document.getElementById('filtSucursal');
+  if (suc) suc.value = '';
   uFiltros = {};
   cargarUsuarios(1);
+}
+
+
+async function configurarFiltrosUsuariosPorRol() {
+  const u = getUsuario();
+  const esSuper = u && u.rol === 'superadmin';
+  const esAdmin = u && u.rol === 'admin';
+  const selSuc = document.getElementById('filtSucursal');
+  const selDep = document.getElementById('filtDepartamento');
+  const selRol = document.getElementById('filtRol');
+
+  // Superadmin: ve filtro sucursal + departamento + todos los roles
+  // Admin: solo usuarios de su sucursal (backend); sin filtro sucursal ni depto
+  if (selSuc) {
+    if (esSuper) {
+      selSuc.classList.remove('d-none');
+      if (selSuc.options.length <= 1) {
+        try {
+          const r = await fetch(`${API}/catalogos/sucursales`, { headers: headers() });
+          const datos = await r.json();
+          (Array.isArray(datos) ? datos : []).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.nombre;
+            selSuc.appendChild(opt);
+          });
+        } catch (e) {}
+      }
+    } else {
+      selSuc.classList.add('d-none');
+      selSuc.value = '';
+    }
+  }
+  if (selDep) {
+    if (esSuper) {
+      selDep.classList.remove('d-none');
+    } else {
+      selDep.classList.add('d-none');
+      selDep.value = '';
+    }
+  }
+  // Admin no necesita filtrar por encargado/superadmin de otras sedes
+  if (selRol && esAdmin && !esSuper) {
+    // dejar opciones pero ocultar superadmin
+    [...selRol.options].forEach(o => {
+      if (o.value === 'superadmin') o.hidden = true;
+    });
+  }
 }
 
 async function cargarFiltroDepartamentos() {
@@ -891,6 +943,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('filtBuscar').addEventListener('input',    aplicarFiltros);
   document.getElementById('filtActivo').addEventListener('change',   aplicarFiltros);
   document.getElementById('filtDepartamento')?.addEventListener('change', aplicarFiltros);
+  document.getElementById('filtSucursal')?.addEventListener('change', aplicarFiltros);
   document.getElementById('filtRol').addEventListener('change',      aplicarFiltros);
   document.getElementById('filtVerif').addEventListener('change',    aplicarFiltros);
   document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);

@@ -14,12 +14,51 @@ class AdminUsuariosController extends Controller
     // ──────────────────────────────────────────────────────────────
     public function index(Request $request)
     {
+        $admin = $request->user();
         $query = Usuario::query()->select([
             'id_usuario', 'nombre', 'apellido', 'correo', 'rol',
             'telefono', 'activo', 'saldo_incentivos',
             'correo_verificado', 'correo_verificado_at', 'created_at',
-            'ultima_presencia_at', 'ultima_pagina',
+            'ultima_presencia_at', 'ultima_pagina', 'id_ciudad',
         ]);
+
+        // Admin de sucursal: solo usuarios de SUS sucursales
+        if ($admin && $admin->rol === 'admin') {
+            $idsCiudad = $admin->idsCiudadesEncargadas();
+            if (empty($idsCiudad)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where(function ($q) use ($idsCiudad) {
+                    $q->whereIn('id_ciudad', $idsCiudad);
+                    // También encargados asignados a esas sucursales
+                    if (\Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('departamento_responsables', 'id_ciudad')) {
+                        $q->orWhereIn('id_usuario', function ($sub) use ($idsCiudad) {
+                            $sub->select('id_usuario')
+                                ->from('departamento_responsables')
+                                ->whereIn('id_ciudad', $idsCiudad);
+                        });
+                    }
+                });
+            }
+        }
+
+        // Superadmin: filtro opcional por sucursal
+        if ($admin && $admin->rol === 'superadmin') {
+            if ($sucursal = $request->query('sucursal')) {
+                $query->where(function ($q) use ($sucursal) {
+                    $q->where('id_ciudad', $sucursal);
+                    if (\Illuminate\Support\Facades\Schema::hasTable('departamento_responsables')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('departamento_responsables', 'id_ciudad')) {
+                        $q->orWhereIn('id_usuario', function ($sub) use ($sucursal) {
+                            $sub->select('id_usuario')
+                                ->from('departamento_responsables')
+                                ->where('id_ciudad', $sucursal);
+                        });
+                    }
+                });
+            }
+        }
 
         if ($buscar = $request->query('buscar')) {
             $query->where(function ($q) use ($buscar) {
