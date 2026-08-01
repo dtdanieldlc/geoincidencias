@@ -31,40 +31,24 @@ function tienePermiso(modulo, accion = 'ver') {
 function aplicarVisibilidadPorPermisos() {
   if (esSuperAdminActual()) return; // el superadmin ve y puede todo, sin restricciones
 
-  const mapaTabs = [
-    { tabId: 'tabIncidenciasBtn', linkId: 'linkAdmin',    modulo: 'incidencias', tab: 'incidencias' },
-    { tabId: 'tabUsuariosBtn',    linkId: 'linkUsuarios', modulo: 'usuarios',    tab: 'usuarios'     },
-    { tabId: 'tabDepartamentosBtn', linkId: null, modulo: 'incidencias', tab: 'departamentos' },
-    { tabId: 'tabSucursalesBtn',    linkId: null, modulo: 'incidencias', tab: 'sucursales' },
-  ];
+  // Módulos base del admin: SIEMPRE visibles (no dependen de permisos granulares)
+  // incidencias, usuarios, departamentos, historial
+  const asegurarVisible = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  };
+  ['tabIncidenciasBtn', 'linkAdmin', 'tabUsuariosBtn', 'linkUsuarios',
+   'tabDepartamentosBtn', 'linkDepartamentos', 'linkHistorial'].forEach(asegurarVisible);
 
-  let primerTabVisible = null;
-  mapaTabs.forEach(({ tabId, linkId, modulo, tab }) => {
-    const puedeVer = tienePermiso(modulo, 'ver');
-    const tabBtn = document.getElementById(tabId);
-    const link = document.getElementById(linkId);
-    if (tabBtn) tabBtn.style.display = puedeVer ? '' : 'none';
-    if (link) link.style.display = puedeVer ? '' : 'none';
-    if (puedeVer && !primerTabVisible) primerTabVisible = tab;
-  });
-
-  // Historial no es un tab dentro de admin.html, es un link a otra página
-  const linkHistorial = document.getElementById('linkHistorial');
-  if (linkHistorial) linkHistorial.style.display = tienePermiso('historial', 'ver') ? '' : 'none';
-
-  // Sucursales: exclusivo Superadmin (admins no gestionan encargados)
+  // Sucursales: exclusivo Superadmin
   const tabSuc = document.getElementById('tabSucursalesBtn');
-  if (tabSuc) tabSuc.style.display = esSuperAdminActual() ? '' : 'none';
+  if (tabSuc) tabSuc.style.display = 'none';
   const panelSuc = document.getElementById('panelSucursales');
-  if (panelSuc && !esSuperAdminActual()) panelSuc.style.display = 'none';
+  if (panelSuc) panelSuc.style.display = 'none';
+  const linkSuc = document.getElementById('linkSucursales');
+  if (linkSuc) linkSuc.style.display = 'none';
 
-  // Departamentos: admin puede VER el catálogo; solo superadmin crea/edita
-  // (botones se ocultan en cargarDepartamentos)
-
-  // Si la pestaña activa por defecto (incidencias) no tiene permiso de ver, cambia a la primera disponible
-  if (!tienePermiso('incidencias', 'ver')) {
-    cambiarTab(primerTabVisible || 'incidencias');
-  }
+  // Permisos: solo admin (no superadmin) — ya se controla en initUsuarioActual
 }
 
 /* ══════════════════════════════════════════════════════════

@@ -580,6 +580,8 @@ const _MODULO_POR_LINK_ID = {
 };
 
 async function _filtrarModulosPorPermisos() {
+  // Módulos base del admin siempre visibles: Incidencias, Usuarios, Departamentos, Historial, Permisos
+  // Solo se ocultan módulos opcionales si el backend lo indica (ej. incentivos retirados)
   try {
     const r = await fetch(`${API}/mis-permisos`, {
       headers: { Authorization: `Bearer ${getToken()}` },
@@ -587,19 +589,36 @@ async function _filtrarModulosPorPermisos() {
     const data = await r.json();
     const permisos = data.permisos ?? {};
 
+    const CORE = new Set(['incidencias', 'usuarios', 'permisos', 'departamentos', 'historial', 'admin']);
+
     document.querySelectorAll('#gi-sidebar .sb-link').forEach(a => {
+      const id = a.id || '';
+      // Nunca ocultar links base
+      if (['linkAdmin', 'linkUsuarios', 'linkPermisos', 'linkDepartamentos', 'linkHistorial'].includes(id)) {
+        a.style.display = '';
+        return;
+      }
       const onclick = a.getAttribute('onclick') || '';
       const match = onclick.match(/cambiarTab\('(\w+)'\)/);
-      if (!match) return;
-      const tabId = match[1];
-      if (tabId === 'permisos') return; // esa siempre visible para admin
-      const modulo = _MODULO_POR_LINK_ID[tabId];
+      if (match) {
+        const tabId = match[1];
+        if (CORE.has(tabId)) {
+          a.style.display = '';
+          return;
+        }
+      }
+      // Opcionales por permiso
+      const modulo = _MODULO_POR_LINK_ID[a.id] || (match ? _MODULO_POR_LINK_ID[match[1]] : null);
       if (!modulo) return;
+      if (CORE.has(modulo)) {
+        a.style.display = '';
+        return;
+      }
       const tienePermiso = permisos[modulo]?.puede_ver;
-      if (!tienePermiso) a.style.display = 'none';
+      if (tienePermiso === false) a.style.display = 'none';
     });
   } catch (e) {
-    // Si falla, no se oculta nada (fail-safe: mejor mostrar de más que bloquear el acceso)
+    // fail-safe: mostrar todo
   }
 }
 

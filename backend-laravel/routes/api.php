@@ -134,8 +134,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/vencidas',   [DashboardController::class, 'vencidas']);
 
     // ── Historial & Notificaciones ───────────────────────────────
-    Route::get('historial',                   [HistorialController::class, 'index'])->middleware(['solo.admin', 'permiso:historial,ver']);
-    Route::get('historial/acciones',          [HistorialController::class, 'acciones'])->middleware(['solo.admin', 'permiso:historial,ver']);
+    Route::get('historial',                   [HistorialController::class, 'index'])->middleware(['solo.admin']);
+    Route::get('historial/acciones',          [HistorialController::class, 'acciones'])->middleware(['solo.admin']);
     Route::get('notificaciones',              [NotificacionesController::class, 'index']);
     Route::get('notificaciones/no-leidas',    [NotificacionesController::class, 'noLeidas']);
     Route::put('notificaciones/{id}/leida',   [NotificacionesController::class, 'marcarLeida']);
@@ -173,8 +173,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('apoyos/pendientes',    [ApoyosController::class, 'pendientes'])->middleware('permiso:incentivos,ver');
         // Route::put('apoyos/{id}/aprobar',  [ApoyosController::class, 'aprobar'])->middleware('permiso:incentivos,editar');
         // Route::put('apoyos/{id}/rechazar', [ApoyosController::class, 'rechazar'])->middleware('permiso:incentivos,editar');
-        Route::get('historial',            [HistorialController::class, 'index'])->middleware('permiso:historial,ver');
-        Route::get('historial/acciones',   [HistorialController::class, 'acciones'])->middleware('permiso:historial,ver');
+        Route::get('historial',            [HistorialController::class, 'index']);
+        Route::get('historial/acciones',   [HistorialController::class, 'acciones']);
 
         // Solicitudes de permisos (admin solicita al superadmin)
         Route::get('solicitudes-permisos',  [PermisosController::class, 'misSolicitudes']);
