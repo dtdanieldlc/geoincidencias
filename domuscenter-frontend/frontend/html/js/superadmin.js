@@ -394,9 +394,18 @@ let _todosLosUsuariosReporte = [];
 async function cargarDetalleUsuarios() {
   const tbody = document.getElementById('tbodyDetalleUsuarios');
   try {
-    const r = await fetch(`${API}/superadmin/usuarios?por_pagina=200`, { headers: headers() });
-    const data = await r.json();
-    _todosLosUsuariosDetalle = data.data?.data ?? [];
+    let page = 1;
+    let lastPage = 1;
+    const todos = [];
+    do {
+      const r = await fetch(`${API}/superadmin/usuarios?por_pagina=200&page=${page}`, { headers: headers() });
+      const data = await r.json();
+      const items = data.data?.data ?? [];
+      todos.push(...items);
+      lastPage = data.data?.last_page ?? 1;
+      page++;
+    } while (page <= lastPage && page <= 20);
+    _todosLosUsuariosDetalle = todos;
     _detalleUsuariosCargados = true;
     _renderDetalleUsuarios(_todosLosUsuariosDetalle);
   } catch (e) {
@@ -413,6 +422,7 @@ function _renderDetalleUsuarios(lista) {
   const rolBadgeMap = {
     superadmin: '<span class="badge" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>',
     admin:      '<span class="badge" style="background:#f3e8fd;color:#a78bfa;">Admin</span>',
+    encargado:  '<span class="badge" style="background:#ecfdf5;color:#047857;">Encargado</span>',
     usuario:    '<span class="badge" style="background:#eef4f8;color:#64748b;">Usuario</span>',
   };
   tbody.innerHTML = lista.map((u, idx) => `
@@ -471,6 +481,7 @@ async function abrirModalDetalle(id) {
     document.getElementById('detallePregunta').value  = u.pregunta_secreta || '';
     document.getElementById('detalleRespuesta').value = u.respuesta_secreta || '';
     document.getElementById('detalleInfoExtra').value = `${u.rol} · registrado ${new Date(u.created_at).toLocaleDateString('es-EC')}`;
+    await _cargarSelectSucursalesDetalle(u.id_ciudad || '');
   } catch (e) {
     document.getElementById('msgDetalleUsuario').className = 'alert alert-danger py-2 small mt-3';
     document.getElementById('msgDetalleUsuario').textContent = 'Error al cargar los datos del usuario.';
@@ -492,6 +503,9 @@ async function guardarDetalle() {
     cedula:            document.getElementById('detalleCedula').value.trim(),
     pregunta_secreta:  document.getElementById('detallePregunta').value.trim(),
     respuesta_secreta: document.getElementById('detalleRespuesta').value.trim(),
+    id_ciudad:         document.getElementById('detalleSucursal')?.value
+                         ? parseInt(document.getElementById('detalleSucursal').value, 10)
+                         : null,
   };
 
   try {
@@ -649,6 +663,7 @@ function _renderReportesUsuario(lista) {
   const rolBadgeMap = {
     superadmin: '<span class="badge" style="background:#f3e8fd;color:#9333ea;">Superadmin</span>',
     admin:      '<span class="badge" style="background:#f3e8fd;color:#a78bfa;">Admin</span>',
+    encargado:  '<span class="badge" style="background:#ecfdf5;color:#047857;">Encargado</span>',
     usuario:    '<span class="badge" style="background:#eef4f8;color:#64748b;">Usuario</span>',
   };
   tbody.innerHTML = lista.map((u, idx) => `

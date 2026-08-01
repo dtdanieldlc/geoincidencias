@@ -168,6 +168,8 @@ function renderTabla({ datos, total, pagina, por_pagina }) {
           ${esAdmin ? `<button class="btn btn-sm btn-outline-secondary" title="Descargar ficha (PDF)" onclick="descargarFichaPdf(${inc.id_incidencia})"><i class="bi bi-file-earmark-pdf"></i></button>` : ''}
           
           ${((esAdmin && misPermisosIncidencias.puede_editar) || esEncargado) ? `<button class="btn btn-sm btn-outline-primary" title="Gestionar" onclick="abrirEditar(${inc.id_incidencia})"><i class="bi bi-pencil"></i></button>` : ''}
+          ${esEncargado && inc.estado === 'Pendiente' ? `<button class="btn btn-sm btn-outline-warning" title="Marcar En proceso" onclick="cambiarEstadoRapido(${inc.id_incidencia},'En proceso')"><i class="bi bi-play-fill"></i></button>` : ''}
+          ${esEncargado && (inc.estado === 'Pendiente' || inc.estado === 'En proceso') ? `<button class="btn btn-sm btn-outline-success" title="Marcar Resuelto" onclick="cambiarEstadoRapido(${inc.id_incidencia},'Resuelto')"><i class="bi bi-check-lg"></i></button>` : ''}
           ${(esAdmin && misPermisosIncidencias.puede_eliminar) ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="abrirEliminar(${inc.id_incidencia},'${inc.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
         </div>
       </td>
@@ -563,5 +565,46 @@ async function eliminarEvidencia(idEvidencia) {
     }
   } catch {
     mostrarAlerta('Error de conexión.', 'danger');
+  }
+}
+
+
+async function cambiarEstadoRapido(id, nombreEstado) {
+  try {
+    // Resolver id_estado desde catálogo en el select de edición o facetas
+    let idEstado = null;
+    const sel = document.getElementById('edit_id_estado') || document.getElementById('filtroEstado');
+    if (sel) {
+      for (const opt of sel.options) {
+        if ((opt.textContent || '').trim().toLowerCase() === nombreEstado.toLowerCase()) {
+          idEstado = opt.value;
+          break;
+        }
+      }
+    }
+    if (!idEstado) {
+      // fallback: cargar estados
+      const r = await fetchAPI(`${API}/catalogos/estados`);
+      const estados = await r.json();
+      const found = (Array.isArray(estados) ? estados : []).find(e => (e.nombre || '').toLowerCase() === nombreEstado.toLowerCase());
+      idEstado = found?.id ?? found?.id_estado;
+    }
+    if (!idEstado) {
+      alert('No se pudo resolver el estado: ' + nombreEstado);
+      return;
+    }
+    if (!confirm(`¿Cambiar la incidencia #${id} a "${nombreEstado}"?`)) return;
+    const res = await fetchAPI(`${API}/incidencias/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id_estado_actual: parseInt(idEstado, 10) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.mensaje || 'No se pudo actualizar el estado');
+      return;
+    }
+    if (typeof cargarIncidencias === 'function') cargarIncidencias();
+  } catch (e) {
+    alert(e.message || 'Error al cambiar estado');
   }
 }

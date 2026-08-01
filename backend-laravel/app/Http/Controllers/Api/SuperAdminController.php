@@ -19,7 +19,7 @@ class SuperAdminController extends Controller
             'id_usuario', 'nombre', 'apellido', 'correo', 'rol',
             'telefono', 'activo', 'saldo_incentivos',
             'correo_verificado', 'created_at',
-            'ultima_presencia_at', 'ultima_pagina',
+            'ultima_presencia_at', 'ultima_pagina', 'id_ciudad',
         ]);
 
         if ($buscar = $request->query('buscar')) {
@@ -34,9 +34,10 @@ class SuperAdminController extends Controller
             $query->where('rol', $rol);
         }
 
-        $usuarios = $query->orderByRaw("FIELD(rol,'superadmin','admin','usuario')")
-                          ->orderBy('created_at', 'desc')
-                          ->paginate(50);
+        $porPagina = min(max((int) $request->query('por_pagina', 200), 1), 500);
+        $usuarios = $query->orderByRaw("FIELD(rol,'superadmin','admin','encargado','usuario')")
+                          ->orderBy('id_usuario', 'asc')
+                          ->paginate($porPagina);
 
         return response()->json(['ok' => true, 'data' => $usuarios]);
     }
@@ -130,6 +131,7 @@ class SuperAdminController extends Controller
                 'respuesta_secreta'     => $usuario->respuesta_secreta,
                 'created_at'            => $usuario->created_at,
                 'ultima_presencia_at'   => $usuario->ultima_presencia_at,
+                'id_ciudad'             => $usuario->id_ciudad,
             ],
             'nota' => 'La contraseña está encriptada con bcrypt y no puede revertirse. Usa el campo de abajo para asignar una nueva.',
         ]);
@@ -148,6 +150,7 @@ class SuperAdminController extends Controller
             'nombre'            => 'required|string|max:100',
             'apellido'          => 'nullable|string|max:100',
             'correo'            => 'required|email|max:150|unique:usuarios,correo,' . $id . ',id_usuario',
+            'id_ciudad'         => 'nullable|integer|exists:ciudades,id_ciudad',
             'telefono'          => 'nullable|string|max:20',
             'cedula'            => 'nullable|string|max:10',
             'pregunta_secreta'  => 'nullable|string|max:255',
@@ -291,7 +294,7 @@ class SuperAdminController extends Controller
             $query->where('id_usuario', $idUsuario);
         }
 
-        $logs = $query->paginate(50);
+        $logs = $query->paginate(min(max((int) $request->query('por_pagina', 200), 1), 500));
 
         return response()->json(['ok' => true, 'data' => $logs]);
     }

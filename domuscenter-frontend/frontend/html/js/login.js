@@ -222,3 +222,25 @@ async function cargarSucursalesRegistro() {
   }
 }
 cargarSucursalesRegistro();
+
+
+// Enter en correo/contraseña inicia sesión
+document.addEventListener('DOMContentLoaded', () => {
+  ['loginCorreo', 'loginPassword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        iniciarSesion();
+      }
+    });
+  });
+  const form = document.getElementById('formLogin');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      iniciarSesion();
+    });
+  }
+});
