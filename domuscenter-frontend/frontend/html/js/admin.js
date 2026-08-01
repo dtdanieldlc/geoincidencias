@@ -142,6 +142,17 @@ function cambiarTab(tab) {
 
   _resaltarSidebarSegunTab(tab);
 
+  // Mantener ?tab= en la URL para que el sidebar y F5 respeten la pestaña
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set('tab', tab);
+    history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+  } catch (e) { /* ignore */ }
+
+  if (tab === 'incidencias') {
+    if (typeof cargarIncidenciasPendientes === 'function') cargarIncidenciasPendientes();
+    if (typeof cargarTodasIncidencias === 'function') cargarTodasIncidencias(1);
+  }
   if (tab === 'usuarios') cargarUsuarios();
   if (tab === 'permisos' && typeof initPanelPermisos === 'function') initPanelPermisos();
   if (tab === 'departamentos' && typeof cargarDepartamentos === 'function') cargarDepartamentos();
@@ -152,7 +163,13 @@ function cambiarTab(tab) {
 // PÁGINA en la que estás, pero admin.html tiene 4 "páginas" en una sola
 // (pestañas). Acá se corrige a mano cuál link debe verse activo según
 // la pestaña realmente abierta.
-const TAB_A_LINK_ID = { incidencias: 'linkAdmin', usuarios: 'linkUsuarios', permisos: 'linkPermisos' };
+const TAB_A_LINK_ID = {
+  incidencias: 'linkAdmin',
+  usuarios: 'linkUsuarios',
+  permisos: 'linkPermisos',
+  departamentos: 'linkDepartamentos',
+  sucursales: 'linkSucursales',
+};
 function _resaltarSidebarSegunTab(tab) {
   document.querySelectorAll('#gi-sidebar .sb-link').forEach(a => a.classList.remove('active'));
   const el = document.getElementById(TAB_A_LINK_ID[tab]);
@@ -951,7 +968,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnConfirmarRechazoInc').addEventListener('click',   confirmarRechazoIncidencia);
   document.getElementById('btnConfirmarRechazoApoyo').addEventListener('click', confirmarRechazoApoyo);
 
-  // Si se llegó con ?tab=usuarios (o apoyos/permisos) desde otra página,
+  // Si se llegó con ?tab=... desde otra página o F5
   // abrir directamente ese panel en lugar de quedarse en "Incidencias".
   const tabSolicitado = new URLSearchParams(location.search).get('tab');
   if (tabSolicitado && document.getElementById(`tab${capitalize(tabSolicitado)}Btn`)) {

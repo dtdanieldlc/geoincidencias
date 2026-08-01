@@ -315,12 +315,18 @@ function _buildSidebarHTML(paginaActiva, esAdmin, esSuperAdmin, esEncargado) {
   ];
 
   const adminLinks = [
-    { id: 'admin',    href: 'admin.html',    icon: 'bi-inbox',        label: 'Incidencias',  linkId: 'linkAdmin',    badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>' },
-    { id: 'usuarios', href: 'admin.html?tab=usuarios',    icon: 'bi-people',       label: 'Usuarios',     linkId: 'linkUsuarios', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('usuarios');else location.href='admin.html?tab=usuarios';" },
-    { id: 'permisos', href: 'admin.html?tab=permisos',    icon: 'bi-key',          label: 'Solicitar Permisos', linkId: 'linkPermisos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('permisos');else location.href='admin.html?tab=permisos';" },
-    { id: 'departamentos', href: 'admin.html?tab=departamentos', icon: 'bi-diagram-3', label: 'Departamentos', onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('departamentos');else location.href='admin.html?tab=departamentos';" },
-    { id: 'sucursales', href: 'admin.html?tab=sucursales', icon: 'bi-building', label: 'Sucursales', soloSuperAdmin: true, onclick: "event.preventDefault();if(typeof cambiarTab==='function')cambiarTab('sucursales');else location.href='admin.html?tab=sucursales';" },
-    { id: 'historial',href: 'historial.html',icon: 'bi-clock-history',label: 'Historial',    linkId: 'linkHistorial' },
+    { id: 'admin', href: 'admin.html?tab=incidencias', icon: 'bi-inbox', label: 'Incidencias', linkId: 'linkAdmin',
+      badge: '<span class="sb-badge bg-danger text-white" id="sideIncBadge" style="display:none">0</span>',
+      onclick: "event.preventDefault();if(typeof cambiarTab==='function'){cambiarTab('incidencias');}else{location.href='admin.html?tab=incidencias';}" },
+    { id: 'usuarios', href: 'admin.html?tab=usuarios', icon: 'bi-people', label: 'Usuarios', linkId: 'linkUsuarios',
+      onclick: "event.preventDefault();if(typeof cambiarTab==='function'){cambiarTab('usuarios');}else{location.href='admin.html?tab=usuarios';}" },
+    { id: 'permisos', href: 'admin.html?tab=permisos', icon: 'bi-key', label: 'Solicitar Permisos', linkId: 'linkPermisos',
+      onclick: "event.preventDefault();if(typeof cambiarTab==='function'){cambiarTab('permisos');}else{location.href='admin.html?tab=permisos';}" },
+    { id: 'departamentos', href: 'admin.html?tab=departamentos', icon: 'bi-diagram-3', label: 'Departamentos', linkId: 'linkDepartamentos',
+      onclick: "event.preventDefault();if(typeof cambiarTab==='function'){cambiarTab('departamentos');}else{location.href='admin.html?tab=departamentos';}" },
+    { id: 'sucursales', href: 'admin.html?tab=sucursales', icon: 'bi-building', label: 'Sucursales', linkId: 'linkSucursales', soloSuperAdmin: true,
+      onclick: "event.preventDefault();if(typeof cambiarTab==='function'){cambiarTab('sucursales');}else{location.href='admin.html?tab=sucursales';}" },
+    { id: 'historial', href: 'historial.html', icon: 'bi-clock-history', label: 'Historial', linkId: 'linkHistorial' },
   ];
 
   const superAdminLinks = [
