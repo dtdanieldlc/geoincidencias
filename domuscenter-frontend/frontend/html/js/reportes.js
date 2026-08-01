@@ -18,10 +18,23 @@ let chartEstado, chartCategoria, chartPrioridad, chartTendencia, chartSucursal;
 // ── Período rápido ──
 function aplicarPeriodoRapido() {
   const dias = document.getElementById('periodoRapido').value;
-  if (!dias) return;
+  // Personalizado: no tocar fechas
+  if (dias === '') return;
+
+  // Todo el historial: rango amplio (sin NaN en fechas)
+  if (dias === 'all') {
+    document.getElementById('rDesde').value = '2020-01-01';
+    document.getElementById('rHasta').value = new Date().toISOString().split('T')[0];
+    cargarReportes();
+    return;
+  }
+
+  const n = parseInt(dias, 10);
+  if (!n || Number.isNaN(n)) return;
+
   const hasta = new Date();
   const desde = new Date();
-  desde.setDate(desde.getDate() - parseInt(dias));
+  desde.setDate(desde.getDate() - n);
   document.getElementById('rDesde').value = desde.toISOString().split('T')[0];
   document.getElementById('rHasta').value = hasta.toISOString().split('T')[0];
   cargarReportes();
