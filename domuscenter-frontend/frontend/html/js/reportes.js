@@ -379,5 +379,30 @@ function renderChartTendencia(datos) {
 inicializarBarraUsuario();
 poblarSelect(`${API}/catalogos/tipos`, 'rTipo');
 poblarSelect(`${API}/catalogos/zonas`, 'rZona');
-poblarSelect(`${API}/catalogos/sucursales`, 'rSucursal');
+
+(function ajustarFiltrosPorRol() {
+  const u = (typeof getUsuario === 'function') ? getUsuario() : JSON.parse(localStorage.getItem('gi_usuario') || '{}');
+  const esSuper = u && u.rol === 'superadmin';
+  // Admin de una sola sucursal: sin filtro de sucursal ni gráfica multi-sede
+  if (!esSuper) {
+    const wrap = document.getElementById('wrapFiltroSucursal');
+    if (wrap) wrap.style.display = 'none';
+    const sel = document.getElementById('rSucursal');
+    if (sel) sel.value = '';
+    // Ocultar bloque de gráfica por sucursal
+    const canvas = document.getElementById('chartSucursal');
+    if (canvas) {
+      const card = canvas.closest('.rounded-3, .card, .col-12, .col-lg-12, .col-lg-6') || canvas.parentElement;
+      if (card) card.style.display = 'none';
+    }
+    const sec = document.getElementById('seccionPorSucursal');
+    if (sec) {
+      const parent = sec.closest('.rounded-3, .card') || sec.parentElement;
+      if (parent) parent.style.display = 'none';
+    }
+  } else {
+    poblarSelect(`${API}/catalogos/sucursales`, 'rSucursal');
+  }
+})();
+
 aplicarPeriodoRapido();
