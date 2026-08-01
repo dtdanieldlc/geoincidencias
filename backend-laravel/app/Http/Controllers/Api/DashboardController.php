@@ -3,20 +3,50 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    // Horas máximas antes de considerar "vencida" una incidencia de prioridad
-    // Alta que sigue sin resolverse. Ajustable según el SLA real del cliente.
     const SLA_HORAS_ALTA = 48;
 
-    public function resumen()
+    /** IDs de ciudad visibles para el usuario autenticado (null = sin filtro / todo). */
+    private function ciudadesScope(?Request $request = null): ?array
     {
-        $r = DB::table('incidencias as i')
+        $user = $request ? $request->user() : auth()->user();
+        if (! $user) {
+            return null;
+        }
+        if ($user->rol === 'admin') {
+            $ids = $user->idsCiudadesEncargadas();
+            return $ids ?: [-1]; // sin sucursal = no ve nada
+        }
+        // superadmin y resto del staff con acceso al dashboard: todo
+        return null;
+    }
+
+    private function aplicarScopeCiudad($query, ?array $idsCiudad, string $zonaAlias = 'z')
+    {
+        if ($idsCiudad === null) {
+            return $query;
+        }
+        return $query->whereIn("{$zonaAlias}.id_ciudad", $idsCiudad);
+    }
+
+    public function resumen(Request $request)
+    {
+        $ids = $this->ciudadesScope($request);
+
+        $q = DB::table('incidencias as i')
             ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
-            ->where('i.estado_aprobacion', 'aprobada')   // ← AGREGAR ESTO
-            ->selectRaw("
+            ->where('i.estado_aprobacion', 'aprobada');
+
+        if ($ids !== null) {
+            $q->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+              ->whereIn('z.id_ciudad', $ids);
+        }
+
+        $r = $q->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN e.nombre='Pendiente' THEN 1 ELSE 0 END) as pendientes,
                 SUM(CASE WHEN e.nombre='Pendiente' THEN 1 ELSE 0 END) as abiertas,
@@ -34,12 +64,11 @@ class DashboardController extends Controller
         return response()->json($r);
     }
 
-    // GET /api/dashboard/vencidas
-    // Incidencias de prioridad Alta que llevan más de SLA_HORAS_ALTA horas
-    // sin resolverse — para el widget de "atención urgente" del dashboard.
-    public function vencidas()
+    public function vencidas(Request $request)
     {
-        $datos = DB::table('incidencias as i')
+        $ids = $this->ciudadesScope($request);
+
+        $q = DB::table('incidencias as i')
             ->join('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
             ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
             ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
@@ -47,25 +76,35 @@ class DashboardController extends Controller
             ->where('i.estado_aprobacion', 'aprobada')
             ->where('i.prioridad', 'Alta')
             ->whereNotIn('e.nombre', ['Resuelto', 'Cerrado'])
-            ->whereRaw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) > ?', [self::SLA_HORAS_ALTA])
-            ->orderBy('i.fecha_ocurrencia')
+            ->whereRaw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) > ?', [self::SLA_HORAS_ALTA]);
+
+        $this->aplicarScopeCiudad($q, $ids, 'z');
+
+        $datos = $q->orderBy('i.fecha_ocurrencia')
             ->select(
-                'i.id_incidencia', 'i.titulo', 'ti.nombre as tipo',
-                'z.nombre as zona', 'c.nombre as sucursal', 'e.nombre as estado',
-                'i.fecha_ocurrencia',
-                DB::raw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) as horas_transcurridas')
+                'i.id_incidencia', 'i.titulo', 'i.prioridad', 'i.fecha_ocurrencia',
+                'ti.nombre as tipo', 'e.nombre as estado', 'c.nombre as ciudad', 'z.nombre as zona'
             )
             ->get();
 
         return response()->json(['datos' => $datos, 'sla_horas' => self::SLA_HORAS_ALTA]);
     }
 
-    public function porTipo()
+    public function porTipo(Request $request)
     {
+        $ids = $this->ciudadesScope($request);
+
+        $join = function ($join) use ($ids) {
+            $join->on('ti.id_tipo', '=', 'i.id_tipo')->where('i.estado_aprobacion', '=', 'aprobada');
+            if ($ids !== null) {
+                $join->whereIn('i.id_zona', function ($q) use ($ids) {
+                    $q->select('id_zona')->from('zonas')->whereIn('id_ciudad', $ids);
+                });
+            }
+        };
+
         $datos = DB::table('tipos_incidencia as ti')
-            ->leftJoin('incidencias as i', function ($join) {
-                $join->on('ti.id_tipo', '=', 'i.id_tipo')->where('i.estado_aprobacion', '=', 'aprobada');
-            })
+            ->leftJoin('incidencias as i', $join)
             ->groupBy('ti.nombre')
             ->orderByDesc(DB::raw('COUNT(i.id_incidencia)'))
             ->select('ti.nombre as tipo', DB::raw('COUNT(i.id_incidencia) as total'))
@@ -74,12 +113,21 @@ class DashboardController extends Controller
         return response()->json($datos);
     }
 
-    public function porEstado()
+    public function porEstado(Request $request)
     {
+        $ids = $this->ciudadesScope($request);
+
+        $join = function ($join) use ($ids) {
+            $join->on('e.id_estado', '=', 'i.id_estado_actual')->where('i.estado_aprobacion', '=', 'aprobada');
+            if ($ids !== null) {
+                $join->whereIn('i.id_zona', function ($q) use ($ids) {
+                    $q->select('id_zona')->from('zonas')->whereIn('id_ciudad', $ids);
+                });
+            }
+        };
+
         $datos = DB::table('estados as e')
-            ->leftJoin('incidencias as i', function ($join) {
-                $join->on('e.id_estado', '=', 'i.id_estado_actual')->where('i.estado_aprobacion', '=', 'aprobada');
-            })
+            ->leftJoin('incidencias as i', $join)
             ->groupBy('e.nombre', 'e.color')
             ->select('e.nombre as estado', 'e.color', DB::raw('COUNT(i.id_incidencia) as total'))
             ->get();
@@ -87,16 +135,24 @@ class DashboardController extends Controller
         return response()->json($datos);
     }
 
-    public function porSucursal()
+    public function porSucursal(Request $request)
     {
         $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
-        $datos = DB::table('ciudades as c')
+        $ids = $this->ciudadesScope($request);
+
+        $q = DB::table('ciudades as c')
             ->whereIn('c.nombre', $permitidas)
             ->leftJoin('zonas as z', 'z.id_ciudad', '=', 'c.id_ciudad')
             ->leftJoin('incidencias as i', function ($join) {
                 $join->on('z.id_zona', '=', 'i.id_zona')->where('i.estado_aprobacion', '=', 'aprobada');
             })
-            ->groupBy('c.id_ciudad', 'c.nombre', 'c.latitud_ref', 'c.longitud_ref')
+            ->leftJoin('estados as e', 'e.id_estado', '=', 'i.id_estado_actual');
+
+        if ($ids !== null) {
+            $q->whereIn('c.id_ciudad', $ids);
+        }
+
+        $datos = $q->groupBy('c.id_ciudad', 'c.nombre', 'c.latitud_ref', 'c.longitud_ref')
             ->select(
                 'c.id_ciudad as id',
                 'c.nombre as sucursal',
@@ -105,20 +161,26 @@ class DashboardController extends Controller
                 DB::raw('COUNT(i.id_incidencia) as total'),
                 DB::raw("SUM(CASE WHEN i.estado_aprobacion='aprobada' AND e.nombre NOT IN ('Resuelto','Cerrado') THEN 1 ELSE 0 END) as abiertas")
             )
-            ->leftJoin('estados as e', 'e.id_estado', '=', 'i.id_estado_actual')
             ->orderBy('c.nombre')
             ->get();
 
         return response()->json($datos);
     }
 
-    public function porZona()
+    public function porZona(Request $request)
     {
-        $datos = DB::table('zonas as z')
+        $ids = $this->ciudadesScope($request);
+
+        $q = DB::table('zonas as z')
             ->leftJoin('incidencias as i', function ($join) {
                 $join->on('z.id_zona', '=', 'i.id_zona')->where('i.estado_aprobacion', '=', 'aprobada');
-            })
-            ->groupBy('z.nombre')
+            });
+
+        if ($ids !== null) {
+            $q->whereIn('z.id_ciudad', $ids);
+        }
+
+        $datos = $q->groupBy('z.nombre')
             ->orderByDesc(DB::raw('COUNT(i.id_incidencia)'))
             ->select('z.nombre as zona', DB::raw('COUNT(i.id_incidencia) as total'))
             ->get();
@@ -126,16 +188,26 @@ class DashboardController extends Controller
         return response()->json($datos);
     }
 
-    public function ultimas()
+    public function ultimas(Request $request)
     {
-        $datos = DB::table('incidencias as i')
+        $ids = $this->ciudadesScope($request);
+
+        $q = DB::table('incidencias as i')
             ->join('tipos_incidencia as ti', 'i.id_tipo', '=', 'ti.id_tipo')
             ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
             ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
-            ->where('i.estado_aprobacion', 'aprobada')
-            ->orderByDesc('i.fecha_registro')
-            ->limit(5)
-            ->select('i.id_incidencia', 'i.titulo', 'ti.nombre as tipo', 'z.nombre as zona', 'e.nombre as estado', 'i.prioridad', 'i.fecha_ocurrencia')
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->where('i.estado_aprobacion', 'aprobada');
+
+        $this->aplicarScopeCiudad($q, $ids, 'z');
+
+        $datos = $q->orderByDesc('i.fecha_registro')
+            ->limit(10)
+            ->select(
+                'i.id_incidencia', 'i.titulo', 'i.prioridad', 'i.fecha_registro',
+                'ti.nombre as tipo', 'e.nombre as estado', 'e.color as color_estado',
+                'c.nombre as ciudad', 'z.nombre as zona'
+            )
             ->get();
 
         return response()->json($datos);

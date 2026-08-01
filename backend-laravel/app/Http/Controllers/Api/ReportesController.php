@@ -11,6 +11,19 @@ class ReportesController extends Controller
 {
     private function aplicarFiltros($query, Request $request)
     {
+        // Admin: solo incidencias de su(s) sucursal(es)
+        $user = $request->user();
+        if ($user && $user->rol === 'admin') {
+            $idsCiudad = $user->idsCiudadesEncargadas();
+            if (empty($idsCiudad)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('i.id_zona', function ($q) use ($idsCiudad) {
+                    $q->select('id_zona')->from('zonas')->whereIn('id_ciudad', $idsCiudad);
+                });
+            }
+        }
+
         $query->where('i.estado_aprobacion', 'aprobada');
         if ($desde = $request->query('desde')) $query->whereDate('i.fecha_ocurrencia', '>=', $desde);
         if ($hasta = $request->query('hasta'))  $query->whereDate('i.fecha_ocurrencia', '<=', $hasta);
