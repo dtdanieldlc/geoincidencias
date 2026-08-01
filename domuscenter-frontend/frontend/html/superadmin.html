@@ -206,7 +206,15 @@
         <div class="table-responsive">
         <table>
           <thead>
-            <tr><th>#ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cédula verificada</th><th>Estado</th><th>Acciones</th></tr>
+            <tr id="theadDetalleUsuarios">
+              <th class="sortable-th" data-sort="id" style="cursor:pointer;user-select:none;" title="Ordenar">#ID <span class="sort-ind"></span></th>
+              <th class="sortable-th" data-sort="nombre" style="cursor:pointer;user-select:none;" title="Ordenar">Nombre <span class="sort-ind"></span></th>
+              <th class="sortable-th" data-sort="correo" style="cursor:pointer;user-select:none;" title="Ordenar">Correo <span class="sort-ind"></span></th>
+              <th class="sortable-th" data-sort="rol" style="cursor:pointer;user-select:none;" title="Ordenar">Rol <span class="sort-ind"></span></th>
+              <th class="sortable-th" data-sort="verificado" style="cursor:pointer;user-select:none;" title="Ordenar">Cédula verificada <span class="sort-ind"></span></th>
+              <th class="sortable-th" data-sort="estado" style="cursor:pointer;user-select:none;" title="Ordenar">Estado <span class="sort-ind"></span></th>
+              <th>Acciones</th>
+            </tr>
           </thead>
           <tbody id="tbodyDetalleUsuarios">
             <tr><td colspan="6" class="text-center py-5" style="color:var(--text-muted)"><i class="bi bi-arrow-repeat me-2"></i>Cargando…</td></tr>

@@ -65,6 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tabSolicitudesBtn').addEventListener('click', () => cambiarTabSuperAdmin('solicitudes'));
   document.getElementById('tabAsignarBtn').addEventListener('click',     () => cambiarTabSuperAdmin('asignar'));
   document.getElementById('tabDetalleBtn').addEventListener('click',     () => cambiarTabSuperAdmin('detalle'));
+  document.getElementById('theadDetalleUsuarios')?.addEventListener('click', (e) => {
+    const th = e.target.closest('.sortable-th');
+    if (th && th.dataset.sort) ordenarDetallePor(th.dataset.sort);
+  });
   document.getElementById('tabReportesUsuarioBtn').addEventListener('click', () => cambiarTabSuperAdmin('reportes-usuario'));
   document.getElementById('tabDenunciasBtn').addEventListener('click', () => cambiarTabSuperAdmin('denuncias'));
 
@@ -388,6 +392,8 @@ function mostrarToast(mensaje, tipo = 'success') {
 ══════════════════════════════════════════════════════════ */
 let _detalleUsuariosCargados = false;
 let _todosLosUsuariosDetalle = [];
+let _detalleSort = { campo: 'id', dir: 'asc' };
+const _ROL_ORDEN = { superadmin: 0, admin: 1, encargado: 2, usuario: 3 };
 let _reportesUsuarioCargados = false;
 let _todosLosUsuariosReporte = [];
 
@@ -407,15 +413,75 @@ async function cargarDetalleUsuarios() {
     } while (page <= lastPage && page <= 20);
     _todosLosUsuariosDetalle = todos;
     _detalleUsuariosCargados = true;
-    _renderDetalleUsuarios(_todosLosUsuariosDetalle);
+    _renderDetalleUsuarios(_listaDetalleFiltrada());
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Error al cargar usuarios.</td></tr>';
   }
 }
 
+
+function _listaDetalleFiltrada() {
+  const q = (document.getElementById('buscarDetalleInput')?.value || '').trim().toLowerCase();
+  let lista = _todosLosUsuariosDetalle.slice();
+  if (q) {
+    lista = lista.filter(u =>
+      `${u.nombre} ${u.apellido || ''}`.toLowerCase().includes(q) || (u.correo || '').toLowerCase().includes(q)
+    );
+  }
+  const { campo, dir } = _detalleSort;
+  const mul = dir === 'asc' ? 1 : -1;
+  lista.sort((a, b) => {
+    let va, vb;
+    switch (campo) {
+      case 'id': va = a.id_usuario; vb = b.id_usuario; break;
+      case 'nombre':
+        va = `${a.nombre || ''} ${a.apellido || ''}`.toLowerCase();
+        vb = `${b.nombre || ''} ${b.apellido || ''}`.toLowerCase(); break;
+      case 'correo':
+        va = (a.correo || '').toLowerCase(); vb = (b.correo || '').toLowerCase(); break;
+      case 'rol':
+        va = _ROL_ORDEN[a.rol] ?? 99; vb = _ROL_ORDEN[b.rol] ?? 99; break;
+      case 'verificado':
+        va = a.correo_verificado ? 1 : 0; vb = b.correo_verificado ? 1 : 0; break;
+      case 'estado':
+        va = a.activo ? 1 : 0; vb = b.activo ? 1 : 0; break;
+      default: va = a.id_usuario; vb = b.id_usuario;
+    }
+    if (va < vb) return -1 * mul;
+    if (va > vb) return 1 * mul;
+    return 0;
+  });
+  return lista;
+}
+
+function _actualizarIndicadoresSort() {
+  document.querySelectorAll('#theadDetalleUsuarios .sortable-th').forEach(th => {
+    const ind = th.querySelector('.sort-ind');
+    if (!ind) return;
+    if (th.dataset.sort === _detalleSort.campo) {
+      ind.textContent = _detalleSort.dir === 'asc' ? ' ▲' : ' ▼';
+      th.style.color = '#0d9488';
+    } else {
+      ind.textContent = '';
+      th.style.color = '';
+    }
+  });
+}
+
+function ordenarDetallePor(campo) {
+  if (_detalleSort.campo === campo) {
+    _detalleSort.dir = _detalleSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _detalleSort.campo = campo;
+    _detalleSort.dir = 'asc';
+  }
+  _renderDetalleUsuarios(_listaDetalleFiltrada());
+}
+
 function _renderDetalleUsuarios(lista) {
   const tbody = document.getElementById('tbodyDetalleUsuarios');
-  if (lista.length === 0) {
+  _actualizarIndicadoresSort();
+  if (!lista || lista.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5" style="color:var(--text-muted)">Sin resultados.</td></tr>';
     return;
   }
@@ -427,7 +493,7 @@ function _renderDetalleUsuarios(lista) {
   };
   tbody.innerHTML = lista.map((u, idx) => `
     <tr>
-      <td class="small text-secondary" title="ID interno: ${u.id_usuario}">#${idx + 1}</td>
+      <td class="small text-secondary" title="ID interno: ${u.id_usuario}">#${u.id_usuario}</td>
       <td>${u.nombre} ${u.apellido || ''}</td>
       <td class="small">${u.correo}</td>
       <td>${rolBadgeMap[u.rol] || u.rol}</td>
@@ -447,12 +513,7 @@ function _renderDetalleUsuarios(lista) {
 }
 
 function filtrarDetalleUsuarios() {
-  const q = document.getElementById('buscarDetalleInput').value.trim().toLowerCase();
-  if (!q) { _renderDetalleUsuarios(_todosLosUsuariosDetalle); return; }
-  const filtrado = _todosLosUsuariosDetalle.filter(u =>
-    `${u.nombre} ${u.apellido || ''}`.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q)
-  );
-  _renderDetalleUsuarios(filtrado);
+  _renderDetalleUsuarios(_listaDetalleFiltrada());
 }
 
 async function abrirModalDetalle(id) {
