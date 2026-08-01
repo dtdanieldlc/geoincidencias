@@ -531,19 +531,32 @@ async function abrirModalDetalle(id) {
   try {
     const r = await fetch(`${API}/superadmin/usuarios/${id}/credenciales`, { headers: headers() });
     const data = await r.json();
+    if (!r.ok || !data?.data) {
+      throw new Error(data?.mensaje || 'Respuesta inválida del servidor');
+    }
     const u = data.data;
 
-    document.getElementById('detalleNombreTitulo').textContent = `${u.nombre} ${u.apellido || ''}`;
-    document.getElementById('detalleNombre').value    = u.nombre || '';
-    document.getElementById('detalleApellido').value  = u.apellido || '';
-    document.getElementById('detalleCorreo').value    = u.correo || '';
-    document.getElementById('detalleTelefono').value  = u.telefono || '';
-    document.getElementById('detalleCedula').value    = u.cedula || '';
-    document.getElementById('detallePregunta').value  = u.pregunta_secreta || '';
-    document.getElementById('detalleRespuesta').value = u.respuesta_secreta || '';
-    document.getElementById('detalleInfoExtra').value = `${u.rol} · registrado ${new Date(u.created_at).toLocaleDateString('es-EC')}`;
-    await _cargarSelectSucursalesDetalle(u.id_ciudad || '');
+    const setVal = (idEl, val) => {
+      const el = document.getElementById(idEl);
+      if (el) el.value = val ?? '';
+    };
+    document.getElementById('detalleNombreTitulo').textContent = `${u.nombre || ''} ${u.apellido || ''}`.trim();
+    setVal('detalleNombre', u.nombre || '');
+    setVal('detalleApellido', u.apellido || '');
+    setVal('detalleCorreo', u.correo || '');
+    setVal('detalleTelefono', u.telefono || '');
+    setVal('detalleCedula', u.cedula || '');
+    setVal('detallePregunta', u.pregunta_secreta || 'No configurada');
+    setVal('detalleRespuesta', u.respuesta_secreta || 'No configurada');
+    setVal('detalleInfoExtra', `${u.rol || '—'} · registrado ${u.created_at ? new Date(u.created_at).toLocaleDateString('es-EC') : '—'}`);
+    // Sucursales: no debe tumbar el modal si falla el catálogo
+    try {
+      await _cargarSelectSucursalesDetalle(u.id_ciudad || '');
+    } catch (e2) {
+      console.warn('No se pudieron cargar sucursales:', e2);
+    }
   } catch (e) {
+    console.error(e);
     document.getElementById('msgDetalleUsuario').className = 'alert alert-danger py-2 small mt-3';
     document.getElementById('msgDetalleUsuario').textContent = 'Error al cargar los datos del usuario.';
     document.getElementById('msgDetalleUsuario').style.display = 'block';
@@ -946,5 +959,36 @@ async function cambiarEstadoDenuncia(idReporte, estado) {
     }
   } catch (e) {
     showToast('Error de conexión.', 'error');
+  }
+}
+
+
+async function _cargarSelectSucursalesDetalle(selectedId) {
+  const sel = document.getElementById('detalleSucursal');
+  if (!sel) return;
+
+  // Mantener solo la opción "Sin asignar" y rellenar
+  sel.innerHTML = '<option value="">Sin asignar</option>';
+
+  try {
+    const r = await fetch(`${API}/catalogos/sucursales`, { headers: headers() });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const datos = await r.json();
+    const lista = Array.isArray(datos) ? datos : (datos.data || []);
+    lista.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id ?? s.id_ciudad;
+      opt.textContent = s.nombre;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.warn('catalogos/sucursales:', e);
+  }
+
+  const val = selectedId != null && selectedId !== '' ? String(selectedId) : '';
+  if (val && [...sel.options].some(o => o.value === val)) {
+    sel.value = val;
+  } else {
+    sel.value = '';
   }
 }
