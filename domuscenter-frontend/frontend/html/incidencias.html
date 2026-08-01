@@ -299,5 +299,36 @@
 <script src="./js/incidencias.js"></script>
 
 <script>document.addEventListener("DOMContentLoaded",()=>initSidebar("incidencias"));</script>
+
+<!-- Confirmación elegante (reemplaza alert/confirm del navegador) -->
+<div class="modal fade" id="modalConfirmAccion" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-body p-4 text-center">
+        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:52px;height:52px;background:#ecfdf5;">
+          <i class="bi bi-question-lg" style="font-size:1.4rem;color:#0d9488;"></i>
+        </div>
+        <h6 class="fw-semibold mb-2" id="confirmAccionTitulo" style="color:#0b2340;">Confirmar acción</h6>
+        <p class="small text-secondary mb-0" id="confirmAccionMensaje">¿Desea continuar?</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-2 pb-4 pt-0">
+        <button type="button" class="btn btn-light border btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-sm px-3 text-white" id="btnConfirmAccionOk" style="background:#0d9488;">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+  <div id="toastApp" class="toast align-items-center border-0 shadow" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastAppBody">Listo</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

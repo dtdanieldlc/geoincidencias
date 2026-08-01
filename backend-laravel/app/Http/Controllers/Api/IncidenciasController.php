@@ -81,6 +81,14 @@ public function index(Request $request)
     // Encargado: solo incidencias de SU departamento en SU sucursal.
     if ($usuario->rol === 'encargado') {
         $pares = $usuario->paresDepartamentoSucursalEncargado();
+        // Fallback: departamentos del usuario + su sucursal (id_ciudad del perfil)
+        if (empty($pares)) {
+            $deps = $usuario->idsDepartamentosEncargados();
+            $ciudad = $usuario->id_ciudad ? (int) $usuario->id_ciudad : null;
+            foreach ($deps as $depId) {
+                $pares[] = ['id_departamento' => (int) $depId, 'id_ciudad' => $ciudad];
+            }
+        }
         if (empty($pares)) {
             $query->whereRaw('1 = 0');
         } else {
@@ -95,7 +103,8 @@ public function index(Request $request)
                 }
             });
         }
-        $query->whereIn('incidencias.estado_aprobacion', ['aprobada', 'pendiente_revision']);
+        // Cola operativa: solo aprobadas (pendiente de revisión es del admin)
+        $query->where('incidencias.estado_aprobacion', 'aprobada');
     }
 
     if ($buscar = $request->query('buscar')) {
@@ -312,6 +321,84 @@ public function index(Request $request)
         return $pdf->download('ficha-incidencia-' . $id . '.pdf');
     }
 
+
+
+    private function asegurarDepartamentoSiFalta(int $idIncidencia): void
+    {
+        $inc = Incidencia::find($idIncidencia);
+        if (! $inc || $inc->id_departamento) {
+            return;
+        }
+        $id = $this->resolverDepartamentoIncidencia(
+            $inc->id_tipo ? (int) $inc->id_tipo : null,
+            $inc->titulo,
+            $inc->descripcion,
+            null
+        );
+        if ($id) {
+            $inc->id_departamento = $id;
+            $inc->save();
+        }
+    }
+
+    /** Infiere id_departamento según tipo/texto si no viene en el request. */
+    private function resolverDepartamentoIncidencia(?int $idTipo, ?string $titulo, ?string $descripcion, $idDepartamentoRequest = null): ?int
+    {
+        if ($idDepartamentoRequest) {
+            return (int) $idDepartamentoRequest;
+        }
+        if (! \Illuminate\Support\Facades\Schema::hasTable('departamentos')) {
+            return null;
+        }
+        $deptos = DB::table('departamentos')->where('activo', 1)->get(['id_departamento', 'nombre']);
+        if ($deptos->isEmpty()) {
+            return null;
+        }
+        $find = function (string $needle) use ($deptos) {
+            $n = mb_strtolower($needle);
+            foreach ($deptos as $d) {
+                if (str_contains(mb_strtolower($d->nombre), $n)) {
+                    return (int) $d->id_departamento;
+                }
+            }
+            return null;
+        };
+
+        $tipoNombre = '';
+        if ($idTipo) {
+            $tipoNombre = (string) (DB::table('tipos_incidencia')->where('id_tipo', $idTipo)->value('nombre') ?? '');
+        }
+        $texto = mb_strtolower(trim($tipoNombre . ' ' . ($titulo ?? '') . ' ' . ($descripcion ?? '')));
+
+        // Mapeo por tipo / palabras clave
+        if (str_contains($texto, 'equipos ti') || str_contains($texto, 'comput') || str_contains($texto, 'software')
+            || str_contains($texto, 'red y conect') || str_contains($texto, 'wifi') || str_contains($texto, 'router')
+            || str_contains($texto, 'impresora') || str_contains($texto, 'televisor') || str_contains($texto, 'pos')) {
+            return $find('tecnolog') ?? $find('inform') ?? $find('sistemas') ?? $find('ti');
+        }
+        if (str_contains($texto, 'seguridad') || str_contains($texto, 'cámara') || str_contains($texto, 'camara')
+            || str_contains($texto, 'alarma') || str_contains($texto, 'robo')) {
+            return $find('seguridad');
+        }
+        if (str_contains($texto, 'limpie') || str_contains($texto, 'baño') || str_contains($texto, 'bano')
+            || str_contains($texto, 'aseo')) {
+            return $find('limpie') ?? $find('servicios');
+        }
+        if (str_contains($texto, 'suministro') || str_contains($texto, 'inventario') || str_contains($texto, 'stock')) {
+            return $find('invent') ?? $find('suminist') ?? $find('logist');
+        }
+        if (str_contains($texto, 'accidente') || str_contains($texto, 'cliente') || str_contains($texto, 'atención')) {
+            return $find('operac') ?? $find('atenci') ?? $find('cliente');
+        }
+        if (str_contains($texto, 'infraestruct') || str_contains($texto, 'fuga') || str_contains($texto, 'grieta')
+            || str_contains($texto, 'alumbrado') || str_contains($texto, 'piso') || str_contains($texto, 'techo')
+            || str_contains($texto, 'mantenim') || str_contains($texto, 'aire acondicionado')) {
+            return $find('mantenim') ?? $find('infraest') ?? $find('operac');
+        }
+        // Fallback mantenimiento / operaciones
+        return $find('mantenim') ?? $find('operac') ?? (int) $deptos->first()->id_departamento;
+    }
+
     // POST /api/incidencias
     public function store(Request $request)
     {
@@ -332,6 +419,13 @@ public function index(Request $request)
         $usuario = $request->user();
         $estadoInicial = Estado::where('nombre', 'Pendiente')->first();
 
+        $idDepto = $this->resolverDepartamentoIncidencia(
+            $request->id_tipo ? (int) $request->id_tipo : null,
+            $request->titulo,
+            $request->descripcion,
+            $request->id_departamento
+        );
+
         $incidencia = Incidencia::create([
             'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
@@ -350,8 +444,13 @@ public function index(Request $request)
             'reportante_contacto' => $request->reportante_contacto,
             'id_usuario_reportante' => $request->id_usuario_reportante,
             'id_usuario_creador' => $usuario->id_usuario,
-            'id_departamento' => $request->id_departamento,
+            'id_departamento' => $idDepto,
         ]);
+
+        // por si el modelo no acepta el campo en fillable, forzar
+        if ($idDepto && empty($incidencia->id_departamento)) {
+            DB::table('incidencias')->where('id_incidencia', $incidencia->id_incidencia)->update(['id_departamento' => $idDepto]);
+        }
 
         DB::table('incidencia_estados_historial')->insert([
             'id_incidencia' => $incidencia->id_incidencia,
@@ -658,10 +757,12 @@ public function index(Request $request)
 
         $usuario = $request->user();
         $incidencia->update([
-            'estado_aprobacion' => 'aprobada',
+            'estado_aprobacion' => 'aprobada',  // dept may be filled below
+
             'id_admin_revisor' => $usuario->id_usuario,
             'fecha_revision' => now(),
         ]);
+        if (isset($id)) { $this->asegurarDepartamentoSiFalta((int) $id); }
 
         if ($incidencia->id_usuario_creador) {
             Notificacion::create([

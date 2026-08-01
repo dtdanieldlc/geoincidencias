@@ -569,9 +569,44 @@ async function eliminarEvidencia(idEvidencia) {
 }
 
 
+
+// ── UI: confirmación y toast (sin alert/confirm del navegador) ──
+function mostrarToastApp(mensaje, tipo = 'success') {
+  const el = document.getElementById('toastApp');
+  const body = document.getElementById('toastAppBody');
+  if (!el || !body) return;
+  body.textContent = mensaje;
+  el.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-warning');
+  el.classList.add(tipo === 'error' ? 'text-bg-danger' : tipo === 'warning' ? 'text-bg-warning' : 'text-bg-success');
+  bootstrap.Toast.getOrCreateInstance(el, { delay: 3200 }).show();
+}
+
+function confirmarAccionApp({ titulo = 'Confirmar acción', mensaje = '¿Desea continuar?', okTexto = 'Confirmar' } = {}) {
+  return new Promise((resolve) => {
+    const modalEl = document.getElementById('modalConfirmAccion');
+    if (!modalEl) { resolve(window.confirm(mensaje)); return; }
+    document.getElementById('confirmAccionTitulo').textContent = titulo;
+    document.getElementById('confirmAccionMensaje').textContent = mensaje;
+    const btnOk = document.getElementById('btnConfirmAccionOk');
+    btnOk.textContent = okTexto;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    const limpiar = () => {
+      btnOk.replaceWith(btnOk.cloneNode(true));
+      modalEl.removeEventListener('hidden.bs.modal', onHide);
+    };
+    const onHide = () => { limpiar(); resolve(false); };
+    modalEl.addEventListener('hidden.bs.modal', onHide, { once: true });
+    document.getElementById('btnConfirmAccionOk').onclick = () => {
+      modalEl.removeEventListener('hidden.bs.modal', onHide);
+      modal.hide();
+      resolve(true);
+    };
+    modal.show();
+  });
+}
+
 async function cambiarEstadoRapido(id, nombreEstado) {
   try {
-    // Resolver id_estado desde catálogo en el select de edición o facetas
     let idEstado = null;
     const sel = document.getElementById('edit_id_estado') || document.getElementById('filtroEstado');
     if (sel) {
@@ -583,28 +618,35 @@ async function cambiarEstadoRapido(id, nombreEstado) {
       }
     }
     if (!idEstado) {
-      // fallback: cargar estados
       const r = await fetchAPI(`${API}/catalogos/estados`);
       const estados = await r.json();
       const found = (Array.isArray(estados) ? estados : []).find(e => (e.nombre || '').toLowerCase() === nombreEstado.toLowerCase());
       idEstado = found?.id ?? found?.id_estado;
     }
     if (!idEstado) {
-      alert('No se pudo resolver el estado: ' + nombreEstado);
+      mostrarToastApp('No se pudo resolver el estado: ' + nombreEstado, 'error');
       return;
     }
-    if (!confirm(`¿Cambiar la incidencia #${id} a "${nombreEstado}"?`)) return;
+
+    const ok = await confirmarAccionApp({
+      titulo: 'Cambiar estado',
+      mensaje: `¿Deseas marcar la incidencia #${id} como "${nombreEstado}"?`,
+      okTexto: 'Sí, cambiar',
+    });
+    if (!ok) return;
+
     const res = await fetchAPI(`${API}/incidencias/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ id_estado_actual: parseInt(idEstado, 10) }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.mensaje || 'No se pudo actualizar el estado');
+      mostrarToastApp(data.mensaje || 'No se pudo actualizar el estado', 'error');
       return;
     }
+    mostrarToastApp(`Incidencia #${id} actualizada a "${nombreEstado}".`, 'success');
     if (typeof cargarIncidencias === 'function') cargarIncidencias();
   } catch (e) {
-    alert(e.message || 'Error al cambiar estado');
+    mostrarToastApp(e.message || 'Error al cambiar estado', 'error');
   }
 }
