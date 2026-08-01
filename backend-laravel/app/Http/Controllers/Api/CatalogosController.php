@@ -53,13 +53,18 @@ class CatalogosController extends Controller
     // Si se pasa id_ciudad, filtra las zonas internas de esa sucursal únicamente
     public function zonas(Request $request)
     {
-        $query = Zona::where('activo', 1);
+        $permitidas = ['Salinas', 'La Libertad', 'Santa Elena', 'Quito'];
+        $query = Zona::query()
+            ->where('zonas.activo', 1)
+            ->join('ciudades as c', 'c.id_ciudad', '=', 'zonas.id_ciudad')
+            ->whereIn('c.nombre', $permitidas);
 
         if ($idCiudad = $request->query('id_ciudad')) {
-            $query->where('id_ciudad', $idCiudad);
+            $query->where('zonas.id_ciudad', $idCiudad);
         }
 
-        return $query->orderBy('nombre')->get(['id_zona as id', 'nombre', 'id_ciudad']);
+        return $query->orderBy('zonas.nombre')
+            ->get(['zonas.id_zona as id', 'zonas.nombre', 'zonas.id_ciudad']);
     }
 
     public function usuarios()

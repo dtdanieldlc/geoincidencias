@@ -132,6 +132,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/por-sucursal', [DashboardController::class, 'porSucursal']);
     Route::get('dashboard/ultimas',    [DashboardController::class, 'ultimas']);
     Route::get('dashboard/vencidas',   [DashboardController::class, 'vencidas']);
+    Route::post('dashboard/recordar-vencidas', [DashboardController::class, 'recordarVencidas']);
 
     // ── Historial & Notificaciones ───────────────────────────────
     Route::get('historial',                   [HistorialController::class, 'index'])->middleware(['solo.admin']);

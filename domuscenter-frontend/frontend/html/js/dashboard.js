@@ -199,3 +199,71 @@ cargarPorCategoria();
 cargarUltimas();
 cargarMarcadores();
 cargarSucursalesEnMapa();
+
+
+// ── Incidencias vencidas (modal) ──
+async function abrirModalVencidas() {
+  const cont = document.getElementById('listaVencidas');
+  if (!cont) return;
+  cont.innerHTML = '<div class="text-secondary text-center py-4">Cargando…</div>';
+  const modalEl = document.getElementById('modalVencidas');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+
+  const u = typeof getUsuario === 'function' ? getUsuario() : null;
+  const esSuper = u && u.rol === 'superadmin';
+  document.getElementById('btnRecordarVencidasModal')?.classList.toggle('d-none', !esSuper);
+  document.getElementById('btnRecordarVencidas')?.classList.toggle('d-none', !esSuper);
+
+  try {
+    const r = await fetchAPI(`${API}/dashboard/vencidas`);
+    const data = await r.json();
+    const lista = data.datos || data || [];
+    if (!lista.length) {
+      cont.innerHTML = '<div class="text-center text-secondary py-4">No hay incidencias vencidas.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(inc => `
+      <div class="list-group-item px-0">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-semibold">#${inc.id_incidencia} — ${escHtml(inc.titulo || '')}</div>
+            <div class="small text-secondary">
+              ${escHtml(inc.ciudad || '')} · ${escHtml(inc.zona || '')} · ${escHtml(inc.tipo || '')}
+              · Estado: ${escHtml(inc.estado || '')}
+              · Desde: ${inc.fecha_ocurrencia || '—'}
+            </div>
+          </div>
+          <a class="btn btn-sm btn-outline-primary" href="incidencias.html">Ver</a>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    cont.innerHTML = '<div class="text-danger text-center py-4">Error al cargar vencidas.</div>';
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function enviarRecordatorioVencidas() {
+  if (!confirm('¿Enviar recordatorio a los admins y encargados de cada sucursal con incidencias Alta vencidas?')) return;
+  try {
+    const r = await fetchAPI(`${API}/dashboard/recordar-vencidas`, { method: 'POST', body: '{}' });
+    const data = await r.json();
+    alert(data.mensaje || (data.ok ? 'Recordatorios enviados.' : 'No se pudo enviar.'));
+  } catch (e) {
+    alert('Error al enviar recordatorios.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btnVerVencidas')?.addEventListener('click', abrirModalVencidas);
+  document.getElementById('btnRecordarVencidas')?.addEventListener('click', enviarRecordatorioVencidas);
+  document.getElementById('btnRecordarVencidasModal')?.addEventListener('click', enviarRecordatorioVencidas);
+  const u = typeof getUsuario === 'function' ? getUsuario() : null;
+  if (u && u.rol === 'superadmin') {
+    document.getElementById('btnRecordarVencidas')?.classList.remove('d-none');
+  }
+});

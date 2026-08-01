@@ -43,7 +43,10 @@
         <div class="small" style="color:#991b1b;">Requieren atención urgente</div>
       </div>
     </div>
-    <a href="incidencias.html" class="btn btn-sm text-white" style="background:#dc2626;">Ver incidencias vencidas</a>
+    <div class="d-flex gap-2 flex-wrap">
+      <button type="button" id="btnVerVencidas" class="btn btn-sm text-white" style="background:#dc2626;">Ver incidencias vencidas</button>
+      <button type="button" id="btnRecordarVencidas" class="btn btn-sm btn-outline-danger d-none">Recordar a responsables</button>
+    </div>
   </div>
 
   <!-- Tarjetas resumen: los 4 estados suman el total -->
@@ -179,5 +182,29 @@
 <script src="./js/dashboard.js"></script>
 
 <script>document.addEventListener("DOMContentLoaded",()=>initSidebar("index"));</script>
+
+<!-- Modal incidencias vencidas -->
+<div class="modal fade" id="modalVencidas" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="bi bi-alarm text-danger me-2"></i>Incidencias Alta vencidas (&gt;48h)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="listaVencidas" class="list-group list-group-flush">
+          <div class="text-secondary text-center py-4">Cargando…</div>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" id="btnRecordarVencidasModal" class="btn btn-danger btn-sm d-none">
+          <i class="bi bi-bell me-1"></i>Recordar a admins / encargados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

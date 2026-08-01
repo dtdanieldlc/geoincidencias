@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Notificacion;
+use App\Models\Usuario;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -212,4 +215,80 @@ class DashboardController extends Controller
 
         return response()->json($datos);
     }
+
+
+    public function recordarVencidas(Request $request)
+    {
+        $user = $request->user();
+        if (! $user || $user->rol !== 'superadmin') {
+            return response()->json(['ok' => false, 'mensaje' => 'Solo el Superadmin puede enviar recordatorios.'], 403);
+        }
+
+        $q = DB::table('incidencias as i')
+            ->join('estados as e', 'i.id_estado_actual', '=', 'e.id_estado')
+            ->join('zonas as z', 'i.id_zona', '=', 'z.id_zona')
+            ->join('ciudades as c', 'z.id_ciudad', '=', 'c.id_ciudad')
+            ->where('i.estado_aprobacion', 'aprobada')
+            ->where('i.prioridad', 'Alta')
+            ->whereNotIn('e.nombre', ['Resuelto', 'Cerrado'])
+            ->whereRaw('TIMESTAMPDIFF(HOUR, i.fecha_ocurrencia, NOW()) > ?', [self::SLA_HORAS_ALTA])
+            ->select('i.id_incidencia', 'i.titulo', 'c.id_ciudad', 'c.nombre as ciudad');
+
+        $vencidas = $q->get();
+        if ($vencidas->isEmpty()) {
+            return response()->json(['ok' => true, 'mensaje' => 'No hay incidencias vencidas para recordar.', 'notificados' => 0]);
+        }
+
+        $porCiudad = $vencidas->groupBy('id_ciudad');
+        $notificados = 0;
+
+        foreach ($porCiudad as $idCiudad => $items) {
+            $ciudad = $items->first()->ciudad ?? 'Sucursal';
+            $lista = $items->take(8)->map(fn ($x) => '• #' . $x->id_incidencia . ' ' . $x->titulo)->implode("\n");
+            $extra = $items->count() > 8 ? "\n… y " . ($items->count() - 8) . ' más' : '';
+            $titulo = "Recordatorio: {$items->count()} incidencia(s) Alta vencida(s) — {$ciudad}";
+            $mensaje = "El Superadmin solicita atención urgente en {$ciudad}:\n{$lista}{$extra}";
+
+            $destIds = collect();
+            if (Schema::hasTable('sucursal_responsables')) {
+                $destIds = $destIds->merge(
+                    DB::table('sucursal_responsables')->where('id_ciudad', $idCiudad)->pluck('id_usuario')
+                );
+            }
+            if (Schema::hasTable('departamento_responsables') && Schema::hasColumn('departamento_responsables', 'id_ciudad')) {
+                $destIds = $destIds->merge(
+                    DB::table('departamento_responsables')->where('id_ciudad', $idCiudad)->pluck('id_usuario')
+                );
+            }
+            $destIds = $destIds->merge(
+                Usuario::where('activo', 1)->whereIn('rol', ['admin', 'encargado'])
+                    ->where('id_ciudad', $idCiudad)->pluck('id_usuario')
+            );
+            $destIds = $destIds->unique()->filter()->values();
+
+            foreach ($destIds as $uid) {
+                try {
+                    Notificacion::create([
+                        'id_usuario'    => $uid,
+                        'id_incidencia' => $items->first()->id_incidencia,
+                        'titulo'        => $titulo,
+                        'mensaje'       => $mensaje,
+                        'leida'         => false,
+                    ]);
+                    $notificados++;
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        }
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => "Recordatorios enviados ({$notificados} notificación/es) a responsables de sucursal.",
+            'notificados' => $notificados,
+            'sucursales' => $porCiudad->count(),
+            'incidencias' => $vencidas->count(),
+        ]);
+    }
+
 }
