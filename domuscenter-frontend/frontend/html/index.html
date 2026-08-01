@@ -196,11 +196,34 @@
           <div class="text-secondary text-center py-4">Cargando…</div>
         </div>
       </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" id="btnRecordarVencidasModal" class="btn btn-danger btn-sm d-none">
-          <i class="bi bi-bell me-1"></i>Recordar a admins / encargados
-        </button>
+      <div class="modal-footer border-0 flex-column align-items-stretch gap-2">
+        <div id="confirmRecordarBox" class="d-none rounded-3 p-3" style="background:#fef2f2;border:1px solid #fecaca;">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-bell-fill text-danger mt-1"></i>
+            <div class="flex-grow-1">
+              <div class="fw-semibold text-danger mb-1">Confirmar recordatorio</div>
+              <p class="small text-secondary mb-0">Se enviará una notificación a los <strong>admins</strong> y <strong>encargados</strong> de cada sucursal con incidencias de prioridad Alta vencidas (&gt;48h).</p>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" id="btnCancelarRecordar" class="btn btn-sm btn-light border">Cancelar</button>
+            <button type="button" id="btnConfirmarRecordar" class="btn btn-sm btn-danger">
+              <i class="bi bi-send me-1"></i>Sí, enviar ahora
+            </button>
+          </div>
+        </div>
+        <div id="msgRecordarOk" class="d-none rounded-3 p-3" style="background:#ecfdf5;border:1px solid #a7f3d0;">
+          <div class="d-flex align-items-center gap-2 text-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span id="msgRecordarTexto" class="small fw-semibold">Recordatorios enviados.</span>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" id="btnRecordarVencidasModal" class="btn btn-danger btn-sm d-none">
+            <i class="bi bi-bell me-1"></i>Recordar a admins / encargados
+          </button>
+        </div>
       </div>
     </div>
   </div>

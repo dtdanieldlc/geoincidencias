@@ -206,6 +206,8 @@ async function abrirModalVencidas() {
   const cont = document.getElementById('listaVencidas');
   if (!cont) return;
   cont.innerHTML = '<div class="text-secondary text-center py-4">Cargando…</div>';
+  document.getElementById('confirmRecordarBox')?.classList.add('d-none');
+  document.getElementById('msgRecordarOk')?.classList.add('d-none');
   const modalEl = document.getElementById('modalVencidas');
   const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
   modal.show();
@@ -247,21 +249,67 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function mostrarConfirmRecordar() {
+  document.getElementById('confirmRecordarBox')?.classList.remove('d-none');
+  document.getElementById('msgRecordarOk')?.classList.add('d-none');
+  document.getElementById('btnRecordarVencidasModal')?.classList.add('d-none');
+}
+
+function ocultarConfirmRecordar() {
+  document.getElementById('confirmRecordarBox')?.classList.add('d-none');
+  const u = typeof getUsuario === 'function' ? getUsuario() : null;
+  if (u && u.rol === 'superadmin') {
+    document.getElementById('btnRecordarVencidasModal')?.classList.remove('d-none');
+  }
+}
+
 async function enviarRecordatorioVencidas() {
-  if (!confirm('¿Enviar recordatorio a los admins y encargados de cada sucursal con incidencias Alta vencidas?')) return;
+  const btn = document.getElementById('btnConfirmarRecordar');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando…'; }
   try {
     const r = await fetchAPI(`${API}/dashboard/recordar-vencidas`, { method: 'POST', body: '{}' });
     const data = await r.json();
-    alert(data.mensaje || (data.ok ? 'Recordatorios enviados.' : 'No se pudo enviar.'));
+    document.getElementById('confirmRecordarBox')?.classList.add('d-none');
+    const okBox = document.getElementById('msgRecordarOk');
+    const okTxt = document.getElementById('msgRecordarTexto');
+    if (okBox && okTxt) {
+      okTxt.textContent = data.mensaje || (data.ok ? 'Recordatorios enviados correctamente.' : 'No se pudo enviar.');
+      okBox.classList.remove('d-none');
+      okBox.style.background = data.ok ? '#ecfdf5' : '#fef2f2';
+      okBox.style.borderColor = data.ok ? '#a7f3d0' : '#fecaca';
+      okBox.querySelector('i')?.classList.toggle('text-success', !!data.ok);
+      okBox.querySelector('i')?.classList.toggle('text-danger', !data.ok);
+    }
+    // Si se disparó desde el botón externo, abrir modal para ver resultado
+    const modalEl = document.getElementById('modalVencidas');
+    if (modalEl && !modalEl.classList.contains('show')) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
   } catch (e) {
-    alert('Error al enviar recordatorios.');
+    const okBox = document.getElementById('msgRecordarOk');
+    const okTxt = document.getElementById('msgRecordarTexto');
+    if (okBox && okTxt) {
+      document.getElementById('confirmRecordarBox')?.classList.add('d-none');
+      okTxt.textContent = 'Error de conexión al enviar recordatorios.';
+      okBox.classList.remove('d-none');
+      okBox.style.background = '#fef2f2';
+      okBox.style.borderColor = '#fecaca';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Sí, enviar ahora'; }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnVerVencidas')?.addEventListener('click', abrirModalVencidas);
-  document.getElementById('btnRecordarVencidas')?.addEventListener('click', enviarRecordatorioVencidas);
-  document.getElementById('btnRecordarVencidasModal')?.addEventListener('click', enviarRecordatorioVencidas);
+  // Botón del banner: abre modal y muestra confirmación elegante
+  document.getElementById('btnRecordarVencidas')?.addEventListener('click', async () => {
+    await abrirModalVencidas();
+    mostrarConfirmRecordar();
+  });
+  document.getElementById('btnRecordarVencidasModal')?.addEventListener('click', mostrarConfirmRecordar);
+  document.getElementById('btnCancelarRecordar')?.addEventListener('click', ocultarConfirmRecordar);
+  document.getElementById('btnConfirmarRecordar')?.addEventListener('click', enviarRecordatorioVencidas);
   const u = typeof getUsuario === 'function' ? getUsuario() : null;
   if (u && u.rol === 'superadmin') {
     document.getElementById('btnRecordarVencidas')?.classList.remove('d-none');
