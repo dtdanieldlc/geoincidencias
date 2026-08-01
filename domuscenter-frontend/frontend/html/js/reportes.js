@@ -419,3 +419,83 @@ poblarSelect(`${API}/catalogos/zonas`, 'rZona');
 })();
 
 aplicarPeriodoRapido();
+
+
+// ── Exportar PDF ──
+function _paramsReportes() {
+  const params = new URLSearchParams();
+  const desde = document.getElementById('rDesde')?.value;
+  const hasta = document.getElementById('rHasta')?.value;
+  const tipo  = document.getElementById('rTipo')?.value;
+  const zona  = document.getElementById('rZona')?.value;
+  const sucursal = document.getElementById('rSucursal')?.value;
+  if (desde) params.append('desde', desde);
+  if (hasta) params.append('hasta', hasta);
+  if (tipo)  params.append('tipo', tipo);
+  if (zona)  params.append('zona', zona);
+  if (sucursal) params.append('sucursal', sucursal);
+  return params;
+}
+
+async function _descargarPdf(url, nombreArchivo) {
+  try {
+    const token = (typeof getToken === 'function') ? getToken() : (localStorage.getItem('gi_token') || localStorage.getItem('token'));
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/pdf',
+      },
+    });
+    if (!res.ok) {
+      let msg = 'No se pudo generar el PDF';
+      try {
+        const j = await res.json();
+        msg = j.mensaje || j.message || msg;
+      } catch (_) {}
+      if (typeof mostrarAlerta === 'function') mostrarAlerta(msg, 'danger');
+      else alert(msg);
+      return;
+    }
+    const blob = await res.blob();
+    // Si el servidor devolvió JSON por error enmascarado
+    if (blob.type && blob.type.includes('json')) {
+      const text = await blob.text();
+      try {
+        const j = JSON.parse(text);
+        const msg = j.mensaje || j.message || 'Error al exportar';
+        if (typeof mostrarAlerta === 'function') mostrarAlerta(msg, 'danger');
+        else alert(msg);
+      } catch (_) {
+        if (typeof mostrarAlerta === 'function') mostrarAlerta('Error al exportar el reporte', 'danger');
+      }
+      return;
+    }
+    const a = document.createElement('a');
+    const objectUrl = URL.createObjectURL(blob);
+    a.href = objectUrl;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+    if (typeof mostrarAlerta === 'function') mostrarAlerta('Descarga iniciada', 'success');
+  } catch (e) {
+    console.error(e);
+    if (typeof mostrarAlerta === 'function') mostrarAlerta('Error de conexión al exportar', 'danger');
+    else alert('Error de conexión al exportar');
+  }
+}
+
+async function exportarResumenPDF() {
+  const params = _paramsReportes();
+  const nombre = 'resumen-ejecutivo-' + new Date().toISOString().slice(0, 10) + '.pdf';
+  await _descargarPdf(`${API}/reportes/exportar-pdf-resumen?${params}`, nombre);
+}
+
+async function exportarDetallePDF() {
+  const params = _paramsReportes();
+  const nombre = 'detalle-incidencias-' + new Date().toISOString().slice(0, 10) + '.pdf';
+  await _descargarPdf(`${API}/reportes/exportar-pdf-detalle?${params}`, nombre);
+}
+
